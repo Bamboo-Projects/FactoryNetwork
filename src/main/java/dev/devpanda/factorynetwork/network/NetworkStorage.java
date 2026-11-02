@@ -253,11 +253,24 @@ public final class NetworkStorage implements ResourceStore {
     /** All cells of all drives, freshly read. */
     private List<CellInventory<ItemKey>> cells() {
         List<CellInventory<ItemKey>> all = new ArrayList<>();
+        cellOwners.clear();
         for (DriveBlockEntity drive : drives) {
-            all.addAll(drive.inventories());
+            for (CellInventory<ItemKey> cell : drive.inventories()) {
+                all.add(cell);
+                cellOwners.add(drive);
+            }
         }
         return all;
     }
+
+    /**
+     * The drive of each cell from the last {@link #cells()}, at the same index.
+     *
+     * <p>So that a change marks only the drive it happened in. Marking all of
+     * them made up most of an insert: setChanged also updates the comparators
+     * around every drive (docs/messung-last-2026-11-02.md).
+     */
+    private final List<DriveBlockEntity> cellOwners = new ArrayList<>();
 
     /**
      * Stores it and returns what did not fit.
@@ -281,20 +294,26 @@ public final class NetworkStorage implements ResourceStore {
             left = bus.insert(item, left);
         }
         List<CellInventory<ItemKey>> cells = cells();
-        for (CellInventory<ItemKey> cell : cells) {
-            if (left <= 0) {
-                break;
-            }
+        java.util.Set<DriveBlockEntity> touched = new java.util.HashSet<>(2);
+        boolean touchedBus = left < count;
+        for (int i = 0; i < cells.size() && left > 0; i++) {
+            CellInventory<ItemKey> cell = cells.get(i);
             if (cell.count(item) > 0) {
-                left -= cell.insert(item, left);
+                long stored = cell.insert(item, left);
+                if (stored > 0) {
+                    left -= stored;
+                    touched.add(cellOwners.get(i));
+                }
             }
         }
-        for (CellInventory<ItemKey> cell : cells) {
-            if (left <= 0) {
-                break;
+        for (int i = 0; i < cells.size() && left > 0; i++) {
+            long stored = cells.get(i).insert(item, left);
+            if (stored > 0) {
+                left -= stored;
+                touched.add(cellOwners.get(i));
             }
-            left -= cell.insert(item, left);
         }
+        long afterCells = left;
         // And last the foreign inventories — unless one has pushed ahead: a
         // priority higher than zero means "here first". On a tie the cells
         // win, because they belong to the network.
@@ -306,7 +325,12 @@ public final class NetworkStorage implements ResourceStore {
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
-            markChanged();
+            if (touchedBus || left < afterCells) {
+                // A bus took part: what it holds is not one drive's matter.
+                markChanged();
+            } else {
+                markChanged(touched);
+            }
         }
         return left;
     }
@@ -322,12 +346,16 @@ public final class NetworkStorage implements ResourceStore {
         }
         Map<ItemKey, Long> stock = index();
         long taken = 0;
-        for (CellInventory<ItemKey> cell : cells()) {
-            if (taken >= count) {
-                break;
+        List<CellInventory<ItemKey>> cells = cells();
+        java.util.Set<DriveBlockEntity> touched = new java.util.HashSet<>(2);
+        for (int i = 0; i < cells.size() && taken < count; i++) {
+            long got = cells.get(i).extract(item, count - taken);
+            if (got > 0) {
+                taken += got;
+                touched.add(cellOwners.get(i));
             }
-            taken += cell.extract(item, count - taken);
         }
+        long fromCells = taken;
         // From the foreign inventories only once the cells are empty. What
         // lies in a chest often has a reason — a Drawer as a buffer, a
         // reserve for the hand. The cells belong to the network and are the
@@ -345,7 +373,11 @@ public final class NetworkStorage implements ResourceStore {
             } else {
                 stock.remove(item);
             }
-            markChanged();
+            if (taken > fromCells) {
+                markChanged();
+            } else {
+                markChanged(touched);
+            }
         }
         return taken;
     }
@@ -463,6 +495,11 @@ public final class NetworkStorage implements ResourceStore {
      */
     private void markChanged() {
         drives.forEach(DriveBlockEntity::setChanged);
+        onChange.run();
+    }
+
+    private void markChanged(java.util.Collection<DriveBlockEntity> touched) {
+        touched.forEach(DriveBlockEntity::setChanged);
         onChange.run();
     }
 
