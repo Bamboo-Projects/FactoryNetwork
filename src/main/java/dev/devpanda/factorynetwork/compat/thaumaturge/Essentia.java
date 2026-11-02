@@ -146,7 +146,7 @@ public final class Essentia implements ResourceKind {
 
     @Override
     public ResourceStore newStore() {
-        return new EssentiaBuffer();
+        return new EssentiaStore();
     }
 
     @Override

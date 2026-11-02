@@ -281,6 +281,21 @@ public final class FnItems {
     public static final Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier,
             DeferredItem<Item>> CHEMICAL_CELLS = registerChemicalCells();
 
+    /** Cells for Thaumaturge essentia; usable only with the mod, harmless without. */
+    public static final Map<dev.devpanda.factorynetwork.storage.EssentiaCellTier,
+            DeferredItem<Item>> ESSENTIA_CELLS = registerEssentiaCells();
+
+    private static Map<dev.devpanda.factorynetwork.storage.EssentiaCellTier,
+            DeferredItem<Item>> registerEssentiaCells() {
+        Map<dev.devpanda.factorynetwork.storage.EssentiaCellTier, DeferredItem<Item>> cells =
+                new LinkedHashMap<>();
+        for (var tier : dev.devpanda.factorynetwork.storage.EssentiaCellTier.values()) {
+            cells.put(tier, ITEMS.registerItem("essentia_cell_" + tier.getSerializedName(),
+                    props -> new dev.devpanda.factorynetwork.storage.EssentiaCellItem(tier, props)));
+        }
+        return Map.copyOf(cells);
+    }
+
     private static Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier,
             DeferredItem<Item>> registerChemicalCells() {
         Map<dev.devpanda.factorynetwork.storage.ChemicalCellTier, DeferredItem<Item>> cells =

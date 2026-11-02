@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " C ",
+    "CIC",
+    " C "
+  ],
+  "key": {
+    "C": "factorynetwork:chemical_cell_64k",
+    "I": "minecraft:iron_ingot",
+    "B": "thaumaturge:amber"
+  },
+  "result": {
+    "id": "factorynetwork:essentia_cell_16k",
+    "count": 1
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thaumaturge"
+    }
+  ]
+}

@@ -63,6 +63,8 @@ public class DriveBlockEntity extends ShelfBlockEntity {
      * lives in {@code compat/mekanism}.
      */
     private final java.util.Map<Integer, CellView> openChemicals = new java.util.HashMap<>();
+    /** Essentia cells; their keys are strings, so the core reads them itself. */
+    private final java.util.Map<Integer, CellInventory<String>> openEssentia = new java.util.HashMap<>();
 
     public DriveBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.DRIVE.get(), pos, state, SLOTS);
@@ -72,7 +74,8 @@ public class DriveBlockEntity extends ShelfBlockEntity {
     public boolean accepts(ItemStack stack) {
         return stack.getItem() instanceof StorageCellItem
                 || stack.getItem() instanceof FluidCellItem
-                || stack.getItem() instanceof EnergyCellItem;
+                || stack.getItem() instanceof EnergyCellItem
+                || stack.getItem() instanceof dev.devpanda.factorynetwork.storage.EssentiaCellItem;
     }
 
     @Override
@@ -106,6 +109,9 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         }
         if (leaving == null) {
             leaving = openFluids.remove(slot);
+        }
+        if (leaving == null) {
+            leaving = openEssentia.remove(slot);
         }
         if (leaving == null) {
             leaving = openEnergy.remove(slot);
@@ -161,6 +167,14 @@ public class DriveBlockEntity extends ShelfBlockEntity {
      * {@link CellView}, which the core knows. Without Mekanism no one calls
      * this method, and the cells stay unopened in the drive.
      */
+    /** The essentia cells, kept open like the item cells. */
+    public List<CellInventory<String>> essentiaCells() {
+        return live(openEssentia, dev.devpanda.factorynetwork.storage.EssentiaCellItem.class,
+                cell -> CellInventory.of(cell,
+                        dev.devpanda.factorynetwork.storage.EssentiaCellItem.tierOf(cell),
+                        dev.devpanda.factorynetwork.storage.CellFormat.ESSENTIA, registries()));
+    }
+
     public List<CellView> chemicalCells(
             java.util.function.Function<ItemStack, CellView> open) {
         return live(openChemicals,
@@ -216,6 +230,7 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         openFluids.values().forEach(CellInventory::flush);
         openEnergy.values().forEach(EnergyCellView::flush);
         openChemicals.values().forEach(CellView::flush);
+        openEssentia.values().forEach(CellInventory::flush);
     }
 
     @Override
@@ -223,6 +238,7 @@ public class DriveBlockEntity extends ShelfBlockEntity {
         openItems.clear();
         openFluids.clear();
         openEnergy.clear();
+        openEssentia.clear();
         super.loadAdditional(input);
     }
 

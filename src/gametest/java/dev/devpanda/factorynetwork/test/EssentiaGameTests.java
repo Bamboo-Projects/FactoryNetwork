@@ -118,4 +118,54 @@ public final class EssentiaGameTests {
                         && found.value() > 0, "Die Aura-Basis ist nicht positiv: " + base);
         helper.succeed();
     }
+
+    /** Essentia in the network is kept in an essentia cell, not in the buffer. */
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void essentiaIsKeptInAnEssentiaCell(GameTestHelper helper) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("thaumaturge")) {
+            helper.succeed();
+            return;
+        }
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos source = controller.east().north().north();
+        helper.setBlock(source, BuiltInRegistries.BLOCK.getValue(
+                Identifier.fromNamespaceAndPath("thaumaturge", "jar_normal")));
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                helper.getLevel().getBlockEntity(helper.absolutePos(controller.above()));
+        drive.setCell(1, new net.minecraft.world.item.ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                .ESSENTIA_CELLS.get(dev.devpanda.factorynetwork.storage.EssentiaCellTier.K4).get()));
+
+        var registry = helper.getLevel().registryAccess().lookupOrThrow(
+                com.leclowndu93150.thaumaturge.api.aspect.IAspect.REGISTRY_KEY);
+        var aqua = registry.get(net.minecraft.resources.ResourceKey.create(
+                com.leclowndu93150.thaumaturge.api.aspect.IAspect.REGISTRY_KEY,
+                Identifier.fromNamespaceAndPath("thaumaturge", "aqua"))).orElseThrow();
+        var storage = helper.getLevel().getCapability(
+                com.leclowndu93150.thaumaturge.api.essentia.EssentiaCapabilities.STORAGE,
+                helper.absolutePos(source), Direction.UP);
+        try (var transaction = net.neoforged.neoforge.transfer.transaction.Transaction.openRoot()) {
+            storage.insert(aqua, 200, transaction);
+            transaction.commit();
+        }
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                worker hinein {
+                    from quarry_output
+                    to storage
+                    filter essentia:aqua
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        helper.startSequence()
+                .thenIdle(120)
+                .thenExecute(() -> {
+                    long inCells = 0;
+                    for (var cell : drive.essentiaCells()) {
+                        inCells += cell.count("thaumaturge:aqua");
+                    }
+                    helper.assertValueEqual(inCells, 200L, "Aqua in der Essenzzelle");
+                    helper.assertValueEqual(storage.amount(aqua), 0, "Aqua im Glas");
+                })
+                .thenSucceed();
+    }
 }

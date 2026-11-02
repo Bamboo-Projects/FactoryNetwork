@@ -82,6 +82,10 @@ public final class FnCreativeTabs {
                                 .forEach(cell -> output.accept(cell.get()));
                         FnItems.CHEMICAL_CELLS.values()
                                 .forEach(cell -> output.accept(cell.get()));
+                        if (net.neoforged.fml.ModList.get().isLoaded("thaumaturge")) {
+                            FnItems.ESSENTIA_CELLS.values()
+                                    .forEach(cell -> output.accept(cell.get()));
+                        }
                         FnItems.ENERGY_CELLS.values()
                                 .forEach(cell -> output.accept(cell.get()));
                     })

@@ -109,6 +109,26 @@ public record CellFormat<T>(String nbtKey, String amountKey, Entry<T> entry) {
             new CellFormat<>("FluidCell", "Amount",
                     registryEntry(BuiltInRegistries.FLUID, "Fluid"));
 
+    /**
+     * Thaumaturge essentia, by aspect identifier. Strings and not aspects: the
+     * cell is read and written without the mod, and an aspect a pack no
+     * longer has is still a name worth keeping.
+     */
+    public static final CellFormat<String> ESSENTIA =
+            new CellFormat<>("EssentiaCell", "Amount", new Entry<>() {
+
+                @Override
+                public String read(CompoundTag tag, HolderLookup.Provider registries) {
+                    String id = Nbt.getString(tag, "Aspect");
+                    return id.isEmpty() ? null : id;
+                }
+
+                @Override
+                public void write(CompoundTag tag, String key, HolderLookup.Provider registries) {
+                    tag.putString("Aspect", key);
+                }
+            });
+
     /** The path for everything fully described by its id. */
     private static <T> Entry<T> registryEntry(Registry<T> registry, String idKey) {
         return new Entry<>() {

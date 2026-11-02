@@ -1,0 +1,24 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thaumaturge"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CBC",
+    "PPP"
+  ],
+  "key": {
+    "P": "factorynetwork:plate",
+    "C": "factorynetwork:crystal",
+    "B": "thaumaturge:amber"
+  },
+  "result": {
+    "id": "factorynetwork:essentia_cell_4k",
+    "count": 1
+  }
+}
