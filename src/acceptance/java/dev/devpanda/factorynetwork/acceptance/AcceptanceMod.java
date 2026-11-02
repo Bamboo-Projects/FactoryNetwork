@@ -41,11 +41,25 @@ public final class AcceptanceMod {
     public AcceptanceMod() {
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::commands);
         NeoForge.EVENT_BUS.addListener(AcceptanceMod::power);
+        NeoForge.EVENT_BUS.addListener(Bench::preTick);
+        NeoForge.EVENT_BUS.addListener(Bench::postTick);
     }
 
     private static void commands(RegisterCommandsEvent event) {
+        // /fnbench run [types] [workers] [cables]
+        event.getDispatcher().register(Commands.literal("fnbench")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .then(Commands.literal("run")
+                        .executes(ctx -> bench(ctx.getSource(), 5_000, 64, 4_000))
+                        .then(Commands.argument("types", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1))
+                                .then(Commands.argument("workers", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1))
+                                        .then(Commands.argument("cables", com.mojang.brigadier.arguments.IntegerArgumentType.integer(1))
+                                                .executes(ctx -> bench(ctx.getSource(),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "types"),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "workers"),
+                                                        com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "cables"))))))));
         event.getDispatcher().register(Commands.literal("fnacceptance")
-                .requires(source -> source.hasPermission(4))
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.literal("setup").executes(ctx -> {
                     setup(ctx.getSource().getLevel());
                     ctx.getSource().sendSuccess(() -> Component.literal("FN_ACCEPTANCE_SETUP_OK"), false);
@@ -92,12 +106,22 @@ public final class AcceptanceMod {
                         .executes(ctx -> {
                             var player = EntityArgument.getPlayer(ctx, "player");
                             var level = ctx.getSource().getLevel();
-                            player.teleportTo(level, 8.5, 64, 12.5, 180, 10);
+                            player.teleportTo(level, 8.5, 64, 12.5, java.util.Set.of(), 180, 10, true);
                             var terminal = (TerminalBlockEntity) level.getBlockEntity(TERMINAL);
                             terminal.sendStateTo(player);
                             player.openMenu(terminal, buffer -> TerminalMenu.writeBlock(buffer, TERMINAL));
                             return 1;
                         }))));
+    }
+
+    private static int bench(net.minecraft.commands.CommandSourceStack source, int types, int workers, int cables) {
+        if (Bench.running()) {
+            source.sendFailure(Component.literal("FN_BENCH_BUSY"));
+            return 0;
+        }
+        Bench.start(source.getLevel(), types, workers, cables);
+        source.sendSuccess(() -> Component.literal("FN_BENCH_STARTED"), false);
+        return 1;
     }
 
     private static void setup(ServerLevel level) {
@@ -134,7 +158,8 @@ public final class AcceptanceMod {
         for (int tick = 0; tick <= Power.BOOT_TICKS; tick++) controller.power().tick();
         if (!controller.deploy(Project.of("worker transfer {\n    from source\n    to target\n}\n")))
             throw new IllegalStateException("Fixture did not compile: " + controller.diagnostics());
-        level.setDefaultSpawnPos(new BlockPos(8, 64, 12), 180);
+        level.setRespawnData(new net.minecraft.world.level.storage.LevelData.RespawnData(
+                net.minecraft.core.GlobalPos.of(level.dimension(), new BlockPos(8, 64, 12)), 180, 0));
     }
 
     private static void connector(ServerLevel level, BlockPos pos, Direction facing, String name) {
