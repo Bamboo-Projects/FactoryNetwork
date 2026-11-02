@@ -185,7 +185,7 @@ public class StorageTabView {
                 mode.jeiSync() ? TerminalScreen.ACCENT : TerminalScreen.TEXT, false);
     }
 
-    private void drawSearch(GuiGraphicsExtractor graphics) {
+    private void drawSearch(GuiGraphics graphics) {
         int fieldWidth = sortButtonX(-1) - x - 6;
         Widgets.stretched(graphics, x + 2, y + 2, fieldWidth, 12, 0, 32, 96, 2);
         String shown = search.isEmpty()
@@ -326,7 +326,7 @@ public class StorageTabView {
             wanted = stack;
             kind = StorageActionPacket.Kind.EXTRACT_TO_INVENTORY;
         }
-        ClientPacketDistributor.sendToServer(new StorageActionPacket(
+        PacketDistributor.sendToServer(new StorageActionPacket(
                 kind, dev.devpanda.factorynetwork.storage.ItemKey.of(entry.stack()), wanted));
         return true;
     }
@@ -339,7 +339,7 @@ public class StorageTabView {
      * number, and the difference between three buckets and three thousand
      * millibuckets deserves to be said.
      */
-    public void renderTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+    public void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         // The sort buttons say what they do, not what lies beneath them.
         for (StorageSort candidate : StorageSort.values()) {
             int bx = sortButtonX(candidate.ordinal());
@@ -379,7 +379,7 @@ public class StorageTabView {
         }
         lines.add(Math.min(1, lines.size()), stored);
         // Which mod it comes from, unless another mod (JEI, say) already added it.
-        String namespace = row.stack().getItem().builtInRegistryHolder().key().identifier().getNamespace();
+        String namespace = row.stack().getItem().builtInRegistryHolder().key().location().getNamespace();
         var container = net.neoforged.fml.ModList.get().getModContainerById(namespace);
         String modName = container.isPresent() ? container.get().getModInfo().getDisplayName() : namespace;
         boolean named = false;

@@ -35,7 +35,7 @@ public final class DevCommands {
         event.getDispatcher().register(Commands.literal("fn")
                 // Only in the dev environment, and there without cheats: the
                 // test worlds are not opened to LAN with commands enabled.
-                .requires(source -> !net.neoforged.fml.loading.FMLEnvironment.isProduction())
+                .requires(source -> !net.neoforged.fml.loading.FMLEnvironment.production)
                 .then(Commands.literal("fill")
                         .executes(context -> fill(context, 200, 1000))
                         .then(Commands.argument("types", IntegerArgumentType.integer(1, 5000))
