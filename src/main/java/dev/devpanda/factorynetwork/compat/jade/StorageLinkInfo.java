@@ -45,7 +45,7 @@ public enum StorageLinkInfo implements IBlockComponentProvider,
         tooltip.add(Component.translatable("message.factorynetwork.storage_link.attached", system)
                 .withStyle(ChatFormatting.GRAY));
         if (!Nbt.getBoolean(data, KEY_REACHABLE)) {
-            // AE2 without a free channel or power, RS without energy.
+            // AE2 without a free connection or power, RS without energy.
             tooltip.add(Component.translatable("jade.factorynetwork.storage_link.offline")
                     .withStyle(ChatFormatting.YELLOW));
         }
