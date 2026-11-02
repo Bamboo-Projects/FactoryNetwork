@@ -46,6 +46,14 @@ public final class AcceptanceMod {
     }
 
     private static void commands(RegisterCommandsEvent event) {
+        // /fnprobe: which blocks with a block entity offer what to a connector.
+        event.getDispatcher().register(Commands.literal("fnprobe")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .executes(ctx -> {
+                    Probe.run(ctx.getSource().getLevel());
+                    ctx.getSource().sendSuccess(() -> Component.literal("FN_PROBE_DONE"), false);
+                    return 1;
+                }));
         // /fnbench run [types] [workers] [cables]
         event.getDispatcher().register(Commands.literal("fnbench")
                 .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
