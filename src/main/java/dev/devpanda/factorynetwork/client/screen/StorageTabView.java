@@ -6,7 +6,7 @@ import dev.devpanda.factorynetwork.client.ClientStorageView;
 import dev.devpanda.factorynetwork.client.FnClientConfig;
 import dev.devpanda.factorynetwork.client.SearchMode;
 import dev.devpanda.factorynetwork.client.StorageSort;
-import dev.devpanda.factorynetwork.compat.jei.JeiSearch;
+import dev.devpanda.factorynetwork.client.ExternalSearch;
 import dev.devpanda.factorynetwork.network.packet.StorageActionPacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -68,8 +68,8 @@ public class StorageTabView {
         this.height = height;
         SearchMode mode = FnClientConfig.searchMode();
         String start = FnClientConfig.rememberSearch() ? ClientStorageView.lastSearch() : "";
-        if (mode.jeiSync() && JeiSearch.installed()) {
-            String jei = JeiSearch.text();
+        if (mode.jeiSync() && ExternalSearch.available()) {
+            String jei = ExternalSearch.text();
             if (jei != null && !jei.isEmpty()) {
                 start = jei;
             }
@@ -96,8 +96,8 @@ public class StorageTabView {
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         drawSearch(graphics);
         // Someone typed in JEI's field while the terminal is open: follow it.
-        if (FnClientConfig.searchMode().jeiSync() && JeiSearch.installed()) {
-            String jei = JeiSearch.text();
+        if (FnClientConfig.searchMode().jeiSync() && ExternalSearch.available()) {
+            String jei = ExternalSearch.text();
             if (jei != null && !jei.equals(lastJeiText)) {
                 lastJeiText = jei;
                 if (!jei.contentEquals(search)) {
@@ -277,8 +277,8 @@ public class StorageTabView {
         if (mouseX >= modeX && mouseX < modeX + 12 && mouseY >= y + 2 && mouseY < y + 14) {
             SearchMode next = FnClientConfig.searchMode().next();
             FnClientConfig.setSearchMode(next);
-            if (next.jeiSync() && JeiSearch.installed()) {
-                JeiSearch.setText(search.toString());
+            if (next.jeiSync() && ExternalSearch.available()) {
+                ExternalSearch.setText(search.toString());
                 lastJeiText = search.toString();
             }
             return true;
@@ -452,8 +452,8 @@ public class StorageTabView {
     private void applySearch() {
         ClientStorageView.setQuery(search.toString());
         ClientStorageView.rememberSearch(search.toString());
-        if (FnClientConfig.searchMode().jeiSync() && JeiSearch.installed()) {
-            JeiSearch.setText(search.toString());
+        if (FnClientConfig.searchMode().jeiSync() && ExternalSearch.available()) {
+            ExternalSearch.setText(search.toString());
             lastJeiText = search.toString();
         }
         scrollRow = 0;

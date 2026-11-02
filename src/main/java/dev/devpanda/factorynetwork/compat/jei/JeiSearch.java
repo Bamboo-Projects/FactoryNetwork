@@ -1,37 +1,27 @@
 package dev.devpanda.factorynetwork.compat.jei;
 
+import dev.devpanda.factorynetwork.client.ExternalSearch;
 import mezz.jei.api.runtime.IJeiRuntime;
 
 /**
- * JEI's search text, for the terminal's synced search modes.
- *
- * <p>Only call this where JEI is loaded; {@link #installed()} says so without
- * touching a JEI class. The runtime arrives through the plugin once JEI has
- * started and leaves again with the world.
+ * JEI's search field as the terminal's external search. Installed by the
+ * plugin while JEI's runtime exists.
  */
-public final class JeiSearch {
+final class JeiSearch implements ExternalSearch.Source {
 
-    private static IJeiRuntime runtime;
+    private final IJeiRuntime runtime;
 
-    private JeiSearch() {
+    JeiSearch(IJeiRuntime runtime) {
+        this.runtime = runtime;
     }
 
-    public static boolean installed() {
-        return net.neoforged.fml.ModList.get().isLoaded("jei");
+    @Override
+    public String text() {
+        return runtime.getIngredientFilter().getFilterText();
     }
 
-    static void attach(IJeiRuntime value) {
-        runtime = value;
-    }
-
-    /** JEI's current filter text, or {@code null} while JEI is not running. */
-    public static String text() {
-        return runtime == null ? null : runtime.getIngredientFilter().getFilterText();
-    }
-
-    public static void setText(String text) {
-        if (runtime != null && !text.equals(runtime.getIngredientFilter().getFilterText())) {
-            runtime.getIngredientFilter().setFilterText(text);
-        }
+    @Override
+    public void setText(String text) {
+        runtime.getIngredientFilter().setFilterText(text);
     }
 }
