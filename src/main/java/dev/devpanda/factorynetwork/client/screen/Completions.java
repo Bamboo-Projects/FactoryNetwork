@@ -233,7 +233,14 @@ public final class Completions {
             addItems(entries, prefix);
             return limit(entries);
         }
-        return limit(structural(entries, lines, lineIndex, prefix));
+        List<Entry> found = structural(entries, lines, lineIndex, prefix);
+        // The building blocks of a display are the language's own words, and
+        // the same rule as for the device members holds: a finite list stands
+        // in full. The ninth one was items, and it pushed scale off the end.
+        if (indentOf(line) != 0 && "display".equals(enclosingBlock(lines, lineIndex))) {
+            return whole(found);
+        }
+        return limit(found);
     }
 
     /**

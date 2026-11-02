@@ -52,8 +52,21 @@ public sealed interface Decl {
 
     record Display(String name, List<Entry> entries, Span span) implements Decl {
 
-        public record Entry(Kind kind, String label, Expr value, Span span) {
-            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE }
+        /**
+         * One building block.
+         *
+         * @param icon the {@code item:…} a {@code row} names in front of its
+         *             value, or {@code null}. A selector and not a resolved
+         *             item: the language does not know the registry, the
+         *             server resolves it when it evaluates.
+         */
+        public record Entry(Kind kind, String label, Expr icon, Expr value, Span span) {
+
+            public Entry(Kind kind, String label, Expr value, Span span) {
+                this(kind, label, null, value, span);
+            }
+
+            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE, ITEMS }
         }
     }
 

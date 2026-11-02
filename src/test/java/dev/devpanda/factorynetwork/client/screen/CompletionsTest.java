@@ -42,6 +42,7 @@ class CompletionsTest {
         assertTrue(shown.contains("row"), () -> "row fehlt: " + shown);
         assertTrue(shown.contains("progress"), () -> "progress fehlt: " + shown);
         assertTrue(shown.contains("scale"), () -> "scale fehlt: " + shown);
+        assertTrue(shown.contains("items"), () -> "items fehlt: " + shown);
         assertFalse(shown.contains("if"),
                 () -> "eine Anzeige kennt keine Anweisungen: " + shown);
         assertFalse(shown.contains("let"), () -> shown.toString());
@@ -288,7 +289,7 @@ class CompletionsTest {
         List<String> shapes = details("display halle {", "    ");
 
         int row = shown.indexOf("row");
-        assertEquals("string expr", shapes.get(row),
+        assertEquals("string|item expr", shapes.get(row),
                 "ohne die Form ist ein Vorschlag ein Wort, das man nachschlagen muss");
         assertEquals("string", shapes.get(shown.indexOf("title")));
     }

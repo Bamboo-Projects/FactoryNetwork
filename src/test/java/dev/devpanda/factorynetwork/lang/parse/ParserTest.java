@@ -384,6 +384,110 @@ class ParserTest {
         }
 
         @Test
+        @DisplayName("row with an item carries the item as its icon and no label")
+        void displayRowWithItem() {
+            Program program = parseClean("""
+                    display lager {
+                        row item:iron_ingot storage.count(item:iron_ingot)
+                    }""");
+            Decl.Display.Entry row =
+                    ((Decl.Display) program.declarations().get(0)).entries().get(0);
+            assertEquals(Decl.Display.Entry.Kind.ROW, row.kind());
+            assertEquals(null, row.label(), "the name comes from the item, not from here");
+            Expr.Selector icon = (Expr.Selector) row.icon();
+            assertEquals(Expr.Selector.Kind.ITEM, icon.kind());
+            assertEquals("iron_ingot", icon.path());
+            assertTrue(row.value() instanceof Expr.Call, () -> "value: " + row.value());
+        }
+
+        @Test
+        @DisplayName("A text after the item overrides its name")
+        void displayRowWithItemAndLabel() {
+            Program program = parseClean("""
+                    display lager {
+                        row item:iron_ingot "Eisen" storage.count(item:iron_ingot)
+                    }""");
+            Decl.Display.Entry row =
+                    ((Decl.Display) program.declarations().get(0)).entries().get(0);
+            assertEquals("Eisen", row.label());
+            assertTrue(row.icon() instanceof Expr.Selector);
+        }
+
+        @Test
+        @DisplayName("A text alone after the item is the value, not a label")
+        void displayRowWithItemAndTextValue() {
+            Program program = parseClean("""
+                    display lager {
+                        row item:iron_ingot "voll"
+                    }""");
+            Decl.Display.Entry row =
+                    ((Decl.Display) program.declarations().get(0)).entries().get(0);
+            assertEquals(null, row.label());
+            assertEquals("voll", ((Expr.StringLit) row.value()).value());
+        }
+
+        @Test
+        @DisplayName("The old row with a text label is unchanged")
+        void displayRowWithTextHasNoIcon() {
+            Program program = parseClean("""
+                    display lager {
+                        row "Eisen" storage.count(item:iron_ingot)
+                    }""");
+            Decl.Display.Entry row =
+                    ((Decl.Display) program.declarations().get(0)).entries().get(0);
+            assertEquals("Eisen", row.label());
+            assertEquals(null, row.icon());
+        }
+
+        @Test
+        @DisplayName("An icon shows one item: patterns, tags and fluids are rejected")
+        void displayRowIconWantsExactlyOneItem() {
+            for (String selector : new String[] {"item:*_ingot", "tag:c/ingots", "fluid:water"}) {
+                List<Diagnostic> errors = errorsOf("display lager {\n    row " + selector
+                        + " storage.count(item:iron_ingot)\n}");
+                assertEquals(1, errors.size(), () -> selector + ": " + errors);
+            }
+        }
+
+        @Test
+        @DisplayName("items is a building block in a display")
+        void displayItemsGrid() {
+            Program program = parseClean("""
+                    display lager {
+                        title "Lager"
+                        items storage.items()
+                    }""");
+            Decl.Display.Entry grid =
+                    ((Decl.Display) program.declarations().get(0)).entries().get(1);
+            assertEquals(Decl.Display.Entry.Kind.ITEMS, grid.kind());
+            Expr.Call call = (Expr.Call) grid.value();
+            assertEquals("items", ((Expr.Member) call.callee()).name());
+        }
+
+        @Test
+        @DisplayName("items stays an ordinary name outside a display")
+        void itemsIsNoKeyword() {
+            // A keyword would take the name away from every variable and
+            // every connector called items.
+            parseClean("""
+                    fn zaehlen() {
+                        let items = storage.items()
+                        log(items.count())
+                    }""");
+        }
+
+        @Test
+        @DisplayName("An unknown word in a display names items among the allowed ones")
+        void unknownDisplayWordNamesItems() {
+            List<Diagnostic> errors = errorsOf("""
+                    display lager {
+                        raster storage.items()
+                    }""");
+            assertEquals(1, errors.size(), () -> errors.toString());
+            assertTrue(errors.get(0).hint().contains("items"), () -> errors.get(0).hint());
+        }
+
+        @Test
         void displayScaleWantsAnumber() {
             // A number and not an expression: the size of the text is layout
             // and not content. A scale that changes while you watch would be

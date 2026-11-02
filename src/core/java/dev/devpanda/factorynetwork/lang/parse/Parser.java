@@ -565,12 +565,17 @@ public final class Parser {
             case LIST -> Decl.Display.Entry.Kind.LIST;
             case BUTTON -> Decl.Display.Entry.Kind.BUTTON;
             case SCALE -> Decl.Display.Entry.Kind.SCALE;
+            // items is a word only here and not a keyword: a variable or a
+            // connector called "items" is far too likely, and a keyword
+            // would take that name away everywhere for the sake of one line
+            // in a display.
+            case NAME -> "items".equals(start.text()) ? Decl.Display.Entry.Kind.ITEMS : null;
             default -> null;
         };
         if (kind == null) {
             error(start.span(), describe(start) + " ist kein Baustein für ein Display.",
-                    "Erlaubt sind title, row, text, progress, indicator, list, button "
-                            + "und scale.");
+                    "Erlaubt sind title, row, text, progress, indicator, list, items, "
+                            + "button und scale.");
             recoverToLineEnd();
             return null;
         }
@@ -606,9 +611,12 @@ public final class Parser {
             return new Decl.Display.Entry(kind, label.text(), null,
                     start.span().to(label.span()));
         }
-        if (kind == Decl.Display.Entry.Kind.TEXT) {
+        if (kind == Decl.Display.Entry.Kind.TEXT || kind == Decl.Display.Entry.Kind.ITEMS) {
             Expr value = parseExpression();
             return new Decl.Display.Entry(kind, null, value, start.span().to(value.span()));
+        }
+        if (kind == Decl.Display.Entry.Kind.ROW && at(TokenType.SELECTOR)) {
+            return parseItemRow(start);
         }
         Token label = peek();
         if (!label.is(TokenType.STRING)) {
@@ -631,6 +639,58 @@ public final class Parser {
         advance();
         Expr value = parseExpression();
         return new Decl.Display.Entry(kind, label.text(), value, start.span().to(value.span()));
+    }
+
+    /**
+     * {@code row item:iron_ingot storage.count(item:iron_ingot)}
+     *
+     * <p>The item stands where the label would stand: it says what the line
+     * is about, and its name is the label. A text after it overrides the name
+     * — {@code row item:iron_ingot "Eisen" …} — for the case where the
+     * game's name is too long for the wall.
+     *
+     * <p><b>Exactly one item.</b> An icon shows one thing; a pattern or a tag
+     * would have to pick one of many, and whichever it picked would look like
+     * the answer. A fluid has no item to draw. Both are rejected here rather
+     * than drawn as something else.
+     *
+     * <p>The selector is read as a token and not as an expression, so that
+     * {@code except} cannot attach to it — an exclusion on an icon means
+     * nothing.
+     */
+    private Decl.Display.Entry parseItemRow(Token start) {
+        Token token = advance();
+        Expr parsed = parseSelector(token);
+        if (!(parsed instanceof Expr.Selector selector)
+                || selector.kind() != Expr.Selector.Kind.ITEM) {
+            error(token.span(), "Vor dem Wert einer Zeile steht ein Text oder ein item:.",
+                    quote(token.text()) + " hat kein Symbol, das sich zeichnen ließe. "
+                            + "Zum Beispiel: row item:iron_ingot storage.count(item:iron_ingot)");
+            recoverToLineEnd();
+            return null;
+        }
+        if (selector.hasPattern()) {
+            error(token.span(), "Eine Zeile zeigt das Symbol genau einer Art.",
+                    quote(token.text()) + " meint mehrere. Für alle zusammen: "
+                            + "row \"Barren\" storage.count(" + token.text() + ")");
+            recoverToLineEnd();
+            return null;
+        }
+        String label = null;
+        // A text after the item is its label only if a value still follows.
+        // Otherwise it is the value itself: row item:x "voll" is a line that
+        // says "voll".
+        if (at(TokenType.STRING) && !endsEntry(peekAt(1))) {
+            label = advance().text();
+        }
+        Expr value = parseExpression();
+        return new Decl.Display.Entry(Decl.Display.Entry.Kind.ROW, label, selector, value,
+                start.span().to(value.span()));
+    }
+
+    /** Does this token end a display entry? */
+    private static boolean endsEntry(Token token) {
+        return token.is(TokenType.NL) || token.is(TokenType.RBRACE) || token.is(TokenType.EOF);
     }
 
     /**

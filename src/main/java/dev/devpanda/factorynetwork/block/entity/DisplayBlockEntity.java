@@ -9,7 +9,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -39,6 +38,7 @@ public class DisplayBlockEntity extends BlockEntity {
 
     private static final String KEY_NAME = "DisplayName";
     private static final String KEY_LINES = "Lines";
+    private static final String KEY_SHOWN = "Shown";
     private static final String KEY_SCALE = "TextScale";
 
     /**
@@ -51,7 +51,7 @@ public class DisplayBlockEntity extends BlockEntity {
     public static final int MAX_SCALE = 8;
 
     private String displayName = "";
-    private List<String> lines = List.of();
+    private List<DisplayLine> lines = List.of();
 
     /**
      * How large the font is; 1 is normal.
@@ -87,8 +87,13 @@ public class DisplayBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    /** The finished lines, as they are drawn. */
+    /** The text of the finished lines — what the panel says, without its icons. */
     public List<String> lines() {
+        return lines.stream().map(DisplayLine::text).toList();
+    }
+
+    /** The finished lines with their icons and grids, as they are drawn. */
+    public List<DisplayLine> shownLines() {
         return lines;
     }
 
@@ -123,10 +128,10 @@ public class DisplayBlockEntity extends BlockEntity {
      * whether the network is down or the name is wrong.
      */
     /** What stands on the panel, and how large. */
-    private record Rendered(List<String> lines, int scale) {
+    private record Rendered(List<DisplayLine> lines, int scale) {
 
-        static Rendered of(List<String> lines) {
-            return new Rendered(lines, 1);
+        static Rendered of(String line) {
+            return new Rendered(List.of(DisplayLine.text(line)), 1);
         }
     }
 
@@ -141,15 +146,15 @@ public class DisplayBlockEntity extends BlockEntity {
         // and that is exactly what a wall should not be.
         dev.devpanda.factorynetwork.block.DisplayWall wall = wall();
         if (!wall.isAnchor(worldPosition)) {
-            return Rendered.of(List.of());
+            return new Rendered(List.of(), 1);
         }
         String name = wallName(wall);
         if (name.isBlank()) {
-            return Rendered.of(List.of("§7ohne Namen"));
+            return Rendered.of("§7ohne Namen");
         }
         var owner = ControllerRegistry.owning(level, worldPosition);
         if (owner.isEmpty()) {
-            return Rendered.of(List.of("§8an keinem Netz"));
+            return Rendered.of("§8an keinem Netz");
         }
         var controller = owner.get();
         Decl.Display declaration = controller.program().declarations().stream()
@@ -159,12 +164,12 @@ public class DisplayBlockEntity extends BlockEntity {
                 .findFirst()
                 .orElse(null);
         if (declaration == null) {
-            return Rendered.of(List.of("§ckein display " + name));
+            return Rendered.of("§ckein display " + name);
         }
 
         DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
                 controller.runtime(), controller.globals(), level);
-        List<String> rendered = new ArrayList<>();
+        List<DisplayLine> rendered = new ArrayList<>();
         for (DisplayValues.Line line : values.evaluate(declaration)) {
             rendered.add(format(line));
         }
@@ -242,7 +247,12 @@ public class DisplayBlockEntity extends BlockEntity {
      * what finally stands there goes over the wire, and the client need not
      * know the language.
      */
-    public static String format(DisplayValues.Line line) {
+    public static DisplayLine format(DisplayValues.Line line) {
+        return new DisplayLine(formatText(line), line.icon(), line.grid());
+    }
+
+    /** The text of a line, with the colour codes it is drawn in. */
+    private static String formatText(DisplayValues.Line line) {
         return switch (line.kind()) {
             case TITLE -> "§f§n" + line.label();
             case ROW -> "§7" + line.label() + " §f" + line.value();
@@ -252,6 +262,9 @@ public class DisplayBlockEntity extends BlockEntity {
             case INDICATOR -> (line.flag() ? "§a● " : "§8● ") + "§7" + line.label();
             case LIST -> "§7" + line.label() + " §f" + line.value();
             case BUTTON -> "§8[" + line.label() + "]";
+            // What a grid says when it is not drawn as one: how many kinds,
+            // or why there is nothing.
+            case ITEMS -> (line.grid().isEmpty() ? "§8" : "§7") + line.value();
             // Never reaches here — scale produces no line.
             case SCALE -> "";
         };
@@ -278,10 +291,20 @@ public class DisplayBlockEntity extends BlockEntity {
         // Default when unspecified: a world from yesterday does not have the
         // key, and a panel with a scale of zero would be invisible.
         textScale = tag.contains(KEY_SCALE) ? clampScale(Nbt.getInt(tag, KEY_SCALE)) : 1;
-        ListTag list = Nbt.getList(tag, KEY_LINES, Tag.TAG_STRING);
-        List<String> loaded = new ArrayList<>(list.size());
-        for (int i = 0; i < list.size(); i++) {
-            loaded.add(Nbt.stringAt(list, i));
+        List<DisplayLine> loaded = new ArrayList<>();
+        if (tag.contains(KEY_SHOWN)) {
+            ListTag shown = Nbt.getList(tag, KEY_SHOWN, Tag.TAG_COMPOUND);
+            for (int i = 0; i < shown.size(); i++) {
+                loaded.add(DisplayLine.load(Nbt.compoundAt(shown, i)));
+            }
+        } else {
+            // A panel saved before icons existed: text only. It is computed
+            // afresh within a second anyway; reading it keeps the first frame
+            // from being blank.
+            ListTag list = Nbt.getList(tag, KEY_LINES, Tag.TAG_STRING);
+            for (int i = 0; i < list.size(); i++) {
+                loaded.add(DisplayLine.text(Nbt.stringAt(list, i)));
+            }
         }
         lines = List.copyOf(loaded);
     }
@@ -299,8 +322,8 @@ public class DisplayBlockEntity extends BlockEntity {
         tag.putString(KEY_NAME, displayName);
         tag.putInt(KEY_SCALE, textScale);
         ListTag list = new ListTag();
-        lines.forEach(line -> list.add(StringTag.valueOf(line)));
-        tag.put(KEY_LINES, list);
+        lines.forEach(line -> list.add(line.save()));
+        tag.put(KEY_SHOWN, list);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dev.devpanda.factorynetwork.network.packet;
 
 import dev.devpanda.factorynetwork.FactoryNetwork;
+import dev.devpanda.factorynetwork.block.entity.DisplayLine;
 import dev.devpanda.factorynetwork.client.ClientDisplayState;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -25,15 +26,30 @@ import java.util.List;
  */
 public record DisplayStatePacket(List<Panel> panels) implements CustomPacketPayload {
 
-    /** A display with its lines. */
-    public record Panel(String name, List<String> lines, List<Button> buttons) {
+    /**
+     * A display with its lines.
+     *
+     * <p>The lines carry their icons and grids; the item travels as its
+     * registry entry, and the client looks up only the model.
+     */
+    public record Panel(String name, List<DisplayLine> shown, List<Button> buttons) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Panel> STREAM_CODEC =
                 StreamCodec.composite(
                         ByteBufCodecs.stringUtf8(128), Panel::name,
-                        ByteBufCodecs.stringUtf8(512).apply(ByteBufCodecs.list(64)), Panel::lines,
+                        DisplayLine.STREAM_CODEC.apply(ByteBufCodecs.list(64)), Panel::shown,
                         Button.STREAM_CODEC.apply(ByteBufCodecs.list(64)), Panel::buttons,
                         Panel::new);
+
+        /** A panel of plain text — the notes about panels the program does not know. */
+        public static Panel ofText(String name, List<String> lines, List<Button> buttons) {
+            return new Panel(name, lines.stream().map(DisplayLine::text).toList(), buttons);
+        }
+
+        /** The text of each line, without icons. */
+        public List<String> lines() {
+            return shown.stream().map(DisplayLine::text).toList();
+        }
     }
 
     /**

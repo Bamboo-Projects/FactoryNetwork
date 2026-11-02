@@ -2296,7 +2296,7 @@ public class ControllerBlockEntity extends BlockEntity {
             if (!(declaration instanceof Decl.Display display)) {
                 continue;
             }
-            List<String> lines = new ArrayList<>();
+            List<DisplayLine> lines = new ArrayList<>();
             List<DisplayStatePacket.Button> buttons = new ArrayList<>();
             List<DisplayValues.Line> evaluated = values.evaluate(display);
             // The entry counts on its own: a list brings several lines with
@@ -2381,12 +2381,12 @@ public class ControllerBlockEntity extends BlockEntity {
             }
         }
         for (String name : unknown) {
-            panels.add(new DisplayStatePacket.Panel(name,
+            panels.add(DisplayStatePacket.Panel.ofText(name,
                     List.of("§eim Netz, aber das Programm kennt kein display " + name),
                     List.of()));
         }
         if (nameless > 0) {
-            panels.add(new DisplayStatePacket.Panel("—",
+            panels.add(DisplayStatePacket.Panel.ofText("—",
                     List.of("§8" + nameless + " Tafel(n) ohne Namen"), List.of()));
         }
     }

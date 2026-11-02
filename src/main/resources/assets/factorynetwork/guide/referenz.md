@@ -79,11 +79,12 @@ Je Zeile eine Angabe. Gezeichnet wird von oben nach unten.
 | Form | Bedeutung |
 |---|---|
 | `title string` | Die Überschrift der Wand. |
-| `row string expr` | Eine Zeile mit Beschriftung und Wert. |
+| `row string|item expr` | Eine Zeile mit Beschriftung und Wert. Statt der Beschriftung geht ein item: — dann mit Symbol und Namen. |
 | `text expr` | Eine Zeile ohne Beschriftung. |
 | `progress string expr` | Ein Balken von null bis eins. |
 | `indicator string expr` | Eine Lampe: an, wenn der Ausdruck wahr ist. |
 | `list string expr` | Eine Aufzählung aus einem Ausdruck. |
+| `items expr` | Ein Raster aus Symbolen mit Mengen, wie im Terminal. |
 | `button string function` | Ein Knopf, der eine Funktion aufruft. |
 | `scale int` | Wie groß die Schrift ist; 1 ist normal. |
 
