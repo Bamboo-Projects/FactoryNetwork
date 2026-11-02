@@ -65,4 +65,14 @@ public class FactoryNetworkJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(
                 new ItemStack(FnBlocks.PRESS.get()), PressCategory.TYPE);
     }
+
+    @Override
+    public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
+        JeiSearch.attach(runtime);
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        JeiSearch.attach(null);
+    }
 }

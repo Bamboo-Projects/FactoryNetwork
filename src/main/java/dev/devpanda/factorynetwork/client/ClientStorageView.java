@@ -119,6 +119,20 @@ public final class ClientStorageView {
         refilter();
     }
 
+    /**
+     * The search text as typed, kept past {@link #clear()}: the terminal
+     * offers it again on the next opening if the player wants that.
+     */
+    private static String lastSearch = "";
+
+    public static String lastSearch() {
+        return lastSearch;
+    }
+
+    public static void rememberSearch(String text) {
+        lastSearch = text;
+    }
+
     public static String query() {
         return query;
     }

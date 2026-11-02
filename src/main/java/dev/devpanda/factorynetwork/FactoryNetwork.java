@@ -38,6 +38,8 @@ public final class FactoryNetwork {
             dev.devpanda.factorynetwork.runtime.ResourceKinds.freeze();
         });
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(DevCommands::register);
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT,
+                dev.devpanda.factorynetwork.client.FnClientConfig.SPEC);
         FnBlocks.BLOCKS.register(modBus);
         FnItems.ITEMS.register(modBus);
         dev.devpanda.factorynetwork.registry.FnComponents.COMPONENTS.register(modBus);
