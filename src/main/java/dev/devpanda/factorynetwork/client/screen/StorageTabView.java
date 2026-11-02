@@ -3,7 +3,10 @@ package dev.devpanda.factorynetwork.client.screen;
 import dev.devpanda.factorynetwork.platform.client.Keys;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.client.ClientStorageView;
+import dev.devpanda.factorynetwork.client.FnClientConfig;
+import dev.devpanda.factorynetwork.client.SearchMode;
 import dev.devpanda.factorynetwork.client.StorageSort;
+import dev.devpanda.factorynetwork.compat.jei.JeiSearch;
 import dev.devpanda.factorynetwork.network.packet.StorageActionPacket;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -51,8 +54,10 @@ public class StorageTabView {
     private final int height;
 
     private final StringBuilder search = new StringBuilder();
-    private boolean searchFocused = true;
+    private boolean searchFocused;
     private int scrollRow;
+    /** JEI's text as last seen, to notice when someone edits it there. */
+    private String lastJeiText;
 
     public StorageTabView(TerminalScreen screen, Font font, int x, int y, int width, int height) {
         this.screen = screen;
@@ -61,6 +66,18 @@ public class StorageTabView {
         this.y = y;
         this.width = width;
         this.height = height;
+        SearchMode mode = FnClientConfig.searchMode();
+        String start = FnClientConfig.rememberSearch() ? ClientStorageView.lastSearch() : "";
+        if (mode.jeiSync() && JeiSearch.installed()) {
+            String jei = JeiSearch.text();
+            if (jei != null && !jei.isEmpty()) {
+                start = jei;
+            }
+            lastJeiText = jei;
+        }
+        search.append(start);
+        searchFocused = mode.autoFocus();
+        ClientStorageView.setQuery(start);
     }
 
     private int gridX() {
@@ -78,6 +95,18 @@ public class StorageTabView {
 
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         drawSearch(graphics);
+        // Someone typed in JEI's field while the terminal is open: follow it.
+        if (FnClientConfig.searchMode().jeiSync() && JeiSearch.installed()) {
+            String jei = JeiSearch.text();
+            if (jei != null && !jei.equals(lastJeiText)) {
+                lastJeiText = jei;
+                if (!jei.contentEquals(search)) {
+                    search.setLength(0);
+                    search.append(jei);
+                    applySearch();
+                }
+            }
+        }
         drawSortButtons(graphics, mouseX, mouseY);
 
         // Grid background, one tile per cell. The texture holds eight rows and
@@ -144,10 +173,21 @@ public class StorageTabView {
             }
             graphics.pose().popPose();
         }
+
+        // The search mode, left of the sort buttons. The letter says whether
+        // the field takes the keyboard on opening, a J whether JEI follows.
+        SearchMode mode = FnClientConfig.searchMode();
+        int mx = sortButtonX(-1);
+        int my = y + 2;
+        graphics.blit(WIDGETS, mx, my, 64, 0, 12, 12, 512, 512);
+        graphics.drawString(font, mode.autoFocus() ? "F" : "S", mx + 3, my + 2, TerminalScreen.TEXT, false);
+        if (mode.jeiSync()) {
+            graphics.drawString(font, "J", mx + 8, my + 2, TerminalScreen.ACCENT, false);
+        }
     }
 
-    private void drawSearch(GuiGraphics graphics) {
-        int fieldWidth = sortButtonX(0) - x - 6;
+    private void drawSearch(GuiGraphicsExtractor graphics) {
+        int fieldWidth = sortButtonX(-1) - x - 6;
         Widgets.stretched(graphics, x + 2, y + 2, fieldWidth, 12, 0, 32, 96, 2);
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
@@ -234,7 +274,17 @@ public class StorageTabView {
                 return true;
             }
         }
-        if (mouseX >= x + 2 && mouseX < sortButtonX(0) && mouseY >= y + 2 && mouseY < y + 14) {
+        int modeX = sortButtonX(-1);
+        if (mouseX >= modeX && mouseX < modeX + 12 && mouseY >= y + 2 && mouseY < y + 14) {
+            SearchMode next = FnClientConfig.searchMode().next();
+            FnClientConfig.setSearchMode(next);
+            if (next.jeiSync() && JeiSearch.installed()) {
+                JeiSearch.setText(search.toString());
+                lastJeiText = search.toString();
+            }
+            return true;
+        }
+        if (mouseX >= x + 2 && mouseX < modeX && mouseY >= y + 2 && mouseY < y + 14) {
             searchFocused = true;
             return true;
         }
@@ -298,6 +348,16 @@ public class StorageTabView {
                         java.util.Optional.empty(), mouseX, mouseY);
                 return;
             }
+        }
+        int modeX = sortButtonX(-1);
+        if (mouseX >= modeX && mouseX < modeX + 12 && mouseY >= y + 2 && mouseY < y + 14) {
+            graphics.renderTooltip(font, List.of(
+                            Component.translatable("screen.factorynetwork.terminal.search_mode",
+                                    FnClientConfig.searchMode().title()),
+                            Component.translatable("screen.factorynetwork.terminal.search_mode.hint")
+                                    .withStyle(net.minecraft.ChatFormatting.GRAY)),
+                    java.util.Optional.empty(), mouseX, mouseY);
+            return;
         }
         ClientStorageView.Row row = rowAt(mouseX, mouseY);
         if (row == null) {
@@ -389,6 +449,11 @@ public class StorageTabView {
 
     private void applySearch() {
         ClientStorageView.setQuery(search.toString());
+        ClientStorageView.rememberSearch(search.toString());
+        if (FnClientConfig.searchMode().jeiSync() && JeiSearch.installed()) {
+            JeiSearch.setText(search.toString());
+            lastJeiText = search.toString();
+        }
         scrollRow = 0;
     }
 }
