@@ -1,6 +1,6 @@
 # Die Fabrikhalle — Entwurf
 
-Stand: 2026-11-02. Status: **Schritte 1 bis 3 gebaut** (Dimension, Hallenblock in drei Größen, Hallennummer, Rein und Raus, Abbauen und Setzen, Laden über Ladescheine, Lager-Kopplung für Items). Offen: Bauplan, Flüssigkeiten durch die Kopplung.
+Stand: 2026-11-02. Status: **Gebaut auf 26.1.2:** Dimension, Hallenblock in drei Größen, Hallennummer, Rein und Raus, Abbauen und Setzen, Laden über Ladescheine, Lager-Kopplung für Items, Bauplan (Blöcke, Connector-Namen, Router, Displays), `/fnhalls`. **Offen:** Programm des Controllers im Bauplan, Flüssigkeiten durch die Kopplung, echte Texturen, Port auf 1.21.1, Prüfung mit echtem Client.
 
 Gewünscht am 02.11.: eine Fabrik in einer eigenen Dimension, wie bei Compact
 Machines, als Ergänzung zu den Multiblöcken in der Welt. Dazu:
