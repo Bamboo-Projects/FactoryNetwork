@@ -79,6 +79,19 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallRoundTrip(ctx.getSource().getLevel())), false);
                     return 1;
                 })
+                .then(Commands.literal("link").then(Commands.argument("pos",
+                        net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(ctx -> {
+                    BlockPos at = net.minecraft.commands.arguments.coordinates.BlockPosArgument.getLoadedBlockPos(ctx, "pos");
+                    var link = (dev.devpanda.factorynetwork.block.entity.StorageLinkBlockEntity) ctx.getSource().getLevel().getBlockEntity(at);
+                    var adapter = link.adapter();
+                    var items = adapter == null ? null : adapter.items();
+                    var iron = dev.devpanda.factorynetwork.storage.ItemKey.bare(net.minecraft.world.item.Items.IRON_INGOT);
+                    String text = "FN_LINK adapter=" + (adapter == null ? "none" : adapter.systemName())
+                            + " items=" + (items == null ? "none" : "room " + items.insert(iron, 64, true))
+                            + " view=" + link.itemView();
+                    ctx.getSource().sendSuccess(() -> Component.literal(text), false);
+                    return 1;
+                })))
                 .then(Commands.literal("couple").executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallCouple(ctx.getSource().getLevel())), false);
                     return 1;
