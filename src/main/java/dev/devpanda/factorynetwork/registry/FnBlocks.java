@@ -230,6 +230,7 @@ public final class FnBlocks {
             () -> BlockBehaviour.Properties.of()
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(-1.0F, 3_600_000.0F)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
                     .noLootTable()
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 15));

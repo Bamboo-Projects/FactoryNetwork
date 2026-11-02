@@ -110,4 +110,23 @@ public final class HallGameTests {
         level.setBlockAndUpdate(to.offset(4, 1, 2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         helper.succeed();
     }
+
+    /** The hall wall is this mod's own block and cannot be broken, pushed or eaten by a wither. */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 40)
+    public static void theHallWallStands(GameTestHelper helper) {
+        var wall = FnBlocks.HALL_WALL.get().defaultBlockState();
+        helper.assertTrue(wall.getDestroySpeed(helper.getLevel(), BlockPos.ZERO) < 0, "unzerstörbar");
+        helper.assertTrue(wall.getPistonPushReaction() == net.minecraft.world.level.material.PushReaction.BLOCK,
+                "Kolben schieben die Wand nicht");
+        helper.assertTrue(wall.is(net.minecraft.tags.BlockTags.WITHER_IMMUNE), "der Wither frisst sie nicht");
+
+        BlockPos at = new BlockPos(1, 2, 1);
+        helper.setBlock(at, wall);
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
+        var event = new net.neoforged.neoforge.event.level.block.BreakBlockEvent(helper.getLevel(),
+                helper.absolutePos(at), wall, player);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        helper.assertTrue(event.isCanceled(), "auch im Kreativmodus nicht abbaubar");
+        helper.succeed();
+    }
 }

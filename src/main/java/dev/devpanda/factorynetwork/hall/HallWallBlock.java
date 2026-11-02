@@ -16,10 +16,22 @@ import net.minecraft.world.phys.BlockHitResult;
  * a single door would be a walk, and a door that can be built over would be
  * lost.
  */
+@net.neoforged.fml.common.EventBusSubscriber(modid = dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)
 public class HallWallBlock extends Block {
 
     public HallWallBlock(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * Not even in creative mode: a broken wall opens the hall to the void
+     * and to the next hall's chunks. Operators still have /setblock.
+     */
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void keepWalls(net.neoforged.neoforge.event.level.block.BreakBlockEvent event) {
+        if (event.getState().getBlock() instanceof HallWallBlock) {
+            event.setCanceled(true);
+        }
     }
 
     @Override
