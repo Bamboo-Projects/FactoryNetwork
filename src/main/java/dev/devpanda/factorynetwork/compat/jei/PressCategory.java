@@ -123,14 +123,14 @@ public class PressCategory implements IRecipeCategory<RecipeHolder<PressRecipe>>
         // this area.
         graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.stamp"),
-                22, 9, 0x404040, false);
+                22, 9, 0xFF404040, false);
         graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.energy",
                         String.format(Locale.GERMANY, "%,d", recipe.energy())),
-                22, 31, 0x808080, false);
+                22, 31, 0xFF808080, false);
         graphics.text(font,
                 Component.translatable("gui.factorynetwork.jei.press.time",
                         String.format(Locale.GERMANY, "%.1f", recipe.ticks() / 20.0F)),
-                22, 41, 0x808080, false);
+                22, 41, 0xFF808080, false);
     }
 }

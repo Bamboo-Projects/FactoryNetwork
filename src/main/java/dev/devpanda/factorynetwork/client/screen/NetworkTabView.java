@@ -385,7 +385,7 @@ public class NetworkTabView {
     }
 
     private int dim(GuiGraphicsExtractor graphics, int cx, int line, String content) {
-        graphics.text(font, content, cx, line, 0x8B8B8B, false);
+        graphics.text(font, content, cx, line, 0xFF8B8B8B, false);
         return line + LINE;
     }
 

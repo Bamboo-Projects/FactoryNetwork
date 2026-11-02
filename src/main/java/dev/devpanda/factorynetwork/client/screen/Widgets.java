@@ -43,10 +43,10 @@ public final class Widgets {
      * <p>What sits <b>inside</b> the screen does not belong here — the pane
      * stays dark, and its text stays light.
      */
-    public static final int CASE_TEXT = 0x3F3F3F;
+    public static final int CASE_TEXT = 0xFF3F3F3F;
 
     /** The same for a secondary detail that should not be read first. */
-    public static final int CASE_TEXT_DIM = 0x7F7F7F;
+    public static final int CASE_TEXT_DIM = 0xFF7F7F7F;
 
     private Widgets() {
     }

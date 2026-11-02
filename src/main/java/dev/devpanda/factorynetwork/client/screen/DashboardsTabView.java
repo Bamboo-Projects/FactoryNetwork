@@ -55,7 +55,7 @@ public class DashboardsTabView {
         if (panels.isEmpty()) {
             graphics.text(font, Component.translatable(
                             "screen.factorynetwork.terminal.dashboards.none"),
-                    x + 3, y + 3, 0x8B8B8B, false);
+                    x + 3, y + 3, 0xFF8B8B8B, false);
             return;
         }
 

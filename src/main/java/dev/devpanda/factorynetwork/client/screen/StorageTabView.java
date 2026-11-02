@@ -106,7 +106,7 @@ public class StorageTabView {
             graphics.pose().pushMatrix();
             // Since 26.1 later strokes lie above earlier ones; no depth step needed.
             graphics.text(font, amount,
-                    cellX + 17 - font.width(amount), cellY + 9, 0xFFFFFF, true);
+                    cellX + 17 - font.width(amount), cellY + 9, 0xFFFFFFFF, true);
             graphics.pose().popMatrix();
         }
 
@@ -146,7 +146,7 @@ public class StorageTabView {
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();
-        int colour = search.isEmpty() ? 0x6E7A70 : 0xA3D9A5;
+        int colour = search.isEmpty() ? 0xFF6E7A70 : 0xFFA3D9A5;
         graphics.pose().pushMatrix();
         // Since 26.1 later strokes lie above earlier ones; no depth step needed.
         graphics.text(font, font.plainSubstrByWidth(shown, fieldWidth - 8),

@@ -53,7 +53,7 @@ public final class WebEditorLoadingScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.centeredText(font, title, width / 2, height / 2 - 48, 0x78DC8C);
+        graphics.centeredText(font, title, width / 2, height / 2 - 48, 0xFF78DC8C);
         var status = FnWeb.status();
         String text = switch (status.state()) {
             case NOT_STARTED -> "Der Editor wird vorbereitet …";
@@ -63,7 +63,7 @@ public final class WebEditorLoadingScreen extends Screen {
             default -> "BambooCEF konnte den Editor nicht starten. Der klassische Editor bleibt verfügbar.";
         };
         graphics.textWithWordWrap(font, Component.literal(text), Math.max(16, width / 2 - 210),
-                height / 2 - 20, Math.min(420, width - 32), 0xD3DBD5);
+                height / 2 - 20, Math.min(420, width - 32), 0xFFD3DBD5);
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 

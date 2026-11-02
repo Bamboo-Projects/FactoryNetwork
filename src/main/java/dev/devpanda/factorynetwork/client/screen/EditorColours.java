@@ -17,13 +17,13 @@ package dev.devpanda.factorynetwork.client.screen;
  */
 public final class EditorColours {
 
-    public static final int TEXT = 0xD8DEE4;
-    public static final int MUTED = 0x8A939C;
-    public static final int KEYWORD = 0x8AB4F8;
-    public static final int SELECTOR = 0xA3D9A5;
-    public static final int COMMENT = 0x6B7480;
-    public static final int ERROR = 0xE88388;
-    public static final int CURSOR = 0xD8DEE4;
+    public static final int TEXT = 0xFFD8DEE4;
+    public static final int MUTED = 0xFF8A939C;
+    public static final int KEYWORD = 0xFF8AB4F8;
+    public static final int SELECTOR = 0xFFA3D9A5;
+    public static final int COMMENT = 0xFF6B7480;
+    public static final int ERROR = 0xFFE88388;
+    public static final int CURSOR = 0xFFD8DEE4;
     /** Background for a line with an error — at ten pixels of height no squiggle carries. */
     public static final int ERROR_LINE = 0x30E88388;
 
@@ -65,7 +65,7 @@ public final class EditorColours {
     public static final int CURRENT_LINE = 0x18FFFFFF;
 
     /** The number of the line the cursor sits on. */
-    public static final int LINE_NUMBER_ACTIVE = 0xA8B2BC;
+    public static final int LINE_NUMBER_ACTIVE = 0xFFA8B2BC;
 
     /**
      * The vertical strokes of the indentation.

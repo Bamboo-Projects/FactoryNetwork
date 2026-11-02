@@ -157,7 +157,7 @@ public class LogTabView {
             case DEBUG -> TerminalScreen.TEXT_FAINT;
             case INFO -> TerminalScreen.TEXT;
             case WARN -> TerminalScreen.WARN;
-            case ERROR -> 0xE05C5C;
+            case ERROR -> 0xFFE05C5C;
         };
     }
 

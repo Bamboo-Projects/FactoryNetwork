@@ -69,10 +69,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     // Text on a dark ground. The values are the same as in the mod's block
     // palette — anyone who looks at the controller and then the terminal
     // should recognise the same colour palette.
-    static final int TEXT = 0xD3DBD5;
-    static final int TEXT_DIM = 0x8B978F;
-    static final int TEXT_FAINT = 0x5D6862;
-    static final int ACCENT = 0x78DC8C;
+    static final int TEXT = 0xFFD3DBD5;
+    static final int TEXT_DIM = 0xFF8B978F;
+    static final int TEXT_FAINT = 0xFF5D6862;
+    static final int ACCENT = 0xFF78DC8C;
 
     /**
      * State colours, chosen for a dark ground.
@@ -81,9 +81,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * a dark red for "failed". On metal the two silt up into the same dirty
      * surface, and then the colour says nothing any more.
      */
-    static final int GOOD = 0x78DC8C;
-    static final int WARN = 0xE8AC3E;
-    static final int BAD = 0xE88388;
+    static final int GOOD = 0xFF78DC8C;
+    static final int WARN = 0xFFE8AC3E;
+    static final int BAD = 0xFFE88388;
 
     /** Buttons in the screen: raised metal, lighter on hover. */
     static final int BUTTON = 0xFF232B27;
@@ -280,8 +280,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                         .NetworkPower.State.values().length - 1)];
         int lamp = switch (state) {
             case RUNNING -> ACCENT;
-            case BOOTING -> 0xD08A3C;
-            case OFF -> 0xA03030;
+            case BOOTING -> 0xFFD08A3C;
+            case OFF -> 0xFFA03030;
         };
         Component netz = FnFonts.mono(Component.translatable(
                 "screen.factorynetwork.terminal.status",
@@ -305,7 +305,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         Component gekuerzt = FnFonts.mono(
                 font.plainSubstrByWidth(eigenes.getString(), platz));
         graphics.text(font, gekuerzt, left, y + 2,
-                tab == TerminalTab.STORAGE && storageView.isFull() ? 0xD08A3C : TEXT_FAINT,
+                tab == TerminalTab.STORAGE && storageView.isFull() ? 0xFFD08A3C : TEXT_FAINT,
                 false);
     }
 
