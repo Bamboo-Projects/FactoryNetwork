@@ -65,7 +65,7 @@ legt 64 Stück ins Inventar. Auf beiden Linien geprüft.
    `serverTick` baut das ganze Netz alle 100 Ticks neu auf
    (`REBUILD_INTERVAL = 100`). Belegt ist, dass der langsamste Controller
    jeweils der mit dem größten Netz ist; den Zeitpunkt der Spitzen habe ich
-   nicht gegen den Neuaufbau protokolliert. Das kostet linear mit der Netzgröße, bei
+   nicht gegen den Neuaufbau protokolliert. Der Neuaufbau kostet linear mit der Netzgröße, bei
    4.000 Kabeln 14 ms am Stück. Bei 20.000 Kabeln wären das um die 70 ms,
    also ein spürbarer Ruckler alle fünf Sekunden.
 2. **Ein offenes Terminal schickt bei jeder Änderung den ganzen Bestand**,
