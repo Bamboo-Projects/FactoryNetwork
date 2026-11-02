@@ -40,6 +40,17 @@ public class HallBlock extends Block implements EntityBlock {
         return new HallBlockEntity(pos, state);
     }
 
+    /** With a blueprint in hand the item decides; otherwise the door opens as usual. */
+    @Override
+    protected InteractionResult useItemOn(net.minecraft.world.item.ItemStack held, BlockState state, Level level,
+                                          BlockPos pos, Player player, net.minecraft.world.InteractionHand hand,
+                                          BlockHitResult hit) {
+        if (held.getItem() instanceof BlueprintItem) {
+            return InteractionResult.PASS;
+        }
+        return super.useItemOn(held, state, level, pos, player, hand, hit);
+    }
+
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
