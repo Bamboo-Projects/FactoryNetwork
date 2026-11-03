@@ -413,7 +413,8 @@ contains('Nach einem Gerätepunkt kein where',
 // stehen in keiner Datei und kommen aus der Tabelle.
 check('Nach on die eingebauten Ereignisse', complete(['on ']).sort(),
     ['crafting_failed', 'crafting_finished', 'device_changed', 'device_offline',
-        'device_online', 'device_output', 'redstone_changed']);
+        'device_online', 'device_output', 'hall_empty', 'hall_entered', 'hall_left',
+        'redstone_changed']);
 contains('Nach on kein worker', ['on '], 'worker', false);
 
 // Filter-Vorlagen: eine Deklaration mehr, ein Block mit except, und ihr Name

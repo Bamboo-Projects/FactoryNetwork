@@ -223,7 +223,9 @@ public final class Completions {
         // of reporting it after the fact.
         if (before.endsWith("on") && indentOf(line) == 0) {
             addEvents(entries, prefix, lines);
-            return limit(entries);
+            // The language's own list: ten events since the halls, and the
+            // ninth fell off the end of a list cut at eight.
+            return whole(entries);
         }
 
 
@@ -341,14 +343,15 @@ public final class Completions {
 
     /** The project's events — for {@code emit}. */
     private static void addEvents(List<Entry> entries, String prefix, List<String> lines) {
-        // The four of the network first: they stand in no file and would
-        // otherwise be found nowhere — you have to know them by heart or look
-        // them up in the docs.
+        // The project's own first: they are the ones emit sends, and with ten
+        // events of the network in front they fell off a list cut at eight.
+        // Then the network's: they stand in no file and would otherwise be
+        // found nowhere.
+        addDeclaredNames(entries, prefix, lines, "event ", "event");
         addAll(entries,
                 List.copyOf(new java.util.TreeSet<>(
                         dev.devpanda.factorynetwork.lang.BuiltinEvents.ARITY.keySet())),
                 prefix, Entry.Kind.KEYWORD);
-        addDeclaredNames(entries, prefix, lines, "event ", "event");
     }
 
     /** The project's functions — for a display's button. */

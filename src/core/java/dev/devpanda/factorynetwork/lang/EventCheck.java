@@ -122,6 +122,12 @@ public final class EventCheck {
         if (BuiltinEvents.DEVICE_OFFLINE.equals(event)) {
             return "Es ist der Name des Geräts — das Gerät selbst ist ja fort.";
         }
+        if (BuiltinEvents.HALL_ENTERED.equals(event) || BuiltinEvents.HALL_LEFT.equals(event)) {
+            return "Es sind die Halle und der Name des Spielers.";
+        }
+        if (BuiltinEvents.HALL_EMPTY.equals(event)) {
+            return "Es ist die Halle.";
+        }
         if (BuiltinEvents.ARITY.containsKey(event)) {
             return "Es ist das Gerät. Zwei Werte hat nur redstone_changed.";
         }

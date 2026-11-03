@@ -30,7 +30,7 @@ bestimmte Connectoren*.
 Ein `on`-Block ist **kein Worker**. Er hat kein `rate` und kein `when`; er
 läuft, wenn sein Ereignis eintritt, und sonst nie.
 
-## Die sieben, die das Netz selbst auslöst
+## Die zehn, die das Netz selbst auslöst
 
 | Ereignis | Wann | Was es mitbringt |
 |---|---|---|
@@ -41,8 +41,11 @@ läuft, wenn sein Ereignis eintritt, und sonst nie.
 | `redstone_changed` | das Signal an einem Connector ist ein anderes | das Gerät **und** die Stärke |
 | `crafting_finished` | ein Fertigungsauftrag ist durch | die Nummer des Auftrags |
 | `crafting_failed` | ein Auftrag kommt nicht weiter | die Nummer **und** den Grund als Text |
+| `hall_entered` | jemand ist in eine Fabrikhalle gekommen | die Halle **und** den Spielernamen |
+| `hall_left` | jemand hat die Halle verlassen, egal wie | die Halle **und** den Spielernamen |
+| `hall_empty` | der Letzte ist aus der Halle | die Halle |
 
-Zwei bringen zwei Werte mit, die anderen fünf einen. Schreibst du mehr Namen
+Vier bringen zwei Werte mit, die anderen sechs einen. Schreibst du mehr Namen
 in die Klammer, als es Werte gibt, sagt es der Editor — die überzähligen
 blieben sonst für immer leer.
 
@@ -52,6 +55,24 @@ und ein Verweis darauf ließe sich nirgends mehr auflösen.
 ```
 on device_offline(name) {
     warn("Der Connector " + name + " ist weg")
+}
+```
+
+### Fabrikhallen
+
+Die Halle kommt als Text: ihr Anlagenname, wenn sie einen hat, sonst
+`halle_` und ihre Nummer. Gezählt wird einmal pro Sekunde, wer in welcher
+Halle steht — so zählt jeder Weg hinein und hinaus, auch Tod, Abmelden oder
+`/tp`. Das Ereignis bekommt jeder Controller, dessen Netz an die Halle reicht:
+über den Hallenblock oder einen Port.
+
+```
+on hall_entered(halle, spieler) {
+    alarm.redstone(15)
+}
+
+on hall_empty(halle) {
+    alarm.redstone(0)
 }
 ```
 

@@ -51,6 +51,15 @@ public final class BuiltinEvents {
     /** And one that can no longer proceed — with the reason as text. */
     public static final String CRAFTING_FAILED = "crafting_failed";
 
+    /** Somebody walked into a factory hall: the hall and the player's name. */
+    public static final String HALL_ENTERED = "hall_entered";
+
+    /** Somebody left a hall, however — door, death, logging out: hall and name. */
+    public static final String HALL_LEFT = "hall_left";
+
+    /** The last one has left the hall: the hall. */
+    public static final String HALL_EMPTY = "hall_empty";
+
     /**
      * How many values a block receives.
      *
@@ -58,14 +67,17 @@ public final class BuiltinEvents {
      * Whoever writes the three others with two names gets a second name that
      * stays empty forever.
      */
-    public static final Map<String, Integer> ARITY = Map.of(
-            DEVICE_ONLINE, 1,
-            DEVICE_OFFLINE, 1,
-            DEVICE_CHANGED, 1,
-            DEVICE_OUTPUT, 1,
-            REDSTONE_CHANGED, 2,
-            CRAFTING_FINISHED, 1,
-            CRAFTING_FAILED, 2);
+    public static final Map<String, Integer> ARITY = Map.ofEntries(
+            Map.entry(DEVICE_ONLINE, 1),
+            Map.entry(DEVICE_OFFLINE, 1),
+            Map.entry(DEVICE_CHANGED, 1),
+            Map.entry(DEVICE_OUTPUT, 1),
+            Map.entry(REDSTONE_CHANGED, 2),
+            Map.entry(CRAFTING_FINISHED, 1),
+            Map.entry(CRAFTING_FAILED, 2),
+            Map.entry(HALL_ENTERED, 2),
+            Map.entry(HALL_LEFT, 2),
+            Map.entry(HALL_EMPTY, 1));
 
     private BuiltinEvents() {
     }

@@ -722,6 +722,9 @@
     "device_offline",
     "device_online",
     "device_output",
+    "hall_empty",
+    "hall_entered",
+    "hall_left",
     "redstone_changed"
   ],
   "declarations": [

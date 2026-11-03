@@ -468,6 +468,7 @@ public final class AcceptanceMod {
                 + " drivesInHall=" + (controller == null ? "-" : controller.graph().elsewhere().drives().size())
                 + " online=" + (controller != null && controller.isOnline())
                 + " names=" + (controller == null ? "-" : controller.graph().connectorNames())
+                + " globals=" + (controller == null ? "-" : controller.globals())
                 + " workers=" + (controller == null ? "-" : controller.runtime().states());
     }
 
