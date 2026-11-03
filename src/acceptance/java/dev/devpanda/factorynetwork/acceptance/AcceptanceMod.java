@@ -106,6 +106,14 @@ public final class AcceptanceMod {
                             + " block=" + door.installation()), false);
                     return 1;
                 })))
+                .then(Commands.literal("inner").executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallInner(ctx.getSource().getLevel())), false);
+                    return 1;
+                }))
+                .then(Commands.literal("display").executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallDisplay(ctx.getSource().getLevel())), false);
+                    return 1;
+                }))
                 .then(Commands.literal("portcheck").executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallPortCheck(ctx.getSource().getLevel())), false);
                     return 1;
@@ -260,6 +268,14 @@ public final class AcceptanceMod {
         var level = event.getServer().overworld();
         if (level.getBlockEntity(CONTROLLER) instanceof ControllerBlockEntity controller)
             controller.power().fill(Power.CAPACITY);
+        // The hall-port fixture has no generator either.
+        if (level.isLoaded(PORT_CONTROLLER)
+                && level.getBlockEntity(PORT_CONTROLLER) instanceof ControllerBlockEntity outside)
+            outside.power().fill(Power.CAPACITY);
+        var hall = event.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        if (hall != null && hall.isLoaded(INNER_CONTROLLER)
+                && hall.getBlockEntity(INNER_CONTROLLER) instanceof ControllerBlockEntity inner)
+            inner.power().fill(Power.CAPACITY);
     }
 
     private static String snapshot(ServerLevel level) {
@@ -377,6 +393,52 @@ public final class AcceptanceMod {
         return "FN_PORT hall=" + id + " ports=" + dev.devpanda.factorynetwork.hall.HallPorts.of(id)
                 + " connector=" + where.map(Object::toString).orElse("missing")
                 + " deploy=" + (ok ? "ok" : controller.diagnostics());
+    }
+
+    /** A controller inside hall 8, under the cable on the first port. */
+    private static final BlockPos INNER_CONTROLLER =
+            dev.devpanda.factorynetwork.hall.Halls.origin(8).offset(2, 1, 1);
+
+    /**
+     * A second controller inside the hall, on the cable behind the port: it
+     * should see the network outside too, through the same port.
+     */
+    private static String hallInner(net.minecraft.server.level.ServerLevel level) {
+        var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        hall.setBlockAndUpdate(INNER_CONTROLLER, FnBlocks.CONTROLLER.get().defaultBlockState());
+        var controller = (ControllerBlockEntity) hall.getBlockEntity(INNER_CONTROLLER);
+        controller.rebuildNetwork();
+        controller.power().fill(Power.CAPACITY);
+        controller.power().setDraw(controller.powerDraw());
+        for (int tick = 0; tick <= Power.BOOT_TICKS; tick++) controller.power().tick();
+        return "FN_INNER names=" + controller.graph().connectorNames()
+                + " draussen=" + controller.graph().connector("draussen").map(Object::toString).orElse("missing")
+                + " cables=" + controller.graph().cableCount();
+    }
+
+    /**
+     * A display panel inside the hall, on the cable behind the port, named
+     * hallenanzeige; the program outside writes to it.
+     */
+    private static String hallDisplay(net.minecraft.server.level.ServerLevel level) {
+        var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(8);
+        BlockPos cable = low.offset(2, 2, 1);
+        BlockPos panel = cable.west();
+        hall.setBlockAndUpdate(panel, FnBlocks.DISPLAY.get().defaultBlockState()
+                .setValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.SOUTH));
+        if (hall.getBlockEntity(panel) instanceof dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity display) {
+            display.setDisplayName("hallenanzeige");
+        }
+        var controller = (ControllerBlockEntity) level.getBlockEntity(PORT_CONTROLLER);
+        controller.rebuildNetwork();
+        boolean ok = controller.deploy(Project.of(String.join("\n",
+                "worker rein {", "    from draussen", "    to hallen_kiste", "}", "",
+                "display hallenanzeige {", "    title \"Halle 8\"",
+                "    row \"Eisen drin\" hallen_kiste.count(item:iron_ingot)", "}", "")));
+        return "FN_DISPLAY deploy=" + (ok ? "ok" : controller.diagnostics())
+                + " displaysElsewhere=" + controller.graph().elsewhere().displays().size()
+                + " places=" + controller.displayPlaces();
     }
 
     private static String hallPortCheck(net.minecraft.server.level.ServerLevel level) {

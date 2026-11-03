@@ -152,11 +152,17 @@ public class DisplayBlockEntity extends BlockEntity {
         if (name.isBlank()) {
             return Rendered.of("§7ohne Namen");
         }
-        var owner = ControllerRegistry.owning(level, worldPosition);
-        if (owner.isEmpty()) {
+        // Two controllers on one cable both own the wall; the one whose
+        // program draws it is meant.
+        var owners = ControllerRegistry.allOwning(level, worldPosition);
+        if (owners.isEmpty()) {
             return Rendered.of("§8an keinem Netz");
         }
-        var controller = owner.get();
+        var controller = owners.stream()
+                .filter(candidate -> candidate.program().declarations().stream()
+                        .anyMatch(decl -> decl instanceof Decl.Display display && display.name().equals(name)))
+                .findFirst()
+                .orElse(owners.get(0));
         Decl.Display declaration = controller.program().declarations().stream()
                 .filter(Decl.Display.class::isInstance)
                 .map(Decl.Display.class::cast)

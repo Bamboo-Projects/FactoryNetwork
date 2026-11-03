@@ -41,10 +41,14 @@ public class GatewayBlockEntity extends BlockEntity {
      * connector on first play.
      */
     public void setInstance(String name) {
+        String before = this.instance;
         this.instance = name == null ? "" : name.trim();
         setChanged();
         if (level != null) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            if (!level.isClientSide() && !before.equals(this.instance)) {
+                dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, worldPosition);
+            }
         }
     }
 

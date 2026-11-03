@@ -85,6 +85,14 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
             }
             if (entity instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity door
                     && door.hall() != dev.devpanda.factorynetwork.hall.HallBlockEntity.NONE) {
+                // A copy from pick-block carries the same number; only the
+                // hall's own door may name it.
+                var entry = dev.devpanda.factorynetwork.hall.Halls.of(player.level().getServer()).get(door.hall());
+                if (entry == null || !entry.door().equals(java.util.Optional.of(
+                        net.minecraft.core.GlobalPos.of(player.level().dimension(), pos)))) {
+                    say(player, "message.factorynetwork.hall.duplicate");
+                    return;
+                }
                 if (!wanted.isEmpty() && !ConnectorNaming.isValidIdentifier(wanted)) {
                     say(player, "message.factorynetwork.label_gun.invalid", wanted);
                     return;

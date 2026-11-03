@@ -620,6 +620,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public void setRemoved() {
         if (level != null && !level.isClientSide()) {
             ControllerRegistry.remove(level, worldPosition);
+            ControllerRegistry.reachesAbroad(level, worldPosition, false);
         }
         super.setRemoved();
     }
@@ -667,6 +668,9 @@ public class ControllerBlockEntity extends BlockEntity {
         // beside us learns them only from us.
         projectPersistence.markStatusStale();
         graph = FactoryGraph.build(level, worldPosition);
+        if (!level.isClientSide()) {
+            ControllerRegistry.reachesAbroad(level, worldPosition, graph.reachesAbroad());
+        }
         // Counted here and not on every query: Bandwidth.at hits the
         // controller per slot per worker per tick, and the attachments change
         // only when someone builds.
@@ -1810,8 +1814,10 @@ public class ControllerBlockEntity extends BlockEntity {
             return List.of();
         }
         Map<String, BlockPos> byName = new java.util.TreeMap<>();
-        for (DisplayBlockEntity panel : loadedOf(graph.displays(), graph.elsewhere().displays(),
+        for (DisplayBlockEntity panel : loadedOf(graph.displays(), List.of(),
                 DisplayBlockEntity.class)) {
+            // Only walls in the controller's world: the client reads a bare
+            // position in its own world. displayNames counts the others too.
             String name = panel.displayName();
             if (name != null && !name.isBlank()) {
                 byName.putIfAbsent(name, panel.getBlockPos().immutable());
@@ -1825,9 +1831,15 @@ public class ControllerBlockEntity extends BlockEntity {
 
     /** Only the names — for the compiler, which needs no locations. */
     public List<String> displayNames() {
-        return displayPlaces().stream()
-                .map(dev.devpanda.factorynetwork.network.packet.NamedPlace::name)
-                .toList();
+        java.util.Set<String> names = new java.util.TreeSet<>();
+        for (DisplayBlockEntity panel : loadedOf(graph.displays(), graph.elsewhere().displays(),
+                DisplayBlockEntity.class)) {
+            String name = panel.displayName();
+            if (name != null && !name.isBlank()) {
+                names.add(name);
+            }
+        }
+        return List.copyOf(names);
     }
 
     /**
@@ -1837,7 +1849,10 @@ public class ControllerBlockEntity extends BlockEntity {
      * on which the connector sits.
      */
     public List<dev.devpanda.factorynetwork.network.packet.NamedPlace> connectorPlaces() {
+        // A bare position means the controller's world on the client; one
+        // behind a bridge or a hall port would point at the wrong spot.
         return graph.connectors().entrySet().stream()
+                .filter(entry -> entry.getValue().dimension() == null)
                 .map(entry -> new dev.devpanda.factorynetwork.network.packet.NamedPlace(
                         entry.getKey(), entry.getValue().pos()))
                 .toList();
@@ -2387,14 +2402,14 @@ public class ControllerBlockEntity extends BlockEntity {
                 declared.add(display.name());
             }
         }
-        Set<BlockPos> walls = new HashSet<>();
+        Set<net.minecraft.core.GlobalPos> walls = new HashSet<>();
         Set<String> unknown = new java.util.LinkedHashSet<>();
         int nameless = 0;
         for (DisplayBlockEntity panel : loadedOf(graph.displays(), graph.elsewhere().displays(),
                 DisplayBlockEntity.class)) {
             // A wall once, not once per panel.
             var wall = panel.wall();
-            if (!walls.add(wall.anchor())) {
+            if (!walls.add(net.minecraft.core.GlobalPos.of(panel.getLevel().dimension(), wall.anchor()))) {
                 continue;
             }
             String name = panel.wallName(wall);

@@ -823,6 +823,29 @@ public final class FactoryNetworkGameTests {
         return controllerAt(helper, controller);
     }
 
+    /**
+     * A renamed connector goes by its new name within a few ticks.
+     *
+     * <p>Before, nothing rebuilt the network on a rename: the label gun
+     * rebuilt it when it was linked, and the name window not at all, so the
+     * old name stayed until the scheduled rebuild minutes later.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aRenamedConnectorIsKnownByItsNewName(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+        // After the controller registered itself (onLoad runs a tick later).
+        helper.runAfterDelay(5, () -> partAt(helper, controller.east(2).above()).setLabel("umbenannt"));
+        helper.runAfterDelay(25, () -> {
+            helper.assertTrue(entity.graph().connector("umbenannt").isPresent(),
+                    "der neue Name ist im Netz nicht angekommen: " + entity.graph().connectorNames());
+            helper.assertTrue(entity.graph().connector("kiste_1").isEmpty(),
+                    "der alte Name gilt noch");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aGroupTakesEveryMatchingConnector(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

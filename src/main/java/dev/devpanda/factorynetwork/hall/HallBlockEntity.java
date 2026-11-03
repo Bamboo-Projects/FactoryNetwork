@@ -71,6 +71,26 @@ public class HallBlockEntity extends BlockEntity {
         if (level instanceof net.minecraft.server.level.ServerLevel server && hall != NONE) {
             Halls.Entry entry = Halls.of(server.getServer()).get(hall);
             showInstallation(entry == null ? "" : entry.name().orElse(""));
+            // A network inside the hall reaches out through this door; while
+            // its chunk was unloaded the door was not in that network.
+            announce();
+        }
+    }
+
+    /**
+     * Tells the networks on both sides of the wall that this door came or
+     * went: the ones outside touch the door, the ones inside touch a port.
+     */
+    void announce() {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server) || hall == NONE) {
+            return;
+        }
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(server, worldPosition);
+        var inside = server.getServer().getLevel(Halls.DIMENSION);
+        if (inside != null) {
+            for (BlockPos port : HallPorts.of(hall)) {
+                dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(inside, port);
+            }
         }
     }
 
@@ -78,6 +98,7 @@ public class HallBlockEntity extends BlockEntity {
     @Override
     public void preRemoveSideEffects(BlockPos pos, BlockState state) {
         HallLoading.release(this);
+        announce();
         super.preRemoveSideEffects(pos, state);
     }
 

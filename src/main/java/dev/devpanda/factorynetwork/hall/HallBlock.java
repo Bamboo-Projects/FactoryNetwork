@@ -58,8 +58,19 @@ public class HallBlock extends Block implements EntityBlock {
             if (entry != null && entry.door().isEmpty()) {
                 halls.setDoor(door.hall(), net.minecraft.core.GlobalPos.of(server.dimension(), pos));
                 HallLoading.hold(door, true);
+                // Only now is it the hall's door: a cable beside it reaches
+                // the ports from here on.
+                door.announce();
             }
         }
+    }
+
+    /** Leaving: the networks that went through this door no longer do. */
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, net.minecraft.server.level.ServerLevel level,
+                                               BlockPos pos, boolean moved) {
+        super.affectNeighborsAfterRemoval(state, level, pos, moved);
+        dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
 
     /** With a blueprint in hand the item decides; otherwise the door opens as usual. */

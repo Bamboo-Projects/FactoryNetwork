@@ -106,8 +106,15 @@ public final class ConnectorPart {
     }
 
     public void setLabel(String label) {
+        String before = this.label;
         this.label = label == null ? "" : label.trim();
         host.partChanged();
+        // The name is what the network knows the device by: without a
+        // rebuild a renamed connector stayed under its old name until the
+        // next scheduled one, minutes later.
+        if (!before.equals(this.label) && host.level() != null && !host.level().isClientSide()) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(host.level(), host.pos());
+        }
     }
 
     public int channelCost() {

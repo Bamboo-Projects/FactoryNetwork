@@ -53,6 +53,16 @@ public final class ControllerRegistry {
      * stop at the spot's own world.
      */
     private static java.util.List<ControllerBlockEntity> loaded() {
+        return loaded(null);
+    }
+
+    /**
+     * Like {@link #loaded()}, but from worlds other than {@code here} only the
+     * controllers whose network leaves their own world — the rest cannot
+     * reach a spot in {@code here}, and asking every controller of every
+     * world for every placed cable would cost what it costs.
+     */
+    private static java.util.List<ControllerBlockEntity> loaded(@org.jspecify.annotations.Nullable Level here) {
         java.util.List<ControllerBlockEntity> found = new java.util.ArrayList<>();
         java.util.List<Map.Entry<LevelAccessor, Set<BlockPos>>> entries;
         synchronized (ControllerRegistry.class) {
@@ -65,7 +75,14 @@ public final class ControllerRegistry {
             if (!(entry.getKey() instanceof Level level) || level.isClientSide()) {
                 continue;
             }
+            boolean foreign = here != null && level != here;
+            if (foreign && !ABROAD.contains(level.dimension())) {
+                continue;
+            }
             for (BlockPos candidate : entry.getValue()) {
+                if (foreign && !reachingAbroad(level, candidate)) {
+                    continue;
+                }
                 if (level.isLoaded(candidate)
                         && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller) {
                     found.add(controller);
@@ -96,12 +113,36 @@ public final class ControllerRegistry {
         if (level.isClientSide()) {
             return Optional.empty();
         }
-        for (ControllerBlockEntity controller : loaded()) {
+        for (ControllerBlockEntity controller : loaded(level)) {
             if (controller.getLevel() != level && controller.graph().contains(level, pos)) {
                 return Optional.of(controller);
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Every controller whose network contains this spot — more than one when
+     * two controllers share a cable, for example one inside a hall and one
+     * outside it.
+     */
+    public static java.util.List<ControllerBlockEntity> allOwning(Level level, BlockPos pos) {
+        java.util.List<ControllerBlockEntity> found = new java.util.ArrayList<>();
+        for (BlockPos candidate : Set.copyOf(in(level))) {
+            if (level.isLoaded(candidate)
+                    && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
+                    && controller.graph().contains(pos)) {
+                found.add(controller);
+            }
+        }
+        if (!level.isClientSide()) {
+            for (ControllerBlockEntity controller : loaded(level)) {
+                if (controller.getLevel() != level && controller.graph().contains(level, pos)) {
+                    found.add(controller);
+                }
+            }
+        }
+        return found;
     }
 
     /**
@@ -119,7 +160,7 @@ public final class ControllerRegistry {
         if (level.isClientSide()) {
             return;
         }
-        for (ControllerBlockEntity controller : loaded()) {
+        for (ControllerBlockEntity controller : loaded(level)) {
             if (touches(controller.graph(), level, pos)) {
                 controller.rebuildNetwork();
             }
@@ -139,7 +180,7 @@ public final class ControllerRegistry {
         if (level.isClientSide()) {
             return;
         }
-        for (ControllerBlockEntity controller : loaded()) {
+        for (ControllerBlockEntity controller : loaded(level)) {
             if (touches(controller.graph(), level, pos)) {
                 controller.markNetworkDirty();
             }
@@ -155,11 +196,29 @@ public final class ControllerRegistry {
             return;
         }
         net.minecraft.world.level.ChunkPos chunk = event.getChunk().getPos();
-        for (ControllerBlockEntity controller : loaded()) {
+        for (ControllerBlockEntity controller : loaded(level)) {
             if (controller.graph().nearChunk(level.dimension(), chunk.x(), chunk.z())) {
                 controller.markNetworkDirty();
             }
         }
+    }
+
+    /** Controllers whose network leaves their own world, as world and position. */
+    private static final Set<net.minecraft.core.GlobalPos> REACHING = new java.util.HashSet<>();
+    /** The worlds that hold at least one of them. */
+    private static final Set<net.minecraft.resources.ResourceKey<Level>> ABROAD = new java.util.HashSet<>();
+
+    /** Called after every rebuild: does this controller's network leave its world? */
+    public static synchronized void reachesAbroad(Level level, BlockPos pos, boolean reaches) {
+        var at = net.minecraft.core.GlobalPos.of(level.dimension(), pos.immutable());
+        if (reaches ? REACHING.add(at) : REACHING.remove(at)) {
+            ABROAD.clear();
+            REACHING.forEach(known -> ABROAD.add(known.dimension()));
+        }
+    }
+
+    private static synchronized boolean reachingAbroad(Level level, BlockPos pos) {
+        return REACHING.contains(net.minecraft.core.GlobalPos.of(level.dimension(), pos));
     }
 
     private static boolean touches(FactoryGraph graph, Level level, BlockPos pos) {

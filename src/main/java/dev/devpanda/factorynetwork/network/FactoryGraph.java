@@ -136,6 +136,8 @@ public final class FactoryGraph {
     /** Routers and bridges among {@link #abroad}, for the energy bill. */
     private final int routersAbroad;
     private final int bridgesAbroad;
+    /** Cables in other worlds, counted while searching. */
+    private final int cablesAbroad;
     /**
      * Drives, racks, displays, fabricators and masts in other worlds. Where a
      * device stands does not matter to the network; they are kept apart from
@@ -183,13 +185,14 @@ public final class FactoryGraph {
                          List<BlockPos> fabricators, Set<BlockPos> contested,
                          List<BlockPos> masts, Set<BlockPos> bridges,
                          boolean truncated, @Nullable ResourceKey<Level> home,
-                         Set<GlobalPos> abroad, int routersAbroad, int bridgesAbroad,
+                         Set<GlobalPos> abroad, int routersAbroad, int bridgesAbroad, int cablesAbroad,
                          Elsewhere elsewhere, Set<BlockPos> portals) {
         this.portals = portals;
         this.home = home;
         this.abroad = abroad;
         this.routersAbroad = routersAbroad;
         this.bridgesAbroad = bridgesAbroad;
+        this.cablesAbroad = cablesAbroad;
         this.elsewhere = elsewhere;
         this.masts = masts;
         this.bridges = bridges;
@@ -213,7 +216,7 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.of(), List.of(), Map.of(), List.of(),
                 Set.of(), Set.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), Set.of(), List.of(), Set.of(), false,
-                null, Set.of(), 0, 0, Elsewhere.NONE, Set.of());
+                null, Set.of(), 0, 0, 0, Elsewhere.NONE, Set.of());
     }
 
     /** Routers in other worlds; they draw power like the ones at home. */
@@ -486,7 +489,7 @@ public final class FactoryGraph {
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
                 List.copyOf(masts), Set.copyOf(bridges), truncated, level.dimension(),
-                Set.copyOf(abroad.members), abroad.routers, abroad.bridges,
+                Set.copyOf(abroad.members), abroad.routers, abroad.bridges, abroad.cables,
                 new Elsewhere(List.copyOf(abroad.drives), List.copyOf(abroad.racks),
                         List.copyOf(abroad.fabricators), List.copyOf(abroad.displays),
                         List.copyOf(abroad.masts)),
@@ -500,6 +503,9 @@ public final class FactoryGraph {
         final Set<BlockPos> portals = new HashSet<>();
         int routers;
         int bridges;
+        int cables;
+        /** Halls whose ports were all reached already; once per hall and build. */
+        final Set<Integer> hallsEntered = new HashSet<>();
         final List<GlobalPos> drives = new ArrayList<>();
         final List<GlobalPos> racks = new ArrayList<>();
         final List<GlobalPos> fabricators = new ArrayList<>();
@@ -633,8 +639,8 @@ public final class FactoryGraph {
             queue.add(node);
             if (from.dimension() == null) {
                 cables.add(pos.immutable());
-            } else {
-                abroad.add(from.dimension(), pos);
+            } else if (abroad.add(from.dimension(), pos)) {
+                abroad.cables++;
             }
         }
         // Even an already-visited cable may contribute its parts: the node is
@@ -762,6 +768,11 @@ public final class FactoryGraph {
         var server = home.getServer();
         Level hall = server == null ? null : server.getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
         if (hall == null) {
+            return;
+        }
+        // The ports of a hall are one line: reached once, they need not be
+        // walked again from each of them.
+        if (!abroad.hallsEntered.add(id)) {
             return;
         }
         var dim = Dimensions.keyOf(home, hall);
@@ -979,7 +990,9 @@ public final class FactoryGraph {
      */
     private static @Nullable String instanceOf(Level home, Level at, DevicePos device,
                                                GatewayRegions regions) {
-        if (at instanceof net.minecraft.server.level.ServerLevel server
+        // Only seen from outside: a controller inside the hall stands in the
+        // installation itself, and its program keeps the short names.
+        if (device.dimension() != null && at instanceof net.minecraft.server.level.ServerLevel server
                 && server.dimension() == dev.devpanda.factorynetwork.hall.Halls.DIMENSION) {
             String hall = dev.devpanda.factorynetwork.hall.HallNaming.instanceAt(server, device.pos());
             if (hall != null) {
@@ -1295,6 +1308,9 @@ public final class FactoryGraph {
         if (home == null || level.dimension() == home) {
             return contains(pos);
         }
+        if (!reachesAbroad()) {
+            return false;
+        }
         members();
         return membersAbroad.contains(GlobalPos.of(level.dimension(), pos.immutable()));
     }
@@ -1304,29 +1320,35 @@ public final class FactoryGraph {
         if (home == null || dimension == home) {
             return nearChunk(chunkX, chunkZ);
         }
-        members();
-        for (GlobalPos pos : membersAbroad) {
-            if (pos.dimension() == dimension
-                    && Math.abs((pos.pos().getX() >> 4) - chunkX) <= 1
-                    && Math.abs((pos.pos().getZ() >> 4) - chunkZ) <= 1) {
-                return true;
+        if (!reachesAbroad()) {
+            return false;
+        }
+        java.util.Map<ResourceKey<Level>, java.util.Set<Long>> found = chunksAbroad;
+        if (found == null) {
+            members();
+            found = new HashMap<>();
+            for (GlobalPos pos : membersAbroad) {
+                found.computeIfAbsent(pos.dimension(), key -> new HashSet<>())
+                        .add(chunkKey(pos.pos().getX() >> 4, pos.pos().getZ() >> 4));
+            }
+            chunksAbroad = found;
+        }
+        java.util.Set<Long> there = found.get(dimension);
+        if (there == null) {
+            return false;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (there.contains(chunkKey(chunkX + dx, chunkZ + dz))) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    /** Hall blocks and ports abroad: they stand in {@link #abroad} but are no cable. */
-    private int portsAbroad() {
-        int count = 0;
-        for (GlobalPos pos : abroad) {
-            if (pos.dimension() == dev.devpanda.factorynetwork.hall.Halls.DIMENSION
-                    && dev.devpanda.factorynetwork.hall.HallPorts.of(
-                            dev.devpanda.factorynetwork.hall.Halls.hallAt(pos.pos())).contains(pos.pos())) {
-                count++;
-            }
-        }
-        return count;
-    }
+    /** The chunks of {@link #membersAbroad} by world, computed on first use. */
+    private volatile java.util.Map<ResourceKey<Level>, java.util.Set<Long>> chunksAbroad;
 
     /** Does the network reach into other worlds at all? */
     public boolean reachesAbroad() {
@@ -1334,7 +1356,7 @@ public final class FactoryGraph {
     }
 
     public int cableCount() {
-        return cables.size() + abroad.size() - routersAbroad - bridgesAbroad - portsAbroad();
+        return cables.size() + cablesAbroad;
     }
 
     /** Was the build aborted because the network is too large? */

@@ -42,7 +42,11 @@ public final class Latency {
     public static int of(Level level, List<FactoryGraph.Node> path) {
         int ticks = 0;
         for (FactoryGraph.Node node : path) {
-            var block = level.getBlockState(node.pos()).getBlock();
+            var at = Dimensions.levelOf(level, node.dimension());
+            if (at == null) {
+                continue;
+            }
+            var block = at.getBlockState(node.pos()).getBlock();
             // Cables and the controller cost nothing: the cable is fiber, and
             // the controller is the start of the path, not a stop along the
             // way.
