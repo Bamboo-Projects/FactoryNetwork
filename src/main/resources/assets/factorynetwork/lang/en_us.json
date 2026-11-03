@@ -265,6 +265,7 @@
   "message.factorynetwork.display.named": "Display now shows %s",
   "message.factorynetwork.hall.named": "Hall is now called %s: everything inside belongs to this installation",
   "message.factorynetwork.hall.unnamed": "Hall no longer has an installation name",
+  "message.factorynetwork.hall.grown": "The hall is now %s × %s × %s. Ports on the outer walls moved along.",
   "message.factorynetwork.display.unnamed": "This display has no name yet.",
   "block.factorynetwork.router": "Router",
   "side.factorynetwork.down": "Bottom",

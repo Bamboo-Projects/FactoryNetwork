@@ -3,8 +3,9 @@ package dev.devpanda.factorynetwork.hall;
 /**
  * The sizes of a factory hall: the inner edge length in blocks.
  *
- * <p>Fixed per block and not upgradable in place: a hall that grows would
- * have to move its walls through whatever stands next to them.
+ * <p>A hall grows by clicking a larger, empty hall block onto its block
+ * ({@link HallUpgrade}): the walls opposite its corner move out, and
+ * nothing inside is touched.
  */
 public enum HallTier {
 

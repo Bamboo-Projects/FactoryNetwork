@@ -140,6 +140,15 @@ public final class Halls extends SavedData {
         }
     }
 
+    /** The hall has grown to this size; see {@code HallUpgrade}. */
+    void setTier(int id, HallTier tier) {
+        Entry entry = halls.get(id);
+        if (entry != null && entry.tier() != tier.ordinal()) {
+            halls.put(id, new Entry(tier.ordinal(), entry.door(), entry.name()));
+            setDirty();
+        }
+    }
+
     /**
      * Names the hall as an installation, the way a gateway does: every
      * connector inside then goes by {@code name/role}, and a multiblock

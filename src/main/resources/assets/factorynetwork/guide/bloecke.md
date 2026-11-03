@@ -287,6 +287,12 @@ Drinnen geht dasselbe Kabel hinter einem Port weiter:
   <IsometricCamera yaw="160" pitch="30" />
 </GameScene>
 
+**Eine Halle wächst.** Ein größerer, noch leerer Hallenblock auf den Block
+einer Halle geklickt macht sie so groß: 16 → 32 → 48. Was drinnen steht,
+bleibt stehen; die drei Wände gegenüber der Ecke, an der man ankommt, rücken
+nach außen. Ports auf diesen Wänden wandern mit, das Kabel daran muss man
+nachziehen. Den kleineren Block bekommst du leer zurück.
+
 **Halle als eine Maschine.** Schleichen und Rechtsklick mit leerer Hand auf
 den Hallenblock öffnet das Namensfenster: Dort bekommt die Halle einen
 Anlagennamen, z. B. `erzhalle` — wie ein Gateway. Dann heißt der Connector `ofen` drinnen im Netz `erzhalle/ofen`, und

@@ -81,6 +81,13 @@ public class HallBlock extends Block implements EntityBlock {
         if (held.getItem() instanceof BlueprintItem) {
             return InteractionResult.PASS;
         }
+        // A larger, empty hall block grows this hall instead of being placed.
+        if (level.getBlockEntity(pos) instanceof HallBlockEntity door && HallUpgrade.applies(held, door)) {
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                HallUpgrade.grow(server, pos, door, held, player);
+            }
+            return InteractionResult.SUCCESS;
+        }
         return super.useItemOn(held, state, level, pos, player, hand, hit);
     }
 
