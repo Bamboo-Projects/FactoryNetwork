@@ -126,6 +126,27 @@ public sealed interface Expr {
         }
     }
 
+    /**
+     * A selection narrowed by what the stack carries — its data components:
+     * {@code item:enchanted_book enchanted:mending},
+     * {@code tag:c/tools damaged > 50%}, {@code item:* named "Erzkiste"}.
+     *
+     * <p>The kinds stay those of the base; the condition is asked of each
+     * stack. That keeps the store's index by kind, and only the few variants
+     * of a kind are looked at one by one.
+     *
+     * @param kind      what is asked
+     * @param id        the enchantment, potion or component, or {@code null}
+     * @param text      the name for {@code named "…"}, or {@code null}
+     * @param percent   the damage bound for {@code damaged > N%}, or {@code null}
+     * @param above     {@code >} rather than {@code <} for the damage bound
+     */
+    record Condition(Expr base, Kind kind, String id, String text, Double percent, boolean above,
+                     Span span) implements Expr {
+
+        public enum Kind { ENCHANTED, DAMAGED, POTION, NAMED, COMPONENT }
+    }
+
     /** {@code tag:c/ores except item:ancient_debris} */
     record Except(Expr base, List<Expr> exclusions, Span span) implements Expr {}
 

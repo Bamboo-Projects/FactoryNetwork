@@ -846,6 +846,70 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /**
+     * A filter with a data-component condition takes only the stacks that
+     * carry it: of two diamond swords, the enchanted one moves and the plain
+     * one stays. In the program, damage bounds count only what passes.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aConditionTakesOnlyWhatCarriesIt(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+        var enchantments = helper.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        ItemStack enchanted = new ItemStack(Items.DIAMOND_SWORD);
+        enchanted.enchant(enchantments.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SHARPNESS), 2);
+        ItemStack plain = new ItemStack(Items.DIAMOND_SWORD);
+        ItemStack worn = new ItemStack(Items.IRON_PICKAXE);
+        worn.setDamageValue(worn.getMaxDamage() * 3 / 4);
+        if (blockEntity(helper, controller.east(2).above(2)) instanceof ChestBlockEntity first) {
+            first.setItem(0, plain);
+            first.setItem(1, enchanted);
+            first.setItem(2, worn);
+            first.setItem(3, new ItemStack(Items.IRON_PICKAXE));
+        }
+        helper.assertTrue(entity.deploy("""
+                global abgenutzt = 0
+
+                worker verzaubert {
+                    from kiste_1
+                    to kiste_2
+                    filter item:diamond_sword enchanted:sharpness
+                }
+
+                fn zaehle() {
+                    abgenutzt = kiste_1.count(item:iron_pickaxe damaged > 50%)
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        helper.assertValueEqual(
+                dev.devpanda.factorynetwork.runtime.SelectionConditions.selectionFor(enchanted),
+                "item:diamond_sword enchanted:sharpness", "kopierte Auswahl");
+        helper.runAfterDelay(40, () -> {
+            entity.callFunction("zaehle", java.util.List.of());
+            int swordsMoved = 0;
+            boolean plainStayed = false;
+            if (blockEntity(helper, controller.east(3).above(2)) instanceof ChestBlockEntity second) {
+                for (int slot = 0; slot < second.getContainerSize(); slot++) {
+                    ItemStack stack = second.getItem(slot);
+                    if (stack.is(Items.DIAMOND_SWORD)) {
+                        swordsMoved++;
+                        helper.assertTrue(stack.isEnchanted(), "ein unverzaubertes Schwert ist mitgegangen");
+                    }
+                }
+            }
+            if (blockEntity(helper, controller.east(2).above(2)) instanceof ChestBlockEntity first) {
+                for (int slot = 0; slot < first.getContainerSize(); slot++) {
+                    plainStayed |= first.getItem(slot).is(Items.DIAMOND_SWORD) && !first.getItem(slot).isEnchanted();
+                }
+            }
+            helper.assertValueEqual(swordsMoved, 1, "verzauberte Schwerter in der zweiten Kiste");
+            helper.assertTrue(plainStayed, "das einfache Schwert ist nicht in der ersten Kiste geblieben");
+            helper.assertValueEqual(entity.globals().get("abgenutzt"),
+                    new dev.devpanda.factorynetwork.runtime.Value.Int(1), "abgenutzte Spitzhacken");
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aGroupTakesEveryMatchingConnector(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

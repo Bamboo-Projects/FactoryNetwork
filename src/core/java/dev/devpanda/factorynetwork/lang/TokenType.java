@@ -41,7 +41,7 @@ public enum TokenType {
     STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS,
 
     // Literals and names
-    INT, FLOAT, STRING, DURATION, SELECTOR, NAME, ESCAPED_NAME, NAME_PATTERN,
+    INT, FLOAT, STRING, DURATION, SELECTOR, CONDITION, NAME, ESCAPED_NAME, NAME_PATTERN,
 
     // Operators
     PLUS, MINUS, STAR, SLASH, PERCENT,
@@ -115,7 +115,7 @@ public enum TokenType {
      */
     public boolean endsExpression() {
         return switch (this) {
-            case INT, FLOAT, STRING, DURATION, SELECTOR, NAME, ESCAPED_NAME, NAME_PATTERN,
+            case INT, FLOAT, STRING, DURATION, SELECTOR, CONDITION, NAME, ESCAPED_NAME, NAME_PATTERN,
                  TRUE, FALSE, IT, RPAREN, RBRACE, POWER, ALL,
                  STORAGE, CRAFTING, WORLD, NETWORK, WORKERS, MULTIBLOCKS -> true;
             default -> false;

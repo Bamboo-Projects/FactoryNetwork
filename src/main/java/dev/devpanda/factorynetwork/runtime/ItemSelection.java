@@ -51,6 +51,9 @@ public final class ItemSelection {
                 yield List.copyOf(items);
             }
             case Expr.Amount amount -> resolve(amount.selection());
+            // The kinds are those of the base; the condition is asked of each
+            // stack, see SelectionConditions.
+            case Expr.Condition condition -> resolve(condition.base());
             default -> List.of();
         };
     }

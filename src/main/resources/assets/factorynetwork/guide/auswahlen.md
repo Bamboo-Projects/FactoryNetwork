@@ -65,6 +65,34 @@ filter tag:c/ores except item:cobblestone except tag:c/ores/quartz
 
 `except` nimmt heraus, was sonst mitkäme. Mehrere hintereinander gehen.
 
+## Was ein Gegenstand trägt
+
+`item:diamond_sword` trifft jedes Diamantschwert, verzaubert oder nicht. Wer
+nur bestimmte will, hängt eine Bedingung an — sie fragt, was der Stapel
+trägt:
+
+```
+filter item:diamond_sword enchanted            verzaubert, egal womit
+filter item:enchanted_book enchanted:mending   ein Buch mit Mending
+filter tag:c/tools damaged                     irgendwie abgenutzt
+filter tag:c/tools damaged > 50%               mehr als halb verbraucht
+filter item:potion potion:healing              ein Heiltrank
+filter item:* named                            umbenannt
+filter item:* named "Erzkiste"                 genau so benannt
+filter item:* component:mekanism/upgrade       trägt diese Datenkomponente
+```
+
+Mehrere hintereinander müssen alle zutreffen: `item:* enchanted named`.
+Das gilt überall, wo eine Auswahl steht — im `filter` eines Workers, in
+`move`, in `count`.
+
+**Abschreiben statt auswendig wissen:** Strg+Klick auf einen Gegenstand im
+Terminal kopiert genau die Auswahl, die ihn trifft, mitsamt Verzauberung,
+Trank und Namen. Im Editor einfügen und kürzen, was nicht gebraucht wird.
+
+Hinter `except` geht noch keine Bedingung; `item:* enchanted except item:book`
+geht, `item:* except item:book enchanted` nicht.
+
 ## Ein Name für eine Auswahl
 
 Wer dieselbe Auswahl an mehreren Stellen braucht, gibt ihr einen Namen:

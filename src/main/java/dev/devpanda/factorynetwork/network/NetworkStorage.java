@@ -538,6 +538,59 @@ public final class NetworkStorage implements ResourceStore {
      * this on every step, and copying 5,000 sorts for it cost half a
      * millisecond.
      */
+    /**
+     * {@link #firstPresent(List)}, but only a sort whose stack passes the
+     * test — an enchanted book with mending, a damaged pickaxe. Walks the
+     * sorts of the filtered kinds, not the whole store.
+     */
+    public @org.jetbrains.annotations.Nullable ItemKey firstPresent(List<Item> filter,
+            java.util.function.@org.jetbrains.annotations.Nullable Predicate<net.minecraft.world.item.ItemStack> test) {
+        if (test == null) {
+            return firstPresent(filter);
+        }
+        Map<ItemKey, Long> stock = index();
+        if (!filter.isEmpty()) {
+            for (Item item : filter) {
+                java.util.Set<ItemKey> sorts = sortsOf(item);
+                if (sorts == null) {
+                    continue;
+                }
+                for (ItemKey key : sorts) {
+                    if (stock.getOrDefault(key, 0L) > 0 && test.test(key.toStack(1))) {
+                        return key;
+                    }
+                }
+            }
+            return null;
+        }
+        for (Map.Entry<ItemKey, Long> entry : stock.entrySet()) {
+            if (entry.getValue() > 0 && test.test(entry.getKey().toStack(1))) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    /** How many of this kind pass the test; {@link #count(Item)} without one. */
+    public long count(Item item,
+            java.util.function.@org.jetbrains.annotations.Nullable Predicate<net.minecraft.world.item.ItemStack> test) {
+        if (test == null) {
+            return count(item);
+        }
+        java.util.Set<ItemKey> sorts = sortsOf(item);
+        if (sorts == null) {
+            return 0;
+        }
+        Map<ItemKey, Long> stock = index();
+        long found = 0;
+        for (ItemKey key : sorts) {
+            if (test.test(key.toStack(1))) {
+                found += stock.getOrDefault(key, 0L);
+            }
+        }
+        return found;
+    }
+
     public @org.jetbrains.annotations.Nullable ItemKey firstPresent(List<Item> filter) {
         Map<ItemKey, Long> stock = index();
         if (filter.size() == 1) {

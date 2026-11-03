@@ -67,6 +67,27 @@ public final class ValueCodec {
                         net.minecraft.nbt.StringTag.valueOf(selection.kind().idOf(key))));
                 tag.put(KEY_ITEMS, keys);
                 tag.putLong(KEY_AMOUNT, selection.amount());
+                // Only when there are any: a selection without conditions is
+                // written exactly as before.
+                if (selection.hasConditions()) {
+                    ListTag conditions = new ListTag();
+                    for (Value.Condition condition : selection.conditions()) {
+                        CompoundTag one = new CompoundTag();
+                        one.putString("Kind", condition.kind());
+                        if (condition.id() != null) {
+                            one.putString("Id", condition.id());
+                        }
+                        if (condition.text() != null) {
+                            one.putString("Text", condition.text());
+                        }
+                        if (condition.percent() != null) {
+                            one.putDouble("Percent", condition.percent());
+                        }
+                        one.putBoolean("Above", condition.above());
+                        conditions.add(one);
+                    }
+                    tag.put("Conditions", conditions);
+                }
             }
             case Value.Request request -> {
                 tag.putString(KEY_TYPE, "req");
@@ -154,7 +175,17 @@ public final class ValueCodec {
         for (int i = 0; i < entries.size(); i++) {
             resolved.add(kind.fromId(Nbt.stringAt(entries, i)));
         }
-        return new Value.Selection(kind, List.copyOf(resolved), Nbt.getLong(tag, KEY_AMOUNT));
+        List<Value.Condition> conditions = new ArrayList<>();
+        ListTag written = Nbt.getList(tag, "Conditions", Tag.TAG_COMPOUND);
+        for (int i = 0; i < written.size(); i++) {
+            CompoundTag one = written.getCompoundOrEmpty(i);
+            conditions.add(new Value.Condition(Nbt.getString(one, "Kind"),
+                    one.contains("Id") ? Nbt.getString(one, "Id") : null,
+                    one.contains("Text") ? Nbt.getString(one, "Text") : null,
+                    one.contains("Percent") ? one.getDoubleOr("Percent", 0) : null,
+                    one.getBooleanOr("Above", true)));
+        }
+        return new Value.Selection(kind, List.copyOf(resolved), Nbt.getLong(tag, KEY_AMOUNT), conditions);
     }
 
     private static Value readList(CompoundTag tag) {

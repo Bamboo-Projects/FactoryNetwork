@@ -317,6 +317,19 @@ public class StorageTabView {
             // item out of nothing.
             return true;
         }
+        // Ctrl+click copies the selection for this exact stack, data
+        // components included, ready to paste into a filter.
+        if (Keys.control()) {
+            String selection = dev.devpanda.factorynetwork.runtime.SelectionConditions
+                    .selectionFor(entry.stack());
+            net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(selection);
+            var player = net.minecraft.client.Minecraft.getInstance().player;
+            if (player != null) {
+                player.sendOverlayMessage(Component.translatable(
+                        "screen.factorynetwork.terminal.storage.copied", selection));
+            }
+            return true;
+        }
         // Familiar bindings: left a full stack, right a half one.
         int stack = entry.stack().getMaxStackSize();
         int wanted = button == 1 ? Math.max(1, stack / 2) : stack;

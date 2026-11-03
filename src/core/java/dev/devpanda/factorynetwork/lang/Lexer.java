@@ -37,6 +37,14 @@ public final class Lexer {
     }
     private static final Set<String> TIME_UNITS = Set.of("t", "s", "min", "h");
 
+    /**
+     * Words of a data-component condition that take an id after a colon:
+     * {@code enchanted:mending}, {@code potion:healing},
+     * {@code component:mekanism/upgrade}. Glued into one token like a
+     * selector, so the id may carry a namespace.
+     */
+    public static final Set<String> CONDITION_WORDS = Set.of("enchanted", "potion", "component");
+
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
     private final List<Diagnostic> diagnostics = new ArrayList<>();
@@ -234,6 +242,16 @@ public final class Lexer {
             advance();
         }
         String text = source.substring(start, pos);
+
+        if (CONDITION_WORDS.contains(text) && !atEnd() && peek() == ':'
+                && pos + 1 < source.length() && isSelectorPart(source.charAt(pos + 1))) {
+            advance();
+            while (!atEnd() && (isSelectorPart(peek()) || peek() == ':')) {
+                advance();
+            }
+            add(TokenType.CONDITION, source.substring(start, pos), start, pos);
+            return;
+        }
 
         // item:iron_ingot is a selector, "item: Item" a type annotation.
         // The difference is the whitespace after the colon.

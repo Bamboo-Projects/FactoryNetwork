@@ -44,13 +44,22 @@ public final class Handoffs {
     public static Handoff items(IItemHandler in, IItemHandler out,
                                 java.util.List<net.minecraft.world.item.Item> filter,
                                 long limit) {
+        return items(in, out, filter, limit, null);
+    }
+
+    /** The same, but only stacks that pass the test (enchanted, damaged …). */
+    public static Handoff items(IItemHandler in, IItemHandler out,
+                                java.util.List<net.minecraft.world.item.Item> filter,
+                                long limit,
+                                java.util.function.@org.jspecify.annotations.Nullable Predicate<ItemStack> test) {
         // A storage link narrows itself to the filter; a chest stays as it is.
         in = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(in, filter);
         long moved = 0;
         long stranded = 0;
         for (int slot = 0; slot < in.getSlots() && moved < limit; slot++) {
             ItemStack stack = in.getStackInSlot(slot);
-            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))
+                    || (test != null && !test.test(stack))) {
                 continue;
             }
             int wanted = (int) Math.min(limit - moved, stack.getCount());

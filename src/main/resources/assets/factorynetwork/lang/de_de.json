@@ -319,6 +319,7 @@
   "item.factorynetwork.energy_cell_4096k": "Energiezelle 4096k",
   "jade.factorynetwork.drive.fluids": "%s mB in %s Sorten",
   "screen.factorynetwork.terminal.storage.room": "%s Plätze frei · %s für Flüssigkeiten",
+  "screen.factorynetwork.terminal.storage.copied": "Kopiert: %s",
   "screen.factorynetwork.terminal.storage.no_room": "Kein Platz für neue Arten",
   "block.factorynetwork.server_rack": "Serverschrank",
   "item.factorynetwork.server_chassis": "Servergehäuse",

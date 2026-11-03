@@ -102,6 +102,11 @@ public final class WorkerRuntime {
     /** The state of a worker, as it also appears in the terminal. */
     public static final class WorkerState {
         public Status status = Status.IDLE;
+        /**
+         * What a stack must carry to pass the filter this tick — enchanted,
+         * damaged, named …; {@code null} for none. Set before the moves.
+         */
+        java.util.function.Predicate<ItemStack> condition;
         /** Strategy dictated by the worker; otherwise the group's applies. */
         public String strategyOverride;
         public long lastRun;
@@ -402,6 +407,7 @@ public final class WorkerRuntime {
         if (state.status == Status.HALTED) {
             return;
         }
+        state.condition = conditionOf(worker);
         state.strategyOverride = strategyOf(worker);
 
         boolean fromStorage = isStorage(from.value());
@@ -529,7 +535,8 @@ public final class WorkerRuntime {
         long moved = 0;
         for (int slot = 0; slot < handler.getSlots() && moved < batch; slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
-            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))) {
+            if (stack.isEmpty() || (!filter.isEmpty() && !filter.contains(stack.getItem()))
+                    || !SelectionConditions.accepts(state.condition, stack)) {
                 continue;
             }
             int wanted = (int) Math.min(batch - moved, stack.getCount());
@@ -583,7 +590,7 @@ public final class WorkerRuntime {
         // <b>An entry and not a type:</b> what is chosen here goes into the
         // machine as a stack afterwards — and a named pickaxe would arrive
         // as a plain one if only the id stood here.
-        dev.devpanda.factorynetwork.storage.ItemKey item = storage.firstPresent(filter);
+        dev.devpanda.factorynetwork.storage.ItemKey item = storage.firstPresent(filter, state.condition);
         if (item == null) {
             state.status = Status.WAITING_SOURCE;
             return 0;
@@ -669,7 +676,7 @@ public final class WorkerRuntime {
         if (in == null || out == null) {
             return 0;
         }
-        Handoffs.Handoff done = Handoffs.items(in, out, filter, batch);
+        Handoffs.Handoff done = Handoffs.items(in, out, filter, batch, state.condition);
         if (done.targetFull()) {
             state.status = Status.WAITING_TARGET;
             state.detail = "Ziel nimmt die angebotenen Gegenstände nicht an";
@@ -1080,6 +1087,13 @@ public final class WorkerRuntime {
      * an AllTheMods pack, {@code tag:c/ores} is the normal case and the
      * enumeration the exception.
      */
+    /** The data-component conditions of the filter as a test, or {@code null}. */
+    private static java.util.function.Predicate<ItemStack> conditionOf(Decl.Worker worker) {
+        Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
+        return filter == null || filter.value() instanceof Expr.Name ? null
+                : SelectionConditions.of(filter.value());
+    }
+
     private List<Item> filterItems(Decl.Worker worker, WorkerState state) {
         Decl.Worker.Entry filter = worker.entry(Decl.Worker.Entry.Kind.FILTER);
         if (filter == null) {
@@ -1653,7 +1667,7 @@ public final class WorkerRuntime {
         Map<Item, Long> present = new LinkedHashMap<>();
         if (isStorage(target)) {
             for (Item item : filter) {
-                present.put(item, storage.count(item));
+                present.put(item, storage.count(item, state.condition));
             }
             return present;
         }
@@ -1664,7 +1678,8 @@ public final class WorkerRuntime {
         handler = dev.devpanda.factorynetwork.network.link.KeyedItems.narrow(handler, filter);
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
-            if (stack.isEmpty() || !filter.contains(stack.getItem())) {
+            if (stack.isEmpty() || !filter.contains(stack.getItem())
+                    || !SelectionConditions.accepts(state.condition, stack)) {
                 continue;
             }
             present.merge(stack.getItem(), (long) stack.getCount(), Long::sum);

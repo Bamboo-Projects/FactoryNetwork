@@ -83,6 +83,21 @@ public sealed interface Value {
      * everything available is meant. The selection stays here as written
      * text and is only resolved where the registry is reachable.
      */
+    /**
+     * What a stack must carry to belong to a selection: an enchantment, a
+     * potion, a name, damage, a data component. Plain data, so a waiting
+     * flow keeps it across a restart; the game side turns it into a test.
+     *
+     * @param kind    {@code enchanted}, {@code damaged}, {@code potion},
+     *                {@code named} or {@code component}
+     * @param id      the enchantment, potion or component, or {@code null}
+     * @param text    the name for {@code named "…"}, or {@code null}
+     * @param percent the damage bound, or {@code null}
+     * @param above   {@code >} rather than {@code <} for the damage bound
+     */
+    record Condition(String kind, String id, String text, Double percent, boolean above) {
+    }
+
     record Request(String selector, long amount) implements Value {
 
         /** What a selection refers to. */
@@ -146,9 +161,15 @@ public sealed interface Value {
      * would be something different at every usage site — the same rule that
      * {@code FilterKind} establishes for templates.
      */
-    record Selection(Kind kind, List<?> keys, long amount) implements Value {
+    record Selection(Kind kind, List<?> keys, long amount, List<Condition> conditions) implements Value {
+
+        /** Without conditions: every stack of the kinds counts. */
+        public Selection(Kind kind, List<?> keys, long amount) {
+            this(kind, keys, amount, List.of());
+        }
 
         public Selection {
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
             keys = List.copyOf(keys);
             for (Object key : keys) {
                 if (!kind.type().isInstance(key)) {
@@ -156,6 +177,11 @@ public sealed interface Value {
                             + " kann kein " + key.getClass() + " enthalten.");
                 }
             }
+        }
+
+        /** Whether only some stacks of the kinds count. */
+        public boolean hasConditions() {
+            return !conditions.isEmpty();
         }
 
         public static Selection ofItems(List<?> items, long amount) {

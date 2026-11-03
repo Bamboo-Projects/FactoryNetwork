@@ -1198,7 +1198,13 @@ public final class Parser {
             } else if (at(TokenType.EXCEPT)) {
                 advance();
                 Expr exclusion = parseUnary();
+                if (exclusion instanceof Expr.Condition) {
+                    error(exclusion.span(), "Hinter except geht noch keine Bedingung wie enchanted oder named.",
+                            "Schreib die Bedingung an die Auswahl davor, oder nimm die Art ganz heraus.");
+                }
                 expr = new Expr.Except(expr, List.of(exclusion), expr.span().to(exclusion.span()));
+            } else if (isSelection(expr) && atCondition()) {
+                expr = parseCondition(expr);
             } else {
                 return expr;
             }
@@ -1425,6 +1431,82 @@ public final class Parser {
                             + Math.round(ticks) + "t.");
         }
         return new Expr.DurationLit(Math.round(ticks), text, token.span());
+    }
+
+    /** Whether a data-component condition may follow this expression. */
+    private static boolean isSelection(Expr expr) {
+        return switch (expr) {
+            case Expr.Selector selector -> selector.kind() == Expr.Selector.Kind.ITEM
+                    || selector.kind() == Expr.Selector.Kind.TAG
+                    || selector.kind() == Expr.Selector.Kind.ALL;
+            case Expr.Condition condition -> true;
+            default -> false;
+        };
+    }
+
+    private boolean atCondition() {
+        Token token = peek();
+        if (token.is(TokenType.CONDITION)) {
+            return true;
+        }
+        return token.is(TokenType.NAME) && switch (token.text()) {
+            case "enchanted", "damaged", "named" -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * {@code enchanted}, {@code enchanted:mending}, {@code damaged},
+     * {@code damaged > 50%}, {@code potion:healing}, {@code named},
+     * {@code named "Erzkiste"}, {@code component:mekanism/upgrade}.
+     */
+    private Expr parseCondition(Expr base) {
+        Token token = advance();
+        String text = token.text();
+        int colon = text.indexOf(':');
+        String word = colon < 0 ? text : text.substring(0, colon);
+        String id = colon < 0 ? null : text.substring(colon + 1);
+        Span span = base.span().to(token.span());
+        return switch (word) {
+            case "enchanted" -> new Expr.Condition(base, Expr.Condition.Kind.ENCHANTED, id, null, null,
+                    true, span);
+            case "potion" -> new Expr.Condition(base, Expr.Condition.Kind.POTION, id, null, null, true, span);
+            case "component" -> new Expr.Condition(base, Expr.Condition.Kind.COMPONENT, id, null, null,
+                    true, span);
+            case "named" -> {
+                if (at(TokenType.STRING)) {
+                    Token name = advance();
+                    yield new Expr.Condition(base, Expr.Condition.Kind.NAMED, null, name.text(), null, true,
+                            span.to(name.span()));
+                }
+                yield new Expr.Condition(base, Expr.Condition.Kind.NAMED, null, null, null, true, span);
+            }
+            default -> {
+                // damaged, optionally with a bound: damaged > 50%
+                if (at(TokenType.GT) || at(TokenType.LT)) {
+                    boolean above = advance().is(TokenType.GT);
+                    Token number = peek();
+                    if (!number.is(TokenType.INT) && !number.is(TokenType.FLOAT)) {
+                        error(number.span(), "Nach damaged " + (above ? ">" : "<")
+                                        + " fehlt eine Zahl.",
+                                "Zum Beispiel: damaged > 50% — mehr als halb verbraucht.");
+                        yield new Expr.Condition(base, Expr.Condition.Kind.DAMAGED, null, null, null, true, span);
+                    }
+                    advance();
+                    Span end = number.span();
+                    if (at(TokenType.PERCENT)) {
+                        end = advance().span();
+                    } else {
+                        error(number.span(), "Die Grenze bei damaged ist ein Anteil in Prozent.",
+                                "Schreib das Prozentzeichen dazu: damaged > "
+                                        + number.text() + "%");
+                    }
+                    yield new Expr.Condition(base, Expr.Condition.Kind.DAMAGED, null, null,
+                            Double.parseDouble(number.text()), above, span.to(end));
+                }
+                yield new Expr.Condition(base, Expr.Condition.Kind.DAMAGED, null, null, null, true, span);
+            }
+        };
     }
 
     private Expr parseSelector(Token token) {

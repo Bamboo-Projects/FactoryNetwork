@@ -363,6 +363,7 @@ public final class WorldHost implements Interpreter.Host {
         }
         List<Item> items = itemsOf(amount);
         long limit = amountOf(amount);
+        java.util.function.Predicate<ItemStack> test = conditionOf(amount);
 
         IItemHandler source = from == null ? null : handlerOf(from);
         IItemHandler target = handlerOf(to);
@@ -397,6 +398,9 @@ public final class WorldHost implements Interpreter.Host {
                 if (!items.isEmpty() && !items.contains(key.item())) {
                     continue;
                 }
+                if (test != null && !test.test(key.toStack(1))) {
+                    continue;
+                }
                 long available = Math.min(
                         Math.min(limit - moved, key.maxStackSize()), storage.count(key));
                 if (available <= 0) {
@@ -417,9 +421,19 @@ public final class WorldHost implements Interpreter.Host {
             return moved;
         }
         if (toStorage) {
-            return drainInto(source, items, limit);
+            return drainInto(source, items, limit, test);
         }
-        return transfer(source, target, items, limit);
+        return transfer(source, target, items, limit, test);
+    }
+
+    /**
+     * What a stack must carry for this selection — enchanted, damaged,
+     * named …; {@code null} for none. Only a resolved selection carries
+     * conditions; a plain written selector never does.
+     */
+    private static java.util.function.Predicate<ItemStack> conditionOf(Value value) {
+        return value instanceof Value.Selection selection && selection.hasConditions()
+                ? SelectionConditions.of(selection.conditions()) : null;
     }
 
     /**
@@ -639,7 +653,8 @@ public final class WorldHost implements Interpreter.Host {
         return fluids;
     }
 
-    private long drainInto(IItemHandler source, List<Item> items, long limit) {
+    private long drainInto(IItemHandler source, List<Item> items, long limit,
+                           java.util.function.Predicate<ItemStack> test) {
         if (source == null) {
             throw new ScriptError("Bei move fehlt die Quelle.",
                     "Zum Beispiel: move item:iron_ore from chest to storage");
@@ -648,7 +663,8 @@ public final class WorldHost implements Interpreter.Host {
         long moved = 0;
         for (int slot = 0; slot < source.getSlots() && moved < limit; slot++) {
             ItemStack stack = source.getStackInSlot(slot);
-            if (stack.isEmpty() || (!items.isEmpty() && !items.contains(stack.getItem()))) {
+            if (stack.isEmpty() || (!items.isEmpty() && !items.contains(stack.getItem()))
+                    || !SelectionConditions.accepts(test, stack)) {
                 continue;
             }
             int wanted = (int) Math.min(limit - moved, stack.getCount());
@@ -683,11 +699,12 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     private long transfer(IItemHandler source, IItemHandler target,
-                          List<Item> items, long limit) {
+                          List<Item> items, long limit,
+                          java.util.function.Predicate<ItemStack> test) {
         if (source == null) {
             throw new ScriptError("Bei move fehlt die Quelle.");
         }
-        Handoffs.Handoff done = Handoffs.items(source, target, items, limit);
+        Handoffs.Handoff done = Handoffs.items(source, target, items, limit, test);
         warnStranded(done.stranded());
         return done.moved();
     }
@@ -736,7 +753,7 @@ public final class WorldHost implements Interpreter.Host {
             return countFluids(connector, fluidsOf(what));
         }
         List<Item> items = what instanceof Value.Nothing ? List.of() : itemsOf(what);
-        return countItems(connector, items);
+        return countItems(connector, items, conditionOf(what));
     }
 
     /**
@@ -795,7 +812,8 @@ public final class WorldHost implements Interpreter.Host {
     }
 
     /** Without a selection everything counts. */
-    private static long countItems(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, List<Item> items) {
+    private static long countItems(dev.devpanda.factorynetwork.block.entity.ConnectorPart connector, List<Item> items,
+                                   java.util.function.Predicate<ItemStack> test) {
         IItemHandler handler = connector.machineInventory();
         if (handler == null) {
             return 0;
@@ -804,7 +822,8 @@ public final class WorldHost implements Interpreter.Host {
         long found = 0;
         for (int slot = 0; slot < handler.getSlots(); slot++) {
             ItemStack stack = handler.getStackInSlot(slot);
-            if (!stack.isEmpty() && (items.isEmpty() || items.contains(stack.getItem()))) {
+            if (!stack.isEmpty() && (items.isEmpty() || items.contains(stack.getItem()))
+                    && SelectionConditions.accepts(test, stack)) {
                 found += stack.getCount();
             }
         }
@@ -850,6 +869,10 @@ public final class WorldHost implements Interpreter.Host {
         // resolution of the selection.
         ResourceKind found = ResourceKind.of(what);
         ResourceKind kind = found == null ? ResourceKinds.ITEM : found;
+        java.util.function.Predicate<ItemStack> test = conditionOf(what);
+        if (kind == ResourceKinds.ITEM && test != null) {
+            return itemsOf(what).stream().mapToLong(item -> storage.count(item, test)).sum();
+        }
         var store = stores.of(kind);
         return keysOf(kind, what).stream().mapToLong(store::count).sum();
     }

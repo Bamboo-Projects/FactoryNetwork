@@ -823,6 +823,7 @@ public final class Interpreter {
             // dropped — except worked in the worker, but not in move and
             // count.
             case Expr.Except except -> resolvedSelection(except);
+            case Expr.Condition condition -> resolvedSelection(condition);
             case Expr.Move move -> new Value.Int(
                     doMove(move.amount(), move.from(), move.to()));
             case Expr.Range range -> rangeList(range);
@@ -869,7 +870,7 @@ public final class Interpreter {
             case Value.Resource resource ->
                     new Value.Selection(resource.kind(), List.of(resource.key()), count);
             case Value.Selection choice ->
-                    new Value.Selection(choice.kind(), choice.keys(), count);
+                    new Value.Selection(choice.kind(), choice.keys(), count, choice.conditions());
             default -> selection;
         };
     }
@@ -924,7 +925,28 @@ public final class Interpreter {
                     ? new ScriptError(missing.message(), missing.hint())
                     : nothingSelected();
         }
-        return new Value.Selection(kind, keys, amountIn(expr));
+        return new Value.Selection(kind, keys, amountIn(expr), conditionsOf(expr));
+    }
+
+    /** The data-component conditions written on a selection, outermost last. */
+    public static List<Value.Condition> conditionsOf(Expr expr) {
+        List<Value.Condition> found = new java.util.ArrayList<>();
+        Expr at = expr;
+        while (true) {
+            switch (at) {
+                case Expr.Condition condition -> {
+                    found.add(0, new Value.Condition(
+                            condition.kind().name().toLowerCase(java.util.Locale.ROOT),
+                            condition.id(), condition.text(), condition.percent(), condition.above()));
+                    at = condition.base();
+                }
+                case Expr.Except except -> at = except.base();
+                case Expr.Amount amount -> at = amount.selection();
+                default -> {
+                    return List.copyOf(found);
+                }
+            }
+        }
     }
 
     /**
@@ -964,6 +986,7 @@ public final class Interpreter {
         return switch (expr) {
             case Expr.Amount amount -> amount.count() == null ? -1 : amount.count();
             case Expr.Except except -> amountIn(except.base());
+            case Expr.Condition condition -> amountIn(condition.base());
             case null, default -> -1;
         };
     }
