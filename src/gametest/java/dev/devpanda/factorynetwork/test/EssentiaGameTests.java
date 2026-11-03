@@ -114,8 +114,15 @@ public final class EssentiaGameTests {
         var base = entity.callFunction("basis", java.util.List.of());
         helper.assertTrue(vis instanceof dev.devpanda.factorynetwork.runtime.Value.Decimal found
                         && found.value() >= 0, "Vis kam nicht als Zahl: " + vis);
+        // The value Thaumaturge itself gives at the machine: the aura base
+        // depends on where the test happens to run and may be zero there, so
+        // the measure is compared with the mod and not with a fixed bound.
+        BlockPos machine = helper.absolutePos(controller.east().north().north());
+        double expected = com.leclowndu93150.thaumaturge.api.aura.AuraHelper
+                .getAuraBase(helper.getLevel(), machine);
         helper.assertTrue(base instanceof dev.devpanda.factorynetwork.runtime.Value.Decimal found
-                        && found.value() > 0, "Die Aura-Basis ist nicht positiv: " + base);
+                        && Math.abs(found.value() - expected) < 1e-6,
+                "Die Aura-Basis muss der von Thaumaturge entsprechen (" + expected + "): " + base);
         helper.succeed();
     }
 
