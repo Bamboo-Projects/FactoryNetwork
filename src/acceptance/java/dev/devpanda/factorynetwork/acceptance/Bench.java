@@ -119,6 +119,12 @@ final class Bench {
         measure("storageWithTerminalOpen", results);
         STEPS.add(server -> closeTerminal(level));
 
+        // Workers taking from the big store into chests.
+        STEPS.add(server -> storageWorkers(level, results));
+        settle();
+        measure("storageWorkersTicking", results);
+        STEPS.add(server -> stopStorageWorkers(level));
+
         // Workers moving items from chest to chest.
         STEPS.add(server -> workers(level, workers, results));
         settle();
@@ -209,6 +215,13 @@ final class Bench {
             stats.put("fnMaxMs", round(fn[fn.length - 1]));
             stats.put("slowestControllerMs", round(dev.devpanda.factorynetwork.network.TickCost.slowest() / 1e6));
             stats.put("slowestControllerAt", String.valueOf(dev.devpanda.factorynetwork.network.TickCost.slowestAt()));
+            // Which phase and which worker made the slowest ticks.
+            Map<String, Object> phases = new LinkedHashMap<>();
+            dev.devpanda.factorynetwork.network.TickCost.slowestPhases()
+                    .forEach((phase, nanos) -> phases.put(phase, round(nanos / 1e6)));
+            stats.put("slowestPhaseMs", phases);
+            stats.put("slowestWorkerMs", round(dev.devpanda.factorynetwork.network.TickCost.slowestWorker() / 1e6));
+            stats.put("slowestWorker", String.valueOf(dev.devpanda.factorynetwork.network.TickCost.slowestWorkerName()));
             results.put(name, stats);
             window = null;
             LOGGER.info("FN_BENCH_STEP {} {}", name, JSON.toJson(stats));
@@ -276,24 +289,50 @@ final class Bench {
             controller.storage().contents();
         }
         results.put("contentsMs", round((System.nanoTime() - start) / 1e6 / 20));
+        // By item across all variants, as a condition or display asks: one
+        // with every sort a variant of it, one with a single bare sort.
+        controller.storage().insert(ItemKey.bare(Items.IRON_INGOT), 100);
+        start = System.nanoTime();
+        for (int i = 0; i < 1_000; i++) {
+            controller.storage().count(Items.PAPER);
+        }
+        results.put("countAllPaperUs", round((System.nanoTime() - start) / 1e3 / 1_000));
+        start = System.nanoTime();
+        for (int i = 0; i < 1_000; i++) {
+            controller.storage().count(Items.IRON_INGOT);
+        }
+        results.put("countIronUs", round((System.nanoTime() - start) / 1e3 / 1_000));
         controller.setChanged();
     }
 
     private static void terminal(ServerLevel level, Map<String, Object> results) {
         ControllerBlockEntity controller = (ControllerBlockEntity) level.getBlockEntity(STORAGE);
         List<ServerPlayer> players = level.getServer().getPlayerList().getPlayers();
-        if (players.isEmpty()) {
-            results.put("terminal", "no player online, skipped");
-            return;
-        }
-        ServerPlayer player = players.getFirst();
         BlockPos terminal = STORAGE.south();
         level.setBlockAndUpdate(terminal, FnBlocks.TERMINAL.get().defaultBlockState());
         controller.rebuildNetwork();
-        player.openMenu((net.minecraft.world.MenuProvider) level.getBlockEntity(terminal),
-                buffer -> TerminalMenu.writeBlock(buffer, terminal));
-        controller.watchStorage(player);
+        ServerPlayer player;
+        if (players.isEmpty()) {
+            // Headless: a stand-in whose connection drops every packet. That
+            // times what the send costs the server thread; encoding runs on
+            // the network thread for a real player anyway.
+            player = new net.neoforged.neoforge.common.util.FakePlayer(level,
+                    new com.mojang.authlib.GameProfile(java.util.UUID.fromString(
+                            "6b3c1d0e-5f1a-4c55-9d1e-0b8f3a2c7e11"), "BenchViewer"));
+            player.setPos(terminal.getX() + 0.5, terminal.getY(), terminal.getZ() + 1.5);
+            player.containerMenu = new TerminalMenu(1, player.getInventory(), terminal);
+            results.put("terminalViewer", "fake player");
+        } else {
+            player = players.getFirst();
+            player.openMenu((net.minecraft.world.MenuProvider) level.getBlockEntity(terminal),
+                    buffer -> TerminalMenu.writeBlock(buffer, terminal));
+            results.put("terminalViewer", "client");
+        }
+        terminalViewer = player;
         long start = System.nanoTime();
+        controller.watchStorage(player);
+        results.put("firstPushMs", round((System.nanoTime() - start) / 1e6));
+        start = System.nanoTime();
         for (int i = 0; i < 20; i++) {
             controller.pushStorageTo(player, true);
         }
@@ -342,8 +381,15 @@ final class Bench {
         });
     }
 
+    private static ServerPlayer terminalViewer;
+
     private static void closeTerminal(ServerLevel level) {
         BACKGROUND.clear();
+        if (terminalViewer instanceof net.neoforged.neoforge.common.util.FakePlayer fake) {
+            fake.containerMenu = fake.inventoryMenu;
+            ((ControllerBlockEntity) level.getBlockEntity(STORAGE)).unwatchStorage(fake);
+        }
+        terminalViewer = null;
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             player.closeContainer();
         }
@@ -376,6 +422,41 @@ final class Bench {
         if (!deployed) {
             results.put("workersDiagnostics", String.valueOf(controller.diagnostics()));
         }
+    }
+
+    /** Eight workers from the store into chests: four by a sort with thousands of variants, four by a plain one. */
+    private static void storageWorkers(ServerLevel level, Map<String, Object> results) {
+        ControllerBlockEntity controller = (ControllerBlockEntity) level.getBlockEntity(STORAGE);
+        StringBuilder program = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            BlockPos cable = STORAGE.east(1 + i).south();
+            level.setBlockAndUpdate(cable, FnBlocks.CABLE.get().defaultBlockState());
+            level.setBlockAndUpdate(cable.south(), Blocks.CHEST.defaultBlockState());
+            CableBusBlockEntity bus = (CableBusBlockEntity) level.getBlockEntity(cable);
+            bus.addPart(Direction.SOUTH).setLabel("k" + i);
+            program.append("worker k").append(i).append(" {\n    from storage\n    to k").append(i)
+                    .append("\n    filter item:").append(i < 4 ? "paper" : "iron_ingot").append("\n}\n");
+        }
+        controller.rebuildNetwork();
+        controller.storage().insert(ItemKey.bare(Items.IRON_INGOT), 1_000_000);
+        boolean deployed = controller.deploy(Project.of(program.toString()));
+        results.put("storageWorkersDeployed", deployed);
+        if (!deployed) {
+            results.put("storageWorkersDiagnostics", String.valueOf(controller.diagnostics()));
+        }
+        // Empty the chests every tick, so the workers keep moving.
+        BACKGROUND.add(() -> {
+            for (int i = 0; i < 8; i++) {
+                if (level.getBlockEntity(STORAGE.east(1 + i).south(2)) instanceof ChestBlockEntity chest) {
+                    chest.clearContent();
+                }
+            }
+        });
+    }
+
+    private static void stopStorageWorkers(ServerLevel level) {
+        BACKGROUND.clear();
+        ((ControllerBlockEntity) level.getBlockEntity(STORAGE)).deploy(Project.of(""));
     }
 
     private static void countMoved(ServerLevel level, int count, Map<String, Object> results, String key) {

@@ -300,7 +300,9 @@ public final class WorkerRuntime {
                 continue;
             }
             state.lastRun = now;
+            long start = System.nanoTime();
             runWorker(level, worker, state, graph, storage);
+            dev.devpanda.factorynetwork.network.TickCost.worker(worker.name(), System.nanoTime() - start);
         }
     }
 
