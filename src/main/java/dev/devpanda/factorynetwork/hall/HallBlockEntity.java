@@ -45,13 +45,20 @@ public class HallBlockEntity extends BlockEntity {
     public void onLoad() {
         super.onLoad();
         HallLoading.hold(this, true);
-        HallLoading.holdDoorChunk(this, true);
+    }
+
+    /** Only the block going for good stops its hall, not its chunk unloading. */
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        HallLoading.release(this);
+        super.preRemoveSideEffects(pos, state);
     }
 
     @Override
     public void setRemoved() {
-        HallLoading.hold(this, false);
-        HallLoading.holdDoorChunk(this, false);
+        if (!dev.devpanda.factorynetwork.FnConfig.hallsLoadThemselves()) {
+            HallLoading.hold(this, false);
+        }
         super.setRemoved();
     }
 

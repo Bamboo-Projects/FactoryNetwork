@@ -62,7 +62,7 @@ public final class FnConfig {
     private static final ModConfigSpec.IntValue GLOBAL_LIST;
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
     private static final ModConfigSpec.BooleanValue KEEP_AWAKE;
-    private static final ModConfigSpec.EnumValue<HallChunks> HALL_CHUNKS;
+    private static final ModConfigSpec.BooleanValue HALLS_LOAD_THEMSELVES;
 
     public static final ModConfigSpec SERVER_SPEC;
 
@@ -125,12 +125,11 @@ public final class FnConfig {
                         "true: Solange ein Controller geladen ist, pausiert der Server nicht.",
                         "Gleichwertig: pause-when-empty-seconds=0 in server.properties.")
                 .define("keepAwakeWhileFactoriesRun", false);
-        HALL_CHUNKS = builder
-                .comment("Ob ein Hallenblock seinen eigenen Chunk geladen hält, damit die Halle",
-                        "auch läuft, wenn niemand in der Nähe ist.",
-                        "AUTO: ja, außer FTB Chunks ist installiert — dann lädt man dort.",
-                        "ALWAYS: immer. NEVER: nie, wie andere Fabrik-Mods.")
-                .defineEnum("hallBlocksLoadTheirChunk", HallChunks.AUTO);
+        HALLS_LOAD_THEMSELVES = builder
+                .comment("Ob eine Fabrikhalle läuft, solange ihr Block steht — auch wenn sein Chunk",
+                        "in der Oberwelt nicht geladen ist und niemand in der Nähe ist.",
+                        "false: Die Halle läuft nur, solange ihr Block geladen ist.")
+                .define("hallsLoadThemselves", true);
         builder.pop();
         SERVER_SPEC = builder.build();
     }
@@ -192,16 +191,8 @@ public final class FnConfig {
         return SERVER_SPEC.isLoaded() && KEEP_AWAKE.get();
     }
 
-    /** Who keeps a hall block's chunk loaded. */
-    public enum HallChunks { AUTO, ALWAYS, NEVER }
-
-    /** Whether a hall block should hold its own chunk now. */
-    public static boolean hallBlocksLoadTheirChunk() {
-        HallChunks mode = SERVER_SPEC.isLoaded() ? HALL_CHUNKS.get() : HallChunks.AUTO;
-        return switch (mode) {
-            case ALWAYS -> true;
-            case NEVER -> false;
-            case AUTO -> !net.neoforged.fml.ModList.get().isLoaded("ftbchunks");
-        };
+    /** Whether a hall keeps running while its block stands but is not loaded. */
+    public static boolean hallsLoadThemselves() {
+        return !SERVER_SPEC.isLoaded() || HALLS_LOAD_THEMSELVES.get();
     }
 }

@@ -96,20 +96,20 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallCouple(ctx.getSource().getLevel())), false);
                     return 1;
                 }))
-                .then(Commands.literal("loaded").executes(ctx -> {
-                    var hall = ctx.getSource().getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
-                    // Asked before anything touches the door's chunk: what the server loaded by itself.
-                    var overworld = ctx.getSource().getServer().overworld();
-                    BlockPos door = HALL_DOOR;
-                    boolean doorLoaded = overworld.isLoaded(door);
-                    int id = doorLoaded && overworld.getBlockEntity(door)
-                            instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity block ? block.hall() : 1;
+                .then(Commands.literal("loaded").then(Commands.argument("id",
+                        com.mojang.brigadier.arguments.IntegerArgumentType.integer(1)).executes(ctx -> {
+                    // Asks without touching the door's chunk: what the server keeps loaded by itself.
+                    var server = ctx.getSource().getServer();
+                    var hall = server.getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+                    int id = com.mojang.brigadier.arguments.IntegerArgumentType.getInteger(ctx, "id");
                     BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(id);
+                    var entry = dev.devpanda.factorynetwork.hall.Halls.of(server).get(id);
                     ctx.getSource().sendSuccess(() -> Component.literal("FN_HALL_LOADED " + hall.isLoaded(low)
-                            + " ticking=" + hall.shouldTickBlocksAt(low) + " hall=" + id
-                            + " doorChunk=" + doorLoaded), false);
+                            + " ticking=" + hall.shouldTickBlocksAt(low)
+                            + " door=" + (entry == null ? "none" : entry.door().map(Object::toString).orElse("empty"))
+                            + " doorChunk=" + server.overworld().isLoaded(HALL_DOOR)), false);
                     return 1;
-                })));
+                }))));
         event.getDispatcher().register(Commands.literal("fnacceptance")
                 .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.literal("setup").executes(ctx -> {

@@ -40,6 +40,28 @@ public class HallBlock extends Block implements EntityBlock {
         return new HallBlockEntity(pos, state);
     }
 
+    /**
+     * A block with a number placed again: its hall runs from here on. A copy
+     * whose original still stands changes nothing; entering it says so.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            net.minecraft.world.entity.@Nullable LivingEntity placer,
+                            net.minecraft.world.item.ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level instanceof net.minecraft.server.level.ServerLevel server
+                && server.dimension() != Halls.DIMENSION
+                && level.getBlockEntity(pos) instanceof HallBlockEntity door
+                && door.hall() != HallBlockEntity.NONE) {
+            Halls halls = Halls.of(server.getServer());
+            Halls.Entry entry = halls.get(door.hall());
+            if (entry != null && entry.door().isEmpty()) {
+                halls.setDoor(door.hall(), net.minecraft.core.GlobalPos.of(server.dimension(), pos));
+                HallLoading.hold(door, true);
+            }
+        }
+    }
+
     /** With a blueprint in hand the item decides; otherwise the door opens as usual. */
     @Override
     protected InteractionResult useItemOn(net.minecraft.world.item.ItemStack held, BlockState state, Level level,

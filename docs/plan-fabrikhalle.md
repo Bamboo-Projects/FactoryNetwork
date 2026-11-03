@@ -62,13 +62,15 @@ Eine Halle läuft, solange ihr Block in der Welt geladen ist. NeoForge bietet
 dafür Ladescheine (`TicketController`): Der Hallenblock nimmt beim Laden
 einen Schein für die Chunks seiner Halle und gibt ihn beim Entladen zurück.
 
-**Umgesetzt (03.11.2026):** Zusätzlich hält der Block seinen eigenen Chunk
-(`hallBlocksLoadTheirChunk`, Vorgabe `AUTO` = an, außer FTB Chunks ist
-installiert). Beim Serverstart nimmt jede Tür aus der Hallenliste ihren Chunk
-wieder; steht dort kein passender Block mehr, gibt sie ihn sofort frei.
-Geprüft auf dem Dev-Server mit Tür bei 2000/64/2000, Neustart ohne Spieler:
-`AUTO` lädt Tür und Halle, `NEVER` keins von beiden, zurück auf `AUTO` wieder
-beides, nach Abbau des Blocks keins.
+**Umgesetzt (03.11.2026):** Eine Halle läuft, solange ihr Block *steht*,
+nicht nur solange er geladen ist (`hallsLoadThemselves`, Vorgabe `true`). Der
+Schein für die Hallen-Chunks hängt am Hallenblock: genommen beim Betreten,
+Bauen aus Bauplan oder Wiederaufstellen, zurückgegeben nur beim Abbau
+(`preRemoveSideEffects`), nicht beim Entladen. Beim Serverstart nimmt jede
+Halle mit Block ihren Schein neu; ein Blick auf den Block räumt Einträge auf,
+deren Block weg ist. Geprüft auf dem Dev-Server, Tür bei 2000/64/2000: Nach
+Neustart ist der Oberwelt-Chunk entladen und die Halle tickt; Abbau stoppt
+sie sofort; mit `false` steht sie nach Neustart.
 
 **Das ist die Stelle mit dem größten Risiko.** Eine Halle, die nicht lädt,
 steht still, und ein Spieler merkt es erst an fehlenden Gegenständen.

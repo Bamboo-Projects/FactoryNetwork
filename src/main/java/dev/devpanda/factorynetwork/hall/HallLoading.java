@@ -14,15 +14,17 @@ import net.neoforged.neoforge.common.world.chunk.TicketController;
 import java.util.ArrayList;
 
 /**
- * A hall runs while its block is loaded.
+ * A hall runs while its block stands.
  *
- * <p>The block takes a ticket for the chunks of its hall when it loads and
- * returns it when it unloads or is broken. Tickets left over from the last
- * session are thrown away at start: the blocks take them again as they load,
- * and a hall whose block no longer stands should not run on forever.
+ * <p>Standing, not loaded: the hall holds its own chunks in the hall
+ * dimension from the moment its block is placed or entered until the block is
+ * broken. The block's chunk in the overworld may unload; the hall goes on.
+ * With {@code hallsLoadThemselves = false} the hall only runs while its block
+ * is loaded, like a machine.
  *
- * <p>Unless FTB Chunks or the like does it, the block also holds its own
- * chunk ({@code hallBlocksLoadTheirChunk}), so a hall runs with nobody near.
+ * <p>Tickets left over from the last session are thrown away at start and
+ * taken again from the hall list, so a hall whose block is gone does not run
+ * on forever.
  *
  * <p>The ticket's owner is the hall's corner, not the block's position: the
  * block can stand at the same coordinates in two dimensions, the corner
@@ -44,46 +46,48 @@ public final class HallLoading {
         event.register(TICKETS);
     }
 
-    /**
-     * After a restart nobody stands next to a hall block, so nothing would
-     * load it — and with it its hall. Where the setting wants it, every door
-     * on the list takes its chunk again here. Loading the chunk runs the
-     * block's {@code onLoad}, which takes the hall's chunks.
-     */
+    /** After a restart: every hall whose block stands takes its chunks again. */
     @SubscribeEvent
-    public static void loadDoors(net.neoforged.neoforge.event.server.ServerStartedEvent event) {
-        if (!dev.devpanda.factorynetwork.FnConfig.hallBlocksLoadTheirChunk()) {
+    public static void loadHalls(net.neoforged.neoforge.event.server.ServerStartedEvent event) {
+        if (!dev.devpanda.factorynetwork.FnConfig.hallsLoadThemselves()) {
             return;
         }
         var server = event.getServer();
-        Halls.of(server).all().forEach((id, entry) -> entry.door().ifPresent(door -> {
+        ServerLevel hall = server.getLevel(Halls.DIMENSION);
+        if (hall == null) {
+            return;
+        }
+        Halls halls = Halls.of(server);
+        halls.all().forEach((id, entry) -> entry.door().ifPresent(door -> {
+            // One look at the block, which loads its chunk once: a list from
+            // an older version or a crash may name a door that is gone.
             ServerLevel level = server.getLevel(door.dimension());
-            if (level == null || level.dimension() == Halls.DIMENSION) {
-                return;
-            }
-            BlockPos at = door.pos();
-            TICKETS.forceChunk(level, at, at.getX() >> 4, at.getZ() >> 4, true, true);
-            if (!(level.getBlockEntity(at) instanceof HallBlockEntity block) || block.hall() != id) {
-                // The list still names a door that is gone: nothing to hold here.
-                TICKETS.forceChunk(level, at, at.getX() >> 4, at.getZ() >> 4, false, true);
+            if (level != null && level.getBlockEntity(door.pos()) instanceof HallBlockEntity block
+                    && block.hall() == id) {
+                force(hall, id, entry.size(), true);
+            } else {
+                halls.setDoor(id, null);
             }
         }));
     }
 
-    /**
-     * The door's own chunk: taken while the setting wants it, returned when
-     * the block goes. After a restart {@link #loadDoors} takes it again.
-     */
-    static void holdDoorChunk(HallBlockEntity door, boolean load) {
+    /** The block went for good (broken, blown up, replaced): its hall stops. */
+    static void release(HallBlockEntity door) {
         if (!(door.getLevel() instanceof ServerLevel level) || level.dimension() == Halls.DIMENSION
                 || door.hall() == HallBlockEntity.NONE) {
             return;
         }
-        if (load && !dev.devpanda.factorynetwork.FnConfig.hallBlocksLoadTheirChunk()) {
+        Halls halls = Halls.of(level.getServer());
+        Halls.Entry entry = halls.get(door.hall());
+        if (entry == null || !entry.door().equals(java.util.Optional.of(
+                GlobalPos.of(level.dimension(), door.getBlockPos())))) {
             return;
         }
-        BlockPos at = door.getBlockPos();
-        TICKETS.forceChunk(level, at, at.getX() >> 4, at.getZ() >> 4, load, true);
+        halls.setDoor(door.hall(), null);
+        ServerLevel hall = level.getServer().getLevel(Halls.DIMENSION);
+        if (hall != null) {
+            force(hall, door.hall(), entry.size(), false);
+        }
     }
 
     /** Takes or returns the hall's chunks, if this block is the hall's door. */
@@ -99,11 +103,14 @@ public final class HallLoading {
             return;
         }
         ServerLevel hall = level.getServer().getLevel(Halls.DIMENSION);
-        if (hall == null) {
-            return;
+        if (hall != null) {
+            force(hall, door.hall(), entry.size(), load);
         }
-        BlockPos low = Halls.origin(door.hall());
-        int high = entry.size().size() + 1;
+    }
+
+    private static void force(ServerLevel hall, int id, HallTier tier, boolean load) {
+        BlockPos low = Halls.origin(id);
+        int high = tier.size() + 1;
         for (int cx = low.getX() >> 4; cx <= (low.getX() + high) >> 4; cx++) {
             for (int cz = low.getZ() >> 4; cz <= (low.getZ() + high) >> 4; cz++) {
                 TICKETS.forceChunk(hall, low, cx, cz, load, true);

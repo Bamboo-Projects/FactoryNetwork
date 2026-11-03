@@ -50,7 +50,6 @@ public final class HallDoor {
         halls.setDoor(id, at);
         // A new hall, or a door that moved: from now on this block holds it.
         HallLoading.hold(door, true);
-        HallLoading.holdDoorChunk(door, true);
 
         ServerLevel hall = player.level().getServer().getLevel(Halls.DIMENSION);
         if (hall == null) {

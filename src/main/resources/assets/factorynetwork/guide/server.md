@@ -142,23 +142,24 @@ erst mit dem nächsten Spieler auf. Ab da hält er die Fabriken wach.
 
 ## Fabrikhallen laden
 
-Eine Halle läuft, solange ihr Block geladen ist. Damit sie auch läuft, wenn
-niemand in der Nähe steht, hält der Hallenblock seinen eigenen Chunk geladen —
-auch nach einem Neustart.
+**Eine Halle läuft, solange ihr Block steht** — auch wenn sein Chunk in der
+Oberwelt nicht geladen ist und niemand in der Nähe ist, auch nach einem
+Neustart. Dafür braucht es weder FTB Chunks noch eine andere Lademod.
+Geladen wird nur die Halle selbst, nicht der Chunk um ihren Block.
+
+Wird der Block abgebaut oder gesprengt, bleibt die Halle stehen, wie sie ist,
+und läuft erst wieder, wenn ihr Block irgendwo steht.
 
 ```toml
 [server]
-hallBlocksLoadTheirChunk = "AUTO"
+hallsLoadThemselves = true
 ```
 
-- **`AUTO`** (Vorgabe): Der Block lädt seinen Chunk selbst, außer FTB Chunks
-  ist installiert. Dann lädst du den Chunk dort, wie jeden anderen.
-- **`ALWAYS`**: Der Block lädt immer, auch neben FTB Chunks.
-- **`NEVER`**: Der Block lädt nie. Die Halle läuft nur, solange ihr Chunk
-  anders geladen ist, durch einen Spieler oder eine andere Mod.
+Mit `false` läuft eine Halle nur, solange ihr Block geladen ist, wie eine
+Maschine. Das spart Leistung auf Servern mit vielen Hallen.
 
-Geladen wird nur der Chunk des Blocks und die Halle dahinter, nichts drumherum.
-Ein abgebauter Block gibt beides frei.
+Ein `/setblock … replace` über dem Block merkt die Halle erst beim nächsten
+Neustart; `/setblock … destroy` und normales Abbauen sofort.
 
 ## Was nicht in dieser Datei steht
 
