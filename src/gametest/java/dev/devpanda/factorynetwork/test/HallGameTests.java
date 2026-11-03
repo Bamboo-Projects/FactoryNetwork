@@ -129,4 +129,40 @@ public final class HallGameTests {
         helper.assertTrue(event.isCanceled(), "auch im Kreativmodus nicht abbaubar");
         helper.succeed();
     }
+
+    /**
+     * A whole factory: the controller's program, the server parts in the rack
+     * and an empty cell in the drive come along — the parts as materials, the
+     * cell without its contents.
+     */
+    @GameTest(template = FactoryNetworkGameTests.EMPTY, timeoutTicks = 100)
+    public static void aBlueprintCopiesAFactoryWithItsProgram(GameTestHelper helper) {
+        BlockPos controller = FactoryNetworkGameTests.buildSetup(helper);
+        var entity = (dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity)
+                helper.getLevel().getBlockEntity(helper.absolutePos(controller));
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 50);
+        helper.assertTrue(entity.deploy("fn ping() { return 1 }"),
+                "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        var level = helper.getLevel();
+        BlockPos low = helper.absolutePos(BlockPos.ZERO).offset(-1, -1, -1);
+        var blueprint = dev.devpanda.factorynetwork.hall.Blueprint.capture(level, low, HallTier.SMALL);
+        var materials = blueprint.materials();
+        helper.assertTrue(materials.containsKey(dev.devpanda.factorynetwork.registry.FnItems.CELLS
+                        .get(dev.devpanda.factorynetwork.storage.CellTier.K64).get()),
+                "die Zelle des Laufwerks gehört zum Material: " + materials);
+
+        BlockPos copyLow = low.offset(0, 30, 0);
+        blueprint.build(level, copyLow);
+        BlockPos copied = copyLow.offset(controller.offset(1, 1, 1));
+        var copy = (dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity) level.getBlockEntity(copied);
+        helper.assertTrue(copy != null, "der Controller steht in der Kopie");
+        helper.assertValueEqual(copy.draft().files(), entity.project().files(), "das Programm kam mit");
+        var drive = (dev.devpanda.factorynetwork.block.entity.DriveBlockEntity)
+                level.getBlockEntity(copied.above());
+        helper.assertTrue(!drive.cell(0).isEmpty(), "die Zelle steckt im Laufwerk");
+        helper.assertValueEqual(copy.storage().count(Items.IRON_INGOT), 0L, "aber leer: kein Eisen kopiert");
+        helper.succeed();
+    }
 }

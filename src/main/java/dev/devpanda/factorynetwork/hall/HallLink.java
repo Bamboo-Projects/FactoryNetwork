@@ -58,8 +58,14 @@ public final class HallLink implements StorageLinkAdapter {
         return null;
     }
 
-    /** The controller inside the hall; the first one found, if there are several. */
+    /** The item store of the controller inside the hall. */
     private @Nullable NetworkStorage store() {
+        ControllerBlockEntity controller = controller();
+        return controller == null ? null : controller.storage();
+    }
+
+    /** The controller inside the hall; the first one found, if there are several. */
+    private @Nullable ControllerBlockEntity controller() {
         Level level = link.getLevel();
         HallBlockEntity door = level == null ? null : door(level, link.getBlockPos());
         if (door == null || level.getServer() == null) {
@@ -73,7 +79,7 @@ public final class HallLink implements StorageLinkAdapter {
         for (BlockPos candidate : ControllerRegistry.in(hall)) {
             if (Halls.inside(door.hall(), entry.size(), candidate) && hall.isLoaded(candidate)
                     && hall.getBlockEntity(candidate) instanceof ControllerBlockEntity controller) {
-                return controller.storage();
+                return controller;
             }
         }
         return null;
@@ -92,7 +98,31 @@ public final class HallLink implements StorageLinkAdapter {
 
     @Override
     public @Nullable FluidStock fluids() {
-        return null;
+        ControllerBlockEntity controller = controller();
+        return controller == null ? null : new Fluids(controller.fluids());
+    }
+
+    private record Fluids(dev.devpanda.factorynetwork.network.NetworkFluids store) implements FluidStock {
+
+        @Override
+        public void find(List<net.minecraft.world.level.material.Fluid> fluids,
+                         ObjLongConsumer<net.minecraft.world.level.material.Fluid> into) {
+            store.contents().forEach((fluid, amount) -> {
+                if (fluids.isEmpty() || fluids.contains(fluid)) {
+                    into.accept(fluid, amount);
+                }
+            });
+        }
+
+        @Override
+        public long insert(net.minecraft.world.level.material.Fluid fluid, long amount, boolean simulate) {
+            return simulate ? store.room(fluid, amount) : amount - store.insert(fluid, amount);
+        }
+
+        @Override
+        public long extract(net.minecraft.world.level.material.Fluid fluid, long amount, boolean simulate) {
+            return simulate ? Math.min(amount, store.count(fluid)) : store.extract(fluid, amount);
+        }
     }
 
     @Override

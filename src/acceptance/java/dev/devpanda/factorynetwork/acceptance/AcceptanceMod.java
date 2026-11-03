@@ -336,7 +336,16 @@ public final class AcceptanceMod {
         long in = adapter.items().insert(iron, 64, false);
         long out = adapter.items().extract(iron, 10, false);
         long after = controller.storage().count(iron);
+        if (drive.getItem(1).isEmpty()) {
+            drive.setItem(1, new net.minecraft.world.item.ItemStack(dev.devpanda.factorynetwork.registry.FnItems
+                    .FLUID_CELLS.values().iterator().next().get()));
+            controller.rebuildNetwork();
+        }
+        var fluids = adapter.fluids();
+        long waterIn = fluids == null ? -1 : fluids.insert(net.minecraft.world.level.material.Fluids.WATER, 1000, false);
+        long waterOut = fluids == null ? -1 : fluids.extract(net.minecraft.world.level.material.Fluids.WATER, 250, false);
+        long water = controller.fluids().count(net.minecraft.world.level.material.Fluids.WATER);
         return "FN_HALL_COUPLE hall=" + id + " adapter=" + adapter.systemName() + " before=" + before + " in=" + in
-                + " out=" + out + " after=" + after;
+                + " out=" + out + " after=" + after + " waterIn=" + waterIn + " waterOut=" + waterOut + " water=" + water;
     }
 }
