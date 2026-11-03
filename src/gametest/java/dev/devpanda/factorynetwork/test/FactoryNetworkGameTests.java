@@ -3038,6 +3038,44 @@ public final class FactoryNetworkGameTests {
         return resultOf(flow);
     }
 
+    /**
+     * The button a panel sends names its own entry, also behind a list, a
+     * row after the list and a scale: counted by lines, the press reached
+     * the wrong entry.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aButtonBehindAListPressesItself(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.IRON_INGOT, 5);
+        entity.storage().insert(Items.COAL, 5);
+
+        helper.assertTrue(entity.deploy("""
+                event Takt(nummer: Int)
+
+                display leitstand {
+                    scale 1
+                    list "Bestand" storage.items()
+                    row "Danach" 1
+                    button "Anstoßen" anstossen
+                }
+
+                fn anstossen() {
+                    let wert = await Takt
+                    return wert
+                }"""), "Das Programm wurde nicht übernommen");
+
+        var panel = entity.displayPanels().get(0);
+        helper.assertValueEqual(panel.buttons().size(), 1, "Ein Knopf");
+        int entry = panel.buttons().get(0).entry();
+        helper.assertValueEqual(entry, 3, "Der Knopf ist der vierte Eintrag, scale mitgezählt");
+        entity.pressDisplayButton("leitstand", entry);
+        helper.assertValueEqual(entity.flowEngine().flows().size(), 1,
+                "Der Knopf muss seinen Ablauf starten");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aDisplayButtonStartsAFlowThatMayWait(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);

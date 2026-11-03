@@ -2303,44 +2303,20 @@ public class ControllerBlockEntity extends BlockEntity {
             }
             List<DisplayLine> lines = new ArrayList<>();
             List<DisplayStatePacket.Button> buttons = new ArrayList<>();
-            List<DisplayValues.Line> evaluated = values.evaluate(display);
-            // The entry counts on its own: a list brings several lines with
-            // it, and the line number runs ahead afterwards.
-            int entryIndex = -1;
-            Decl.Display.Entry.Kind previous = null;
-            for (int i = 0; i < evaluated.size(); i++) {
-                DisplayValues.Line line = evaluated.get(i);
-                if (belongsToPreviousEntry(line, previous)) {
+            int lineIndex = 0;
+            for (DisplayValues.Evaluated entry : values.evaluateEntries(display)) {
+                for (DisplayValues.Line line : entry.lines()) {
                     lines.add(DisplayBlockEntity.format(line));
-                    continue;
-                }
-                entryIndex++;
-                previous = line.kind();
-                lines.add(DisplayBlockEntity.format(line));
-                if (line.kind() == Decl.Display.Entry.Kind.BUTTON) {
-                    buttons.add(new DisplayStatePacket.Button(i, entryIndex));
+                    if (line.kind() == Decl.Display.Entry.Kind.BUTTON) {
+                        buttons.add(new DisplayStatePacket.Button(lineIndex, entry.entry()));
+                    }
+                    lineIndex++;
                 }
             }
             panels.add(new DisplayStatePacket.Panel(display.name(), lines, buttons));
         }
         addUnknownPanels(panels);
         return panels;
-    }
-
-    /**
-     * Does this line still belong to the entry before it?
-     *
-     * <p>Only a list brings more than one line with it: its heading is
-     * followed by the items as lines, until the next entry begins. Everything
-     * else is one to one.
-     */
-    private static boolean belongsToPreviousEntry(DisplayValues.Line line,
-                                                  Decl.Display.Entry.Kind previous) {
-        if (previous != Decl.Display.Entry.Kind.LIST) {
-            return false;
-        }
-        return line.kind() == Decl.Display.Entry.Kind.ROW
-                || line.kind() == Decl.Display.Entry.Kind.TEXT;
     }
 
     /**

@@ -124,7 +124,31 @@ public final class DisplayValues {
 
     public List<Line> evaluate(Decl.Display display) {
         List<Line> lines = new ArrayList<>();
-        for (Decl.Display.Entry entry : display.entries()) {
+        for (Evaluated entry : evaluateEntries(display)) {
+            lines.addAll(entry.lines());
+        }
+        return lines;
+    }
+
+    /**
+     * The lines of one entry, with the entry's place in the declaration.
+     *
+     * @param entry index into {@code display.entries()}, scale entries counted
+     */
+    public record Evaluated(int entry, List<Line> lines) {
+    }
+
+    /**
+     * The lines grouped by the entry they come from.
+     *
+     * <p>A button press names its entry by this index. Counting lines instead
+     * went wrong twice: a list brings several lines, and a scale none.
+     */
+    public List<Evaluated> evaluateEntries(Decl.Display display) {
+        List<Evaluated> out = new ArrayList<>();
+        List<Decl.Display.Entry> entries = display.entries();
+        for (int i = 0; i < entries.size(); i++) {
+            Decl.Display.Entry entry = entries.get(i);
             // scale is not a line but a statement about the panel. It sits
             // in the block because it belongs to this display — but it
             // writes nothing.
@@ -134,14 +158,14 @@ public final class DisplayValues {
             // A listing is more than one line — that is its whole point and
             // the difference from row.
             if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
-                lines.addAll(listing(entry));
+                out.add(new Evaluated(i, listing(entry)));
             } else if (entry.kind() == Decl.Display.Entry.Kind.ITEMS) {
-                lines.add(grid(entry));
+                out.add(new Evaluated(i, List.of(grid(entry))));
             } else {
-                lines.add(evaluate(entry));
+                out.add(new Evaluated(i, List.of(evaluate(entry))));
             }
         }
-        return lines;
+        return out;
     }
 
     /**
