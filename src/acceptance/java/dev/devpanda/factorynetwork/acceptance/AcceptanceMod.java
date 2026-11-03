@@ -381,6 +381,7 @@ public final class AcceptanceMod {
                         : controller.graph().connector("hallen_kiste").map(Object::toString).orElse("missing"))
                 + " drivesInHall=" + (controller == null ? "-" : controller.graph().elsewhere().drives().size())
                 + " online=" + (controller != null && controller.isOnline())
+                + " names=" + (controller == null ? "-" : controller.graph().connectorNames())
                 + " workers=" + (controller == null ? "-" : controller.runtime().states());
     }
 

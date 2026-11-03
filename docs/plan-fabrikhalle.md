@@ -111,7 +111,12 @@ Seit a874bc7 und dem Folgecommit zählen auch Laufwerke, Serverschränke,
 Displays, Fabricatoren und Masten in anderen Welten (`FactoryGraph.Elsewhere`):
 „Wo was im Netz steht, muss egal sein“ (User, 03.11.).
 
-Offen ist Modus 2 aus dem Gespräch: die Halle draußen als *eine* Maschine.
+Modus 2, die Halle draußen als *eine* Maschine, ist eine benannte Halle:
+Die Beschriftungspistole auf dem Hallenblock setzt `Halls.Entry.name`, und
+`FactoryGraph.instanceOf` nimmt ihn als Anlagennamen für alles in der Halle,
+wie ein Gateway (`HallNaming`). Geprüft im Client: Name setzen und wieder
+wegnehmen, `erzhalle/hallen_kiste` im Netz, ein Programm mit
+`multiblock Erzhalle` und `erzhalle.befuellen()` wird übernommen.
 
 ### 2.5 Der Bauplan (Klonen)
 

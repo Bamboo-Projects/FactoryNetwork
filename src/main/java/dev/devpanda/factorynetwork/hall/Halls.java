@@ -49,13 +49,20 @@ public final class Halls extends SavedData {
      * @param tier the size, as {@link HallTier#ordinal()}
      * @param door where its block was last placed; empty while it lies in an
      *             inventory or was destroyed
+     * @param name the installation name, as with a gateway: empty means every
+     *             connector inside goes by its own name
      */
-    public record Entry(int tier, Optional<GlobalPos> door) {
+    public record Entry(int tier, Optional<GlobalPos> door, Optional<String> name) {
 
         static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.INT.fieldOf("tier").forGetter(Entry::tier),
-                GlobalPos.CODEC.optionalFieldOf("door").forGetter(Entry::door)
+                GlobalPos.CODEC.optionalFieldOf("door").forGetter(Entry::door),
+                Codec.STRING.optionalFieldOf("name").forGetter(Entry::name)
         ).apply(instance, Entry::new));
+
+        public Entry(int tier, Optional<GlobalPos> door) {
+            this(tier, door, Optional.empty());
+        }
 
         public HallTier size() {
             return HallTier.byOrdinal(tier);
@@ -128,7 +135,22 @@ public final class Halls extends SavedData {
     public void setDoor(int id, @Nullable GlobalPos door) {
         Entry entry = halls.get(id);
         if (entry != null && !entry.door().equals(Optional.ofNullable(door))) {
-            halls.put(id, new Entry(entry.tier(), Optional.ofNullable(door)));
+            halls.put(id, new Entry(entry.tier(), Optional.ofNullable(door), entry.name()));
+            setDirty();
+        }
+    }
+
+    /**
+     * Names the hall as an installation, the way a gateway does: every
+     * connector inside then goes by {@code name/role}, and a multiblock
+     * template in the program drives it as one machine. Blank takes the
+     * name away.
+     */
+    public void setName(int id, @Nullable String name) {
+        Entry entry = halls.get(id);
+        Optional<String> wanted = name == null || name.isBlank() ? Optional.empty() : Optional.of(name.trim());
+        if (entry != null && !entry.name().equals(wanted)) {
+            halls.put(id, new Entry(entry.tier(), entry.door(), wanted));
             setDirty();
         }
     }

@@ -159,6 +159,24 @@ public class LabelGunItem extends Item {
             return InteractionResult.CONSUME;
         }
 
+        // A hall gets an installation name, the way a gateway does: then it
+        // is one machine to the network outside, and its connectors go by
+        // hall/role. The same name again takes it away.
+        if (entity instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity door
+                && door.hall() != dev.devpanda.factorynetwork.hall.HallBlockEntity.NONE) {
+            String wanted = activeLabel(gun);
+            if (wanted.isBlank()) {
+                return InteractionResult.PASS;
+            }
+            String now = dev.devpanda.factorynetwork.hall.HallNaming.toggle(
+                    (net.minecraft.server.level.ServerLevel) level, door, wanted);
+            if (player != null) {
+                say(player, now.isEmpty() ? "message.factorynetwork.hall.unnamed"
+                        : "message.factorynetwork.hall.named", now);
+            }
+            return InteractionResult.CONSUME;
+        }
+
         // A display gets its name from the same gun: it is the same action —
         // telling a block in the network what it is called.
         if (entity instanceof DisplayBlockEntity display) {

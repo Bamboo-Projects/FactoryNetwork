@@ -282,6 +282,8 @@
   "screen.factorynetwork.terminal.stored": "Im Netz: %s",
   "block.factorynetwork.display": "Display",
   "message.factorynetwork.display.named": "Display zeigt jetzt %s",
+  "message.factorynetwork.hall.named": "Halle heißt jetzt %s: drinnen gilt alles als diese Anlage",
+  "message.factorynetwork.hall.unnamed": "Halle hat keinen Anlagennamen mehr",
   "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen.",
   "block.factorynetwork.router": "Router",
   "side.factorynetwork.down": "Unten",

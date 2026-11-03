@@ -67,7 +67,8 @@ public class HallBlock extends Block implements EntityBlock {
     protected InteractionResult useItemOn(net.minecraft.world.item.ItemStack held, BlockState state, Level level,
                                           BlockPos pos, Player player, net.minecraft.world.InteractionHand hand,
                                           BlockHitResult hit) {
-        if (held.getItem() instanceof BlueprintItem) {
+        if (held.getItem() instanceof BlueprintItem
+                || held.getItem() instanceof dev.devpanda.factorynetwork.item.LabelGunItem) {
             return InteractionResult.PASS;
         }
         return super.useItemOn(held, state, level, pos, player, hand, hit);

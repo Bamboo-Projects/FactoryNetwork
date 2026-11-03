@@ -247,6 +247,14 @@ draußen spricht sie mit ihrem Namen an.
 Schleichen mit leerer Hand macht einen Port wieder zur Wand und gibt ihn
 zurück.
 
+**Halle als eine Maschine.** Mit der Beschriftungspistole auf den Hallenblock
+bekommt die Halle einen Anlagennamen, z. B. `erzhalle` — wie mit einem
+Gateway. Dann heißt der Connector `ofen` drinnen im Netz `erzhalle/ofen`, und
+eine `multiblock`-Vorlage steuert die ganze Halle als eine Anlage:
+`erzhalle.befuellen()`. Derselbe Name noch einmal nimmt ihn wieder weg; dann
+heißt drinnen jeder Connector wieder nur, wie er beschriftet ist. Mehr unter
+*Anlagen*.
+
 *Kostet: keinen Kanal, keinen Strom.*
 
 In der Halle gehört alles am Kabel zum Netz draußen: Connector, Laufwerke,

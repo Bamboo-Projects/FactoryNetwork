@@ -77,6 +77,13 @@ hängt, gehört zu dieser Anlage.** An den Connectoren steht weiterhin nur
 
 Umbenennen ist damit **ein Block statt zwölf**.
 
+## Oder: eine ganze Fabrikhalle
+
+Eine Halle wirkt wie ein Gateway, sobald sie einen Namen hat: Beschriftungs-
+pistole auf den Hallenblock, und alles, was drinnen über einen Hallen-Port am
+Netz hängt, gehört zu dieser Anlage. Draußen ist die Halle damit eine
+Maschine, drinnen stehen beliebig viele.
+
 ### Drei Regeln, die du kennen solltest
 
 - **Die Beschriftung gewinnt.** Steht am Connector schon ein Schrägstrich, ist

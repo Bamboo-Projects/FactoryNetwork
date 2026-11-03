@@ -959,8 +959,7 @@ public final class FactoryGraph {
                     // The installation sits at the place and not at the face:
                     // a gateway names what hangs around it, and a cable block
                     // hangs there with all its connectors.
-                    String label = effectiveLabel(connector.label(),
-                            device.dimension() == null ? regions.instanceAt(pos) : null);
+                    String label = effectiveLabel(connector.label(), instanceOf(level, at, device, regions));
                     if (label == null || label.isBlank()) {
                         unnamed.add(device);
                     } else {
@@ -972,6 +971,22 @@ public final class FactoryGraph {
                 default -> { }
             }
         }
+    }
+
+    /**
+     * The installation a connector belongs to: the gateway's at home, the
+     * hall's in a named factory hall (wherever the controller stands).
+     */
+    private static @Nullable String instanceOf(Level home, Level at, DevicePos device,
+                                               GatewayRegions regions) {
+        if (at instanceof net.minecraft.server.level.ServerLevel server
+                && server.dimension() == dev.devpanda.factorynetwork.hall.Halls.DIMENSION) {
+            String hall = dev.devpanda.factorynetwork.hall.HallNaming.instanceAt(server, device.pos());
+            if (hall != null) {
+                return hall;
+            }
+        }
+        return device.dimension() == null ? regions.instanceAt(device.pos()) : null;
     }
 
     /**
