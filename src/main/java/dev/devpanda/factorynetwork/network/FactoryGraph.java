@@ -935,36 +935,59 @@ public final class FactoryGraph {
         return ((long) x << 32) | (z & 0xFFFFFFFFL);
     }
 
-    /** Does this spot belong to this network — as cable, device or display? */
-    public boolean contains(BlockPos pos) {
-        return cables.contains(pos)
-                || racks.contains(pos)
-                // The rack stands in the list only with its lower half; the
-                // upper one belongs just as much.
-                || racks.contains(pos.below())
-                || drives.contains(pos)
-                || routers.contains(pos)
-                || displays.contains(pos)
-                // What the graph collects as a consumer belongs here too. If
-                // one were missing here, it would be in the network but no one
-                // would find it: ControllerRegistry.owning goes through this
-                // question, and on it hang the registration of a remote
-                // device, the opening of the window and every display. In the
-                // game the mast therefore looked as if it hung on nothing at
-                // all.
-                || masts.contains(pos)
-                || fabricators.contains(pos)
-                || bridges.contains(pos)
-                // For the connectors only the place counts: the question is
-                // whether this block belongs to the network, not which of its
-                // faces.
-                || atPos(unnamed, pos)
-                || connectorsByName.values().stream()
-                        .anyMatch(found -> atPos(found, pos));
+    /**
+     * Every spot that belongs to the network, gathered on first use.
+     *
+     * <p>{@link #contains} is asked for every network block placed or broken
+     * anywhere in the level, seven spots per controller, and once per second
+     * per display. Answered from the lists it walked every connector: 146 µs
+     * per placed block with three networks in the bench
+     * (docs/messung-last-2026-11-03.md). The graph does not change after it
+     * is built, so the set stays true.
+     */
+    private volatile Set<BlockPos> members;
+
+    private Set<BlockPos> members() {
+        Set<BlockPos> found = members;
+        if (found != null) {
+            return found;
+        }
+        found = new HashSet<>(cables);
+        found.addAll(racks);
+        // The rack stands in the list only with its lower half; the upper one
+        // belongs just as much.
+        for (BlockPos rack : racks) {
+            found.add(rack.above());
+        }
+        found.addAll(drives);
+        found.addAll(routers);
+        found.addAll(displays);
+        // What the graph collects as a consumer belongs here too. If one were
+        // missing here, it would be in the network but no one would find it:
+        // ControllerRegistry.owning goes through this question, and on it hang
+        // the registration of a remote device, the opening of the window and
+        // every display. In the game the mast therefore looked as if it hung
+        // on nothing at all.
+        found.addAll(masts);
+        found.addAll(fabricators);
+        found.addAll(bridges);
+        // For the connectors only the place counts: the question is whether
+        // this block belongs to the network, not which of its faces.
+        for (DevicePos device : unnamed) {
+            found.add(device.pos().immutable());
+        }
+        for (List<DevicePos> named : connectorsByName.values()) {
+            for (DevicePos device : named) {
+                found.add(device.pos().immutable());
+            }
+        }
+        members = found;
+        return found;
     }
 
-    private static boolean atPos(List<DevicePos> devices, BlockPos pos) {
-        return devices.stream().anyMatch(device -> device.pos().equals(pos));
+    /** Does this spot belong to this network — as cable, device or display? */
+    public boolean contains(BlockPos pos) {
+        return members().contains(pos);
     }
 
     public int cableCount() {
