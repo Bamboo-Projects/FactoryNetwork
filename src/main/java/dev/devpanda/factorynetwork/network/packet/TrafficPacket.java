@@ -32,17 +32,20 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
         implements CustomPacketPayload {
 
     /** A consumer with its amount. */
-    public record Consumer(String name, long bytes) {
+    public record Consumer(String name, long bytes, List<Integer> recent) {
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Consumer> STREAM_CODEC =
                 StreamCodec.composite(
                         ByteBufCodecs.stringUtf8(256), Consumer::name,
                         ByteBufCodecs.VAR_LONG, Consumer::bytes,
+                        ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list(
+                                dev.devpanda.factorynetwork.network.TrafficHistory.RECENT)),
+                        Consumer::recent,
                         Consumer::new);
     }
 
-    /** This many consumers appear in the ranking. */
-    public static final int TOP = 8;
+    /** This many consumers appear in the ranking — every worker of a large factory. */
+    public static final int TOP = 32;
 
     public static final Type<TrafficPacket> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "traffic"));
@@ -74,7 +77,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
     public static TrafficPacket of(
             dev.devpanda.factorynetwork.network.TrafficHistory history, int capacity) {
         List<Consumer> top = history.top(TOP).stream()
-                .map(one -> new Consumer(one.name(), one.bytes()))
+                .map(one -> new Consumer(one.name(), one.bytes(), one.recent()))
                 .toList();
         return new TrafficPacket(history.perSecond(), top, history.total(), capacity);
     }

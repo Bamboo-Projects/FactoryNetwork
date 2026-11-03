@@ -231,8 +231,10 @@ public class NetworkTabView {
             // The consumption per worker sits next to the worker: a separate
             // ranking would have named the same names a second time.
             var verbrauch = new java.util.HashMap<String, Long>();
+            var verlaeufe = new java.util.HashMap<String, List<Integer>>();
             for (TrafficPacket.Consumer one : ClientTraffic.top()) {
                 verbrauch.put(one.name(), one.bytes());
+                verlaeufe.put(one.name(), one.recent());
             }
             for (FlowStatePacket.WorkerLine worker : workers) {
                 int colour = worker.status().equals("HALTED") ? TerminalScreen.BAD
@@ -242,9 +244,15 @@ public class NetworkTabView {
                 String name = worker.name();
                 String menge = verbrauch.containsKey(name)
                         ? Bandwidth.total(verbrauch.get(name)) : "";
-                int platz = cw - 6 - font.width(menge);
+                // The last minute as a small line: who stood still, and when.
+                List<Integer> verlauf = verlaeufe.getOrDefault(name, List.of());
+                int spark = verlauf.isEmpty() ? 0 : 60;
+                int platz = cw - 6 - font.width(menge) - (spark > 0 ? spark + 4 : 0);
                 graphics.text(font, font.plainSubstrByWidth(name, Math.max(10, platz)),
                         cx, line, colour, false);
+                if (spark > 0) {
+                    sparkline(graphics, cx + cw - font.width(menge) - spark - 4, line, spark, verlauf);
+                }
                 if (!menge.isEmpty()) {
                     graphics.text(font, menge, cx + cw - font.width(menge), line,
                             TerminalScreen.TEXT_DIM, false);
@@ -543,6 +551,27 @@ public class NetworkTabView {
             line += LINE;
         }
         return line;
+    }
+
+    /** One worker's last minute, a bar per second, scaled to its own peak. */
+    private static void sparkline(GuiGraphicsExtractor graphics, int left, int top, int width,
+                                  List<Integer> values) {
+        int peak = 1;
+        for (int value : values) {
+            peak = Math.max(peak, value);
+        }
+        int height = 7;
+        graphics.fill(left, top + height, left + width, top + height + 1, TerminalScreen.TEXT_DIM);
+        int count = values.size();
+        for (int i = 0; i < count; i++) {
+            int value = values.get(i);
+            if (value <= 0) {
+                continue;
+            }
+            int x = left + (width - count) + i;
+            int bar = Math.max(1, value * height / peak);
+            graphics.fill(x, top + height - bar, x + 1, top + height, TerminalScreen.GOOD);
+        }
     }
 
     /** What the line shows: the reason, otherwise the state. */

@@ -27,8 +27,18 @@ public class TrafficHistory {
     /** Five minutes of history — as far back as the question "what just happened" reaches. */
     public static final int SAMPLES = 300;
 
-    /** A device and what it has moved. */
-    public record Consumer(String name, long bytes) { }
+    /** A device and what it has moved, with its last minute second by second. */
+    public record Consumer(String name, long bytes, List<Integer> recent) { }
+
+    /**
+     * One minute per name: enough to see who stood still and when, small
+     * enough to keep for every worker. The whole five minutes stay for the
+     * network's sum only.
+     */
+    public static final int RECENT = 60;
+
+    private final Map<String, Deque<Integer>> recentByDevice = new LinkedHashMap<>();
+    private final Map<String, Integer> currentByDevice = new LinkedHashMap<>();
 
     private final Deque<Integer> samples = new ArrayDeque<>();
     private final Map<String, Long> byDevice = new LinkedHashMap<>();
@@ -51,6 +61,7 @@ public class TrafficHistory {
         currentSecond += bytes;
         total += bytes;
         byDevice.merge(device, (long) bytes, Long::sum);
+        currentByDevice.merge(device, bytes, Integer::sum);
     }
 
     /**
@@ -70,6 +81,16 @@ public class TrafficHistory {
         while (samples.size() > SAMPLES) {
             samples.removeFirst();
         }
+        // Every name that ever moved gets its second, a zero too: a worker
+        // that stopped shows a falling line, not a frozen one.
+        for (String device : byDevice.keySet()) {
+            Deque<Integer> recent = recentByDevice.computeIfAbsent(device, key -> new ArrayDeque<>());
+            recent.addLast(currentByDevice.getOrDefault(device, 0));
+            while (recent.size() > RECENT) {
+                recent.removeFirst();
+            }
+        }
+        currentByDevice.clear();
     }
 
     /** The history, oldest sample first. */
@@ -94,7 +115,8 @@ public class TrafficHistory {
      */
     public List<Consumer> top(int count) {
         List<Consumer> found = new ArrayList<>();
-        byDevice.forEach((name, bytes) -> found.add(new Consumer(name, bytes)));
+        byDevice.forEach((name, bytes) -> found.add(new Consumer(name, bytes,
+                List.copyOf(recentByDevice.getOrDefault(name, new ArrayDeque<>())))));
         found.sort(Comparator.comparingLong(Consumer::bytes).reversed());
         return List.copyOf(found.subList(0, Math.min(count, found.size())));
     }

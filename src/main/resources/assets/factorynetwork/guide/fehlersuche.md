@@ -137,6 +137,13 @@ Ergebnis vollständig ist, weiß von außen niemand — der Ausgang kann von vor
 gefüllt sein, und jede Mod zählt anders. Was „fertig" bedeutet, schreibst du
 selbst dazu.
 
+### Wer hat wann gestanden?
+
+Im Reiter **Netz** steht neben jedem Worker ein kleiner Verlauf: seine letzte
+Minute, ein Strich je Sekunde, gemessen an seinem eigenen Höchstwert. Eine
+Lücke darin ist die Zeit, in der er nichts bewegt hat — die Frage „lief das
+eben?“ beantwortet sich ohne Danebenstehen.
+
 ## 4. Und wenn es dann immer noch nichts tut
 
 Die selteneren Ursachen, in dieser Reihenfolge:
