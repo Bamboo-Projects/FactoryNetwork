@@ -61,6 +61,7 @@ public final class FnConfig {
     private static final ModConfigSpec.IntValue CRAFTING_BUDGET;
     private static final ModConfigSpec.IntValue GLOBAL_LIST;
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
+    private static final ModConfigSpec.BooleanValue KEEP_AWAKE;
 
     public static final ModConfigSpec SERVER_SPEC;
 
@@ -113,6 +114,16 @@ public final class FnConfig {
                         "Die Beschriftungspistole ist nicht dabei: Sie ändert die Welt,",
                         "und dafür gibt es Schutzmods.")
                 .defineEnum("programs", FnProtection.Mode.OFF);
+        builder.pop();
+        builder.comment("Was der Server tut, wenn niemand online ist.")
+                .push("server");
+        KEEP_AWAKE = builder
+                .comment("Ab Minecraft 1.21.2 pausiert ein Dedicated Server, wenn",
+                        "pause-when-empty-seconds Sekunden lang (Vorgabe 60) niemand online ist.",
+                        "Dann steht jede Fabrik still, auch in forceloaded Chunks.",
+                        "true: Solange ein Controller geladen ist, pausiert der Server nicht.",
+                        "Gleichwertig: pause-when-empty-seconds=0 in server.properties.")
+                .define("keepAwakeWhileFactoriesRun", false);
         builder.pop();
         SERVER_SPEC = builder.build();
     }
@@ -167,5 +178,10 @@ public final class FnConfig {
      */
     public static FnProtection.Mode protection() {
         return SERVER_SPEC.isLoaded() ? PROTECTION.get() : FnProtection.Mode.OFF;
+    }
+
+    /** Whether a server with a running factory should skip the empty-server pause. */
+    public static boolean keepAwakeWhileFactoriesRun() {
+        return SERVER_SPEC.isLoaded() && KEEP_AWAKE.get();
     }
 }

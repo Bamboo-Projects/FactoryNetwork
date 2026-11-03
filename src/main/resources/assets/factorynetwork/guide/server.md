@@ -7,8 +7,9 @@ navigation:
 # Für Serverbetreiber
 
 Diese Seite ist für den, der den Server betreibt — nicht für den, der darauf
-spielt. Sie beantwortet zwei Fragen: **Wer darf eine fremde Fabrik umbauen**,
-und **wie viel darf ein Programm kosten**.
+spielt. Sie beantwortet drei Fragen: **Wer darf eine fremde Fabrik umbauen**,
+**wie viel darf ein Programm kosten**, und **was passiert, wenn niemand online
+ist**.
 
 Beides steht in `config/factorynetwork-server.toml`. Die Datei entsteht beim
 ersten Start und liegt bei der Welt, nicht beim Client — die Werte gelten also
@@ -101,6 +102,43 @@ das Programm mit einer Meldung an.
 
 Er ist der einzige Wert, der in einer Schleife wachsen kann **und** den
 Neustart übersteht — deshalb hat er eine eigene Grenze.
+
+## Wenn niemand online ist
+
+**Ab Minecraft 1.21.2 pausiert ein Dedicated Server, sobald eine Minute lang
+niemand online ist.** Dann steht jede Fabrik still: kein Worker, kein Ablauf,
+keine Fabrikhalle. Auch Chunks, die per `/forceload` oder von einem
+Chunkloader gehalten werden, ticken in der Pause nicht. Die Pause hält den
+ganzen Server an, nicht einzelne Chunks.
+
+Gesteuert wird das in der `server.properties`:
+
+```properties
+pause-when-empty-seconds=60
+```
+
+Fehlt die Zeile, schreibt der Server sie beim ersten Start mit 60 hinein. Das
+gilt auch für Modpack-Server, wenn der Pack sie nicht selbst auf `0` setzt.
+
+Sollen Fabriken weiterlaufen, während niemand online ist, gibt es zwei Wege:
+
+- **In der `server.properties`** `pause-when-empty-seconds=0` setzen. Dann
+  pausiert der Server nie.
+- **In `factorynetwork-server.toml`** diesen Wert einschalten:
+
+  ```toml
+  [server]
+  keepAwakeWhileFactoriesRun = true
+  ```
+
+  Dann pausiert der Server nicht, solange ein Controller geladen ist. Ohne
+  geladene Fabrik pausiert er wie gewohnt.
+
+**Die Vorgabe ist `false`.** Ein Server, der auch leer weiterrechnet, kostet
+Strom und Leistung, und das soll der Betreiber entscheiden, nicht die Mod.
+
+Ist der Server schon in der Pause, wenn du den Wert einschaltest, wacht er
+erst mit dem nächsten Spieler auf. Ab da hält er die Fabriken wach.
 
 ## Was nicht in dieser Datei steht
 

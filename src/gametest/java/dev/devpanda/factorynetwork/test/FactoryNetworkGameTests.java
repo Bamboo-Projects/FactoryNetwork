@@ -10392,6 +10392,31 @@ public final class FactoryNetworkGameTests {
      * connector per machine, the fuel still goes into the fuel slot), and
      * exactly why the price is stated in sprache.md.
      */
+    /**
+     * With a controller loaded, the empty-server count is reset, so a
+     * dedicated server does not pause while a factory runs (if the option
+     * is on; the switch itself is plain config).
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aRunningFactoryKeepsTheServerAwake(GameTestHelper helper) {
+        buildSetup(helper);
+        helper.startSequence()
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    var server = helper.getLevel().getServer();
+                    try {
+                        dev.devpanda.factorynetwork.ServerAwake.setEmptyTicks(server, 1000);
+                        helper.assertTrue(dev.devpanda.factorynetwork.ServerAwake.holdAwake(server),
+                                "Mit geladenem Controller wird der Zähler zurückgesetzt");
+                        helper.assertValueEqual(dev.devpanda.factorynetwork.ServerAwake.emptyTicks(server), 0,
+                                "Leerlaufzähler");
+                    } catch (IllegalAccessException e) {
+                        helper.fail("Kein Zugriff auf den Leerlaufzähler: " + e);
+                    }
+                })
+                .thenSucceed();
+    }
+
     /** A worker keeps a certain slot stocked, the fuel case from the guide. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aWorkerKeepsACertainSlotStocked(GameTestHelper helper) {
