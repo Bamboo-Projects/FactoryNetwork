@@ -525,7 +525,7 @@ public class NetworkTabView {
             if (line > y + height - LINE) {
                 break;
             }
-            boolean stale = "STALE".equals(flow.status());
+            boolean stale = "STALE".equals(flow.status()) || "PAUSED".equals(flow.status());
             int colour = stale ? TerminalScreen.WARN
                     : "FAILED".equals(flow.status()) ? TerminalScreen.BAD
                     : "QUEUED".equals(flow.status()) ? TerminalScreen.WARN

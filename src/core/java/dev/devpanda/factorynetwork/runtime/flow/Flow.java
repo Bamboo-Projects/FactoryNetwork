@@ -49,7 +49,39 @@ public final class Flow {
          * up in the terminal with a choice: abort or let it continue. That is
          * how it was decided.
          */
-        STALE
+        STALE,
+        /**
+         * Stopped at a breakpoint the editor set, until the player lets it
+         * go on. Only for the editor session: after a restart it runs.
+         */
+        PAUSED
+    }
+
+    /** The statement this flow stopped in front of, and must not stop at again. */
+    private Object pausedAt;
+
+    /** Stops in front of this statement, at a breakpoint. */
+    public void pause(Object statement, String where) {
+        status = Status.PAUSED;
+        pausedAt = statement;
+        detail = "angehalten: " + where;
+    }
+
+    /** Whether the breakpoint on this statement was just let go. */
+    public boolean passes(Object statement) {
+        if (pausedAt == statement) {
+            pausedAt = null;
+            return true;
+        }
+        return false;
+    }
+
+    /** Lets a paused flow go on, past its breakpoint. */
+    public void proceed() {
+        if (status == Status.PAUSED) {
+            status = Status.RUNNING;
+            detail = "";
+        }
     }
 
     private final long id;

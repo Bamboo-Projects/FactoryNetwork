@@ -90,6 +90,7 @@ public class CodeTabView {
         this.editor = new CodeEditor(font, x + 2, y + FILE_ROW + 2, width - 4,
                 height - FILE_ROW - FOOTER - 2, project.source(open));
         this.editor.setChangeListener(this::onChanged);
+        this.editor.nameFile(open);
         recheck();
     }
 

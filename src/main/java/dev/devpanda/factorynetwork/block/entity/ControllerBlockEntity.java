@@ -2754,10 +2754,39 @@ public class ControllerBlockEntity extends BlockEntity {
      * was loaded would otherwise meet an empty engine — and the waiting flows
      * would come a tick too late.
      */
+    /** Breakpoint lines per file, as the editor set them; not saved. */
+    private final Map<String, java.util.Set<Integer>> breakpointLines = new java.util.HashMap<>();
+
+    /**
+     * The editor set breakpoints in a file. They are resolved against the
+     * running program each time it or they change, and belong to the session:
+     * nothing of them is saved.
+     */
+    public void setBreakpoints(String file, java.util.Set<Integer> lines) {
+        if (lines.isEmpty()) {
+            breakpointLines.remove(file);
+        } else {
+            breakpointLines.put(file, java.util.Set.copyOf(lines));
+        }
+        applyBreakpoints();
+    }
+
+    private void applyBreakpoints() {
+        if (flows == null) {
+            return;
+        }
+        java.util.Set<Object> statements = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        breakpointLines.forEach((file, lines) -> statements.addAll(
+                dev.devpanda.factorynetwork.runtime.flow.Breakpoints.resolve(
+                        program, project.source(file), lines)));
+        flows.setBreakpoints(statements);
+    }
+
     public FlowEngine flowEngine() {
         if (flows == null && level != null) {
             flows = new FlowEngine(program, new Interpreter(program,
                     newHost(), dev.devpanda.factorynetwork.FnConfig.interpreterLimits()));
+            applyBreakpoints();
         }
         if (flows != null && pendingFlows != null) {
             CompoundTag saved = pendingFlows;

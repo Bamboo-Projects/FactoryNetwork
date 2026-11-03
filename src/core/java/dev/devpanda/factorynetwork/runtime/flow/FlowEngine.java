@@ -89,6 +89,37 @@ public final class FlowEngine {
     private final Interpreter interpreter;
     private final BlockIndex blocks;
     private final Map<Long, Flow> flows = new LinkedHashMap<>();
+
+    /**
+     * Statements a flow stops in front of — set from the editor, by
+     * identity: the same line in two files is two statements.
+     */
+    private java.util.Set<Object> breakpoints = java.util.Set.of();
+
+    public void setBreakpoints(java.util.Set<Object> statements) {
+        java.util.Set<Object> identity = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        identity.addAll(statements);
+        breakpoints = identity;
+        // A breakpoint taken away lets go of whoever waits at it.
+        for (Flow flow : flows.values()) {
+            if (flow.status() == Flow.Status.PAUSED && !flow.stack().isEmpty()) {
+                Frame frame = flow.top();
+                if (!frame.atEnd() && !breakpoints.contains(frame.block().statements().get(frame.index()))) {
+                    flow.proceed();
+                }
+            }
+        }
+    }
+
+    /** Lets a flow stopped at a breakpoint go on. */
+    public boolean proceed(long id) {
+        Flow flow = flows.get(id);
+        if (flow == null || flow.status() != Flow.Status.PAUSED) {
+            return false;
+        }
+        flow.proceed();
+        return true;
+    }
     private final List<Flow> failed = new ArrayList<>();
     private final java.util.Deque<PendingEvent> pending = new java.util.ArrayDeque<>();
     private long nextId = 1;
@@ -583,6 +614,10 @@ public final class FlowEngine {
                 continue;
             }
             Stmt statement = frame.block().statements().get(frame.index());
+            if (breakpoints.contains(statement) && !flow.passes(statement)) {
+                flow.pause(statement, "Zeile " + statement.span().line());
+                return;
+            }
             try {
                 // Whoever is writing is noted next to the log line. Without
                 // that, the log says "coal is running low" and nobody knows

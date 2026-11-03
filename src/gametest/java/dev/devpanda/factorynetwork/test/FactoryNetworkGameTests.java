@@ -936,6 +936,40 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * A breakpoint stops a flow in front of its line, and "weiter" lets it
+     * go on. Taking the breakpoint away lets go as well.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aBreakpointStopsAFlowUntilItGoesOn(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                global schritte = 0
+
+                fn lauf() {
+                    schritte = 1
+                    schritte = 2
+                }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        var engine = entity.flowEngine();
+        entity.setBreakpoints("main.mf", java.util.Set.of(5));
+        var flow = engine.start("lauf", java.util.List.of());
+        engine.tick(helper.getLevel().getGameTime());
+        helper.assertValueEqual(flow.status(), dev.devpanda.factorynetwork.runtime.flow.Flow.Status.PAUSED,
+                "Zustand am Haltepunkt");
+        helper.assertValueEqual(entity.globals().get("schritte"),
+                new dev.devpanda.factorynetwork.runtime.Value.Int(1), "vor dem Haltepunkt");
+        helper.assertTrue(engine.proceed(flow.id()), "weiter ging nicht");
+        engine.tick(helper.getLevel().getGameTime());
+        helper.assertValueEqual(flow.status(), dev.devpanda.factorynetwork.runtime.flow.Flow.Status.DONE,
+                "nach weiter");
+        helper.assertValueEqual(entity.globals().get("schritte"),
+                new dev.devpanda.factorynetwork.runtime.Value.Int(2), "nach dem Haltepunkt");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aGroupTakesEveryMatchingConnector(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

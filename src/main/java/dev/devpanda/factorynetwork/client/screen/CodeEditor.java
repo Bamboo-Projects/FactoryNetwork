@@ -230,6 +230,16 @@ public class CodeEditor {
      * them would write that old text over the new one. Then the file starts
      * fresh, exactly as {@link #setText} does.
      */
+    /**
+     * Names the file the editor was built with. Breakpoints and the parked
+     * state go by the name; without it the first file had none.
+     */
+    public void nameFile(String name) {
+        if (openName == null) {
+            openName = name;
+        }
+    }
+
     public void openFile(String name, String text) {
         if (openName != null) {
             parked.remove(openName);
@@ -351,6 +361,10 @@ public class CodeEditor {
             // The marker for a diagnostic: the stripe in the text says that
             // something is there, but not what. The marker is the place the
             // message hangs on — on hover, it shows there.
+            // A breakpoint: a red dot left of the number.
+            if (dev.devpanda.factorynetwork.client.ClientBreakpoints.has(openName, lineIndex + 1)) {
+                graphics.fill(x + 4, lineY + 1, x + 9, lineY + 6, 0xFFE0453B);
+            }
             Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
             if (problem != null) {
                 graphics.fill(x + 1, lineY - 1, x + 3, lineY + LINE_HEIGHT - 2,
@@ -2245,6 +2259,11 @@ public class CodeEditor {
             return true;
         }
         int lineIndex = lineAt(mouseY);
+        // A click into the gutter sets or takes away a breakpoint.
+        if (button == 0 && mouseX < x + GUTTER_WIDTH && lineIndex < lines.size()) {
+            dev.devpanda.factorynetwork.client.ClientBreakpoints.toggle(openName, lineIndex + 1);
+            return true;
+        }
         int column = columnAt(lineIndex, mouseX);
 
         long now = System.currentTimeMillis();

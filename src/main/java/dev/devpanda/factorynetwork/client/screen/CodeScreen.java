@@ -159,6 +159,7 @@ public class CodeScreen extends Screen {
         editor = new CodeEditor(font, editorX, contentTop, width - editorX - MARGIN,
                 contentHeight, project.source(open));
         editor.setChangeListener(this::onTextChanged);
+        editor.nameFile(open);
         recheck();
     }
 

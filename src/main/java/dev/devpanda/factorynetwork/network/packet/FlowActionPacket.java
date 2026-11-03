@@ -44,7 +44,11 @@ public record FlowActionPacket(long id, boolean keep) implements CustomPacketPay
                     return;
                 }
                 if (packet.keep()) {
-                    controller.flowEngine().unstale(packet.id());
+                    // Keep means "go on": past a breakpoint, or after a
+                    // program change.
+                    if (!controller.flowEngine().proceed(packet.id())) {
+                        controller.flowEngine().unstale(packet.id());
+                    }
                 } else {
                     controller.flowEngine().abort(packet.id());
                 }

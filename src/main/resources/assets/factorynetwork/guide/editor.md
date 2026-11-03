@@ -120,6 +120,17 @@ Zählungen, Rechnungen, `redstone()` ohne Zahl. Was etwas ändern würde —
 `redstone(15)`, `insert`, `click`, `craft`, eine Funktion des Programms —
 zeigt statt eines Werts einen Hinweis.
 
+## Haltepunkte
+
+Ein Klick links neben die Zeilennummer setzt einen **Haltepunkt**, ein roter
+Punkt. Kommt ein Ablauf — ein `on`-Block oder eine Funktion, die wartet — an
+diese Zeile, bleibt er davor stehen. Im Reiter **Netz** steht er dann unter
+*Abläufe* als angehalten, mit „weiter“ und „abbrechen“. Werte unter der Maus
+zeigen währenddessen, wie es gerade steht.
+
+Haltepunkte gehören zur Sitzung: Schließt du das Terminal, sind sie weg, und
+wer an einem stand, läuft weiter. Nach einem Neustart läuft ohnehin alles.
+
 ## Ordner im Projekt
 
 Ein Dateiname darf einen Ordner nennen: `erz/brecher.mf`, auch zwei Ebenen

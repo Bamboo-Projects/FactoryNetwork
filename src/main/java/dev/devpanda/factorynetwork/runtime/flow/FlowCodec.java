@@ -245,6 +245,10 @@ public final class FlowCodec {
     }
 
     private static Flow.Status statusOf(String name) {
+        // A breakpoint belongs to an editor session; after a restart it runs.
+        if (Flow.Status.PAUSED.name().equals(name)) {
+            return Flow.Status.RUNNING;
+        }
         for (Flow.Status status : Flow.Status.values()) {
             if (status.name().equals(name)) {
                 return status;
