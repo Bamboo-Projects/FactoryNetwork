@@ -137,11 +137,33 @@ public final class FactoryGraph {
     private final int routersAbroad;
     private final int bridgesAbroad;
     /**
-     * Drives, racks, displays and the like found in another world. They are
-     * not part of the network: storage, computing power and screens stay
-     * with the controller. Counted, so the controller can say so.
+     * Drives, racks, displays, fabricators and masts in other worlds. Where a
+     * device stands does not matter to the network; they are kept apart from
+     * the lists above only because those hold bare positions in the
+     * controller's world.
      */
-    private final int skippedAbroad;
+    private final Elsewhere elsewhere;
+
+    /** The devices of the network that stand outside the controller's world. */
+    public record Elsewhere(List<GlobalPos> drives, List<GlobalPos> racks,
+                            List<GlobalPos> fabricators, List<GlobalPos> displays,
+                            List<GlobalPos> masts) {
+
+        static final Elsewhere NONE = new Elsewhere(List.of(), List.of(), List.of(), List.of(), List.of());
+
+        /** All of them, for the membership question. */
+        List<GlobalPos> all() {
+            List<GlobalPos> found = new ArrayList<>(drives);
+            found.addAll(racks);
+            for (GlobalPos rack : racks) {
+                found.add(GlobalPos.of(rack.dimension(), rack.pos().above()));
+            }
+            found.addAll(fabricators);
+            found.addAll(displays);
+            found.addAll(masts);
+            return found;
+        }
+    }
     /**
      * Hall blocks and hall ports in the controller's world: the places where
      * the line goes through a hall wall. They belong to the network like a
@@ -162,13 +184,13 @@ public final class FactoryGraph {
                          List<BlockPos> masts, Set<BlockPos> bridges,
                          boolean truncated, @Nullable ResourceKey<Level> home,
                          Set<GlobalPos> abroad, int routersAbroad, int bridgesAbroad,
-                         int skippedAbroad, Set<BlockPos> portals) {
+                         Elsewhere elsewhere, Set<BlockPos> portals) {
         this.portals = portals;
         this.home = home;
         this.abroad = abroad;
         this.routersAbroad = routersAbroad;
         this.bridgesAbroad = bridgesAbroad;
-        this.skippedAbroad = skippedAbroad;
+        this.elsewhere = elsewhere;
         this.masts = masts;
         this.bridges = bridges;
         this.contested = contested;
@@ -191,7 +213,7 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.of(), List.of(), Map.of(), List.of(),
                 Set.of(), Set.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), Set.of(), List.of(), Set.of(), false,
-                null, Set.of(), 0, 0, 0, Set.of());
+                null, Set.of(), 0, 0, Elsewhere.NONE, Set.of());
     }
 
     /** Routers in other worlds; they draw power like the ones at home. */
@@ -204,9 +226,9 @@ public final class FactoryGraph {
         return bridgesAbroad;
     }
 
-    /** Devices in other worlds that only work at home (drives, racks, displays). */
-    public int skippedAbroad() {
-        return skippedAbroad;
+    /** Drives, racks, displays, fabricators and masts in other worlds. */
+    public Elsewhere elsewhere() {
+        return elsewhere;
     }
 
     /** The fabricators on the network. */
@@ -424,10 +446,8 @@ public final class FactoryGraph {
                     // and which one carries it is decided only once all paths
                     // are known.
                     Consumer kind = consumerAt(state);
-                    if (kind != null && dim != null) {
-                        abroad.skipped++;
-                    } else if (kind != null) {
-                        DevicePos device = deviceAt(state, next);
+                    if (kind != null) {
+                        DevicePos device = deviceAt(state, next, dim);
                         reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                 .add(current);
                         kinds.put(device, kind);
@@ -450,7 +470,7 @@ public final class FactoryGraph {
         GatewayRegions regions = gateways.isEmpty()
                 ? GatewayRegions.EMPTY : GatewayRegions.of(level, gateways, maxNodes());
         assignPaths(level, reachable, kinds, parents, connectors, unnamed,
-                paths, displays, drives, racks, fabricators, masts, regions);
+                paths, displays, drives, racks, fabricators, masts, regions, abroad);
 
         Map<String, List<DevicePos>> frozen = new LinkedHashMap<>();
         connectors.forEach((label, positions) -> frozen.put(label, List.copyOf(positions)));
@@ -466,7 +486,10 @@ public final class FactoryGraph {
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
                 List.copyOf(masts), Set.copyOf(bridges), truncated, level.dimension(),
-                Set.copyOf(abroad.members), abroad.routers, abroad.bridges, abroad.skipped,
+                Set.copyOf(abroad.members), abroad.routers, abroad.bridges,
+                new Elsewhere(List.copyOf(abroad.drives), List.copyOf(abroad.racks),
+                        List.copyOf(abroad.fabricators), List.copyOf(abroad.displays),
+                        List.copyOf(abroad.masts)),
                 Set.copyOf(abroad.portals));
     }
 
@@ -477,7 +500,11 @@ public final class FactoryGraph {
         final Set<BlockPos> portals = new HashSet<>();
         int routers;
         int bridges;
-        int skipped;
+        final List<GlobalPos> drives = new ArrayList<>();
+        final List<GlobalPos> racks = new ArrayList<>();
+        final List<GlobalPos> fabricators = new ArrayList<>();
+        final List<GlobalPos> displays = new ArrayList<>();
+        final List<GlobalPos> masts = new ArrayList<>();
 
         /** Adds a spot; {@code false} if it was there already or is at home. */
         boolean add(@Nullable ResourceKey<Level> dim, BlockPos pos) {
@@ -548,11 +575,12 @@ public final class FactoryGraph {
      * <p>A face gets only one connector. Everything else is a whole block:
      * whoever cables up a drive from two sides has one drive and not two.
      */
-    private static DevicePos deviceAt(BlockState state, BlockPos pos) {
+    private static DevicePos deviceAt(BlockState state, BlockPos pos,
+                                      @Nullable ResourceKey<Level> dimension) {
         if (state.getBlock() instanceof RackBlock) {
-            return DevicePos.of(RackBlock.baseOf(state, pos));
+            return DevicePos.of(RackBlock.baseOf(state, pos), dimension);
         }
-        return DevicePos.of(pos);
+        return DevicePos.of(pos, dimension);
     }
 
     /**
@@ -772,7 +800,7 @@ public final class FactoryGraph {
      */
     private static void visitDisplay(BlockPos pos, Node from, Map<Node, Node> parents,
                                      Deque<Node> queue) {
-        Node node = new Node(pos.immutable(), from.colour());
+        Node node = new Node(pos.immutable(), from.colour(), from.dimension());
         if (!parents.containsKey(node)) {
             parents.put(node, from);
             queue.add(node);
@@ -878,7 +906,8 @@ public final class FactoryGraph {
                                        Map<DevicePos, List<Node>> paths,
                                        List<BlockPos> displays, List<BlockPos> drives,
                                        List<BlockPos> racks, List<BlockPos> fabricators,
-                                       List<BlockPos> masts, GatewayRegions regions) {
+                                       List<BlockPos> masts, GatewayRegions regions,
+                                       Abroad abroad) {
         for (Map.Entry<DevicePos, List<Node>> entry : reachable.entrySet()) {
             DevicePos device = entry.getKey();
             BlockPos pos = device.pos();
@@ -908,6 +937,18 @@ public final class FactoryGraph {
             }
             paths.put(device, chosen);
 
+            if (kind != Consumer.CONNECTOR && device.dimension() != null) {
+                GlobalPos far = GlobalPos.of(device.dimension(), pos);
+                switch (kind) {
+                    case DRIVE -> abroad.drives.add(far);
+                    case RACK -> abroad.racks.add(far);
+                    case FABRICATOR -> abroad.fabricators.add(far);
+                    case DISPLAY -> abroad.displays.add(far);
+                    case MAST -> abroad.masts.add(far);
+                    default -> { }
+                }
+                continue;
+            }
             switch (kind) {
                 case DRIVE -> drives.add(pos);
                 case RACK -> racks.add(pos);
@@ -1116,7 +1157,8 @@ public final class FactoryGraph {
      */
     public int deviceCount() {
         return connectorCount() + drives.size() + racks.size() + displays.size()
-                + routers.size();
+                + routers.size() + routersAbroad + elsewhere.drives().size()
+                + elsewhere.racks().size() + elsewhere.displays().size();
     }
 
     /** Displays on the network. */
@@ -1199,6 +1241,7 @@ public final class FactoryGraph {
         // For the connectors only the place counts: the question is whether
         // this block belongs to the network, not which of its faces.
         Set<GlobalPos> far = new HashSet<>(abroad);
+        far.addAll(elsewhere.all());
         for (DevicePos device : unnamed) {
             addDevice(found, far, device);
         }
@@ -1237,9 +1280,6 @@ public final class FactoryGraph {
         if (home == null || level.dimension() == home) {
             return contains(pos);
         }
-        if (abroad.isEmpty()) {
-            return false;
-        }
         members();
         return membersAbroad.contains(GlobalPos.of(level.dimension(), pos.immutable()));
     }
@@ -1248,9 +1288,6 @@ public final class FactoryGraph {
     public boolean nearChunk(ResourceKey<Level> dimension, int chunkX, int chunkZ) {
         if (home == null || dimension == home) {
             return nearChunk(chunkX, chunkZ);
-        }
-        if (abroad.isEmpty()) {
-            return false;
         }
         members();
         for (GlobalPos pos : membersAbroad) {

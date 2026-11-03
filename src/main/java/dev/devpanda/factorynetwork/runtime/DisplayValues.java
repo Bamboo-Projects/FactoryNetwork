@@ -474,7 +474,10 @@ public final class DisplayValues {
         }
         // Without a connector there is no answer — same as with online.
         return graph.connector(device.value())
-                .map(where -> level.getBestNeighborSignal(where.pos()))
+                .map(where -> {
+                    var at = where.level(level);
+                    return at == null || !at.isLoaded(where.pos()) ? null : at.getBestNeighborSignal(where.pos());
+                })
                 .orElse(null);
     }
 
@@ -546,7 +549,7 @@ public final class DisplayValues {
         if (measure == null || connector == null) {
             return null;
         }
-        return measure.at(level, connector.pos().relative(connector.facing()));
+        return measure.at(connector.level(), connector.pos().relative(connector.facing()));
     }
 
     /** Gives the display the network's other stores, so fluids and essentia can be counted too. */
@@ -722,11 +725,13 @@ public final class DisplayValues {
     private dev.devpanda.factorynetwork.block.entity.ConnectorPart connectorNamed(
             String device) {
         var where = graph.connector(device).orElse(null);
-        if (where == null || where.side() == null || level == null
-                || !level.isLoaded(where.pos())) {
+        // The controller's world is the home of every name; a connector
+        // behind a bridge or a hall port stands in its own.
+        var at = where == null || level == null ? null : where.level(level);
+        if (where == null || where.side() == null || at == null || !at.isLoaded(where.pos())) {
             return null;
         }
         return dev.devpanda.factorynetwork.block.entity.Connectors
-                .at(level, where.pos(), where.side());
+                .at(at, where.pos(), where.side());
     }
 }

@@ -8048,6 +8048,58 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * Where a drive stands does not matter: one in the Nether, behind a
+     * bridge, is the network's storage like one next to the controller.
+     *
+     * <p>The controller at home has no drive of its own, so anything it
+     * stores lands in the Nether — and without the drive there it would store
+     * nothing at all.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aDriveInTheNetherIsTheNetworksStorage(GameTestHelper helper) {
+        var nether = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        placeCable(helper, controller.east(), dev.devpanda.factorynetwork.block.CableColour.NONE);
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        placeBridge(helper, helper.absolutePos(controller.east(2)), paar.split(1));
+
+        BlockPos dort = new BlockPos(30_100, 70, 30_000);
+        nether.setChunkForced(dort.getX() >> 4, dort.getZ() >> 4, true);
+        nether.setBlockAndUpdate(dort, FnBlocks.BRIDGE.get().defaultBlockState());
+        if (nether.getBlockEntity(dort)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity bridge) {
+            bridge.setItem(0, paar);
+        }
+        BlockPos kabel = dort.east();
+        nether.setBlockAndUpdate(kabel, FnBlocks.CABLE.get().defaultBlockState());
+        BlockPos laufwerk = kabel.east();
+        nether.setBlockAndUpdate(laufwerk, FnBlocks.DRIVE.get().defaultBlockState());
+        if (nether.getBlockEntity(laufwerk)
+                instanceof dev.devpanda.factorynetwork.block.entity.DriveBlockEntity drive) {
+            drive.setItem(0, new ItemStack(FnItems.CELLS
+                    .get(dev.devpanda.factorynetwork.storage.CellTier.K1).get()));
+        }
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        // insert answers with what did not fit.
+        long left = entity.storage().insert(Items.COBBLESTONE, 32);
+        long counted = entity.storage().count(Items.COBBLESTONE);
+        boolean contains = entity.graph().contains(nether, laufwerk);
+
+        nether.removeBlock(laufwerk, false);
+        nether.removeBlock(kabel, false);
+        nether.removeBlock(dort, false);
+        nether.setChunkForced(dort.getX() >> 4, dort.getZ() >> 4, false);
+        helper.assertTrue(contains, "das Laufwerk im Nether gehört nicht zum Netz");
+        helper.assertValueEqual(entity.graph().elsewhere().drives().size(), 1, "Laufwerke im Nether");
+        helper.assertValueEqual(left, 0L, "übrige Pflastersteine");
+        helper.assertValueEqual(counted, 32L, "gezählte Pflastersteine");
+        helper.succeed();
+    }
+
+    /**
      * Two bridges with the same number find each other — and only those.
      *
      * <p><b>No searching, registering.</b> A bridge that had to search the

@@ -379,6 +379,8 @@ public final class AcceptanceMod {
                 + " outside=" + count(level, HALL_DOOR.east(2).north())
                 + " connector=" + (controller == null ? "no controller"
                         : controller.graph().connector("hallen_kiste").map(Object::toString).orElse("missing"))
+                + " drivesInHall=" + (controller == null ? "-" : controller.graph().elsewhere().drives().size())
+                + " online=" + (controller != null && controller.isOnline())
                 + " workers=" + (controller == null ? "-" : controller.runtime().states());
     }
 

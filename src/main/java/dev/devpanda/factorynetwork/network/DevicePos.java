@@ -58,6 +58,12 @@ public record DevicePos(BlockPos pos, @Nullable Direction side,
         return new DevicePos(pos, null);
     }
 
+    /** A whole block in another world; {@code null} is the controller's. */
+    public static DevicePos of(BlockPos pos,
+                               net.minecraft.resources.@Nullable ResourceKey<net.minecraft.world.level.Level> dimension) {
+        return new DevicePos(pos, null, dimension);
+    }
+
     /** A connector on a face. */
     public static DevicePos of(BlockPos pos, Direction side) {
         return new DevicePos(pos, side);

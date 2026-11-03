@@ -228,10 +228,12 @@ jeden anderen.
 
 *Kostet: keinen Kanal, 6 FE/t je Ende.*
 
+**Wo etwas steht, ist dem Netz egal.** Laufwerke, Serverschränke, Displays,
+Fabricatoren und Masten hinter der Brücke gehören genauso dazu wie neben dem
+Controller.
+
 **Beide Enden müssen geladen sein.** Ist der Chunk drüben nicht geladen,
-endet das Netz an der Brücke. Laufwerke, Serverschränke, Displays und
-Fabricatoren gehören in die Welt des Controllers; hinter einer Brücke in
-einer anderen Welt zählen sie nicht mit.
+endet das Netz an der Brücke.
 
 ## Fabrikhalle und Ports
 
@@ -247,10 +249,8 @@ zurück.
 
 *Kostet: keinen Kanal, keinen Strom.*
 
-**In der Halle zählen Kabel, Router, Brücken und Connector.** Laufwerke,
-Serverschränke, Displays und Fabricatoren gehören in die Welt des
-Controllers; in der Halle hängen sie nicht am Netz draußen, und das Protokoll
-des Controllers sagt es.
+In der Halle gehört alles am Kabel zum Netz draußen: Connector, Laufwerke,
+Serverschränke, Displays, Fabricatoren.
 
 **Der Port bleibt eine Wand:** unzerstörbar, die Halle bleibt zu. Ein
 Rechtsklick mit leerer Hand auf eine Wand führt hinaus, auf einen Port nicht.

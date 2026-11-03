@@ -479,22 +479,21 @@ public class ControllerBlockEntity extends BlockEntity {
     public int powerDraw() {
         int total = dev.devpanda.factorynetwork.network.Power.CONTROLLER;
         total += graph.connectorCount() * dev.devpanda.factorynetwork.network.Power.CONNECTOR;
-        total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
+        total += (graph.displays().size() + graph.elsewhere().displays().size())
+                * dev.devpanda.factorynetwork.network.Power.DISPLAY;
         total += (graph.routers().size() + graph.routersAbroad())
                 * dev.devpanda.factorynetwork.network.Power.ROUTER;
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
         // Both ends pay; both stand in the graph when both are loaded.
         total += (graph.bridges().size() + graph.bridgesAbroad())
                 * dev.devpanda.factorynetwork.network.Power.BRIDGE;
-        total += graph.fabricators().size()
+        total += (graph.fabricators().size() + graph.elsewhere().fabricators().size())
                 * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
         // A mast costs according to its build-out: what it draws hangs on its
         // cards. That is why there is a loop here and not a multiplication.
-        for (net.minecraft.core.BlockPos pos : graph.masts()) {
-            if (level != null && level.getBlockEntity(pos)
-                    instanceof MastBlockEntity mast) {
-                total += dev.devpanda.factorynetwork.network.Power.mast(mast.loadout());
-            }
+        for (MastBlockEntity mast : loadedOf(graph.masts(), graph.elsewhere().masts(),
+                MastBlockEntity.class)) {
+            total += dev.devpanda.factorynetwork.network.Power.mast(mast.loadout());
         }
         for (DriveBlockEntity drive : drives) {
             total += dev.devpanda.factorynetwork.network.Power.DRIVE
@@ -629,8 +628,31 @@ public class ControllerBlockEntity extends BlockEntity {
      * Notes that the network changed. The rebuild follows on one of the next
      * ticks, bundled: placing ten cables in one tick rebuilds once.
      */
-    /** How many devices the last rebuild found in other worlds and left out. */
-    private int skippedAbroad;
+    /**
+     * The block entities of one kind of device, at home and in other worlds
+     * alike — where a device stands does not matter to the network. Only
+     * loaded ones: an unloaded chunk is no reason to load it.
+     */
+    private <T> List<T> loadedOf(List<BlockPos> home, List<net.minecraft.core.GlobalPos> elsewhere,
+                                 Class<T> type) {
+        List<T> found = new ArrayList<>();
+        if (level == null) {
+            return found;
+        }
+        for (BlockPos pos : home) {
+            if (level.isLoaded(pos) && type.isInstance(level.getBlockEntity(pos))) {
+                found.add(type.cast(level.getBlockEntity(pos)));
+            }
+        }
+        for (net.minecraft.core.GlobalPos at : elsewhere) {
+            net.minecraft.world.level.Level there =
+                    dev.devpanda.factorynetwork.network.Dimensions.levelOf(level, at.dimension());
+            if (there != null && there.isLoaded(at.pos()) && type.isInstance(there.getBlockEntity(at.pos()))) {
+                found.add(type.cast(there.getBlockEntity(at.pos())));
+            }
+        }
+        return found;
+    }
 
     public void markNetworkDirty() {
         networkDirty = true;
@@ -645,17 +667,6 @@ public class ControllerBlockEntity extends BlockEntity {
         // beside us learns them only from us.
         projectPersistence.markStatusStale();
         graph = FactoryGraph.build(level, worldPosition);
-        // Drives, racks, displays behind a bridge or a hall port in another
-        // world do not count. Said once when the number changes, not on
-        // every rebuild.
-        if (graph.skippedAbroad() != skippedAbroad) {
-            skippedAbroad = graph.skippedAbroad();
-            if (skippedAbroad > 0) {
-                note(dev.devpanda.factorynetwork.runtime.LogLevel.WARN, "Netz", skippedAbroad
-                        + " Geräte in einer anderen Welt zählen nicht mit: Laufwerke, Serverschränke, "
-                        + "Displays und Fabricatoren gehören in die Welt des Controllers.");
-            }
-        }
         // Counted here and not on every query: Bandwidth.at hits the
         // controller per slot per worker per tick, and the attachments change
         // only when someone builds.
@@ -669,13 +680,8 @@ public class ControllerBlockEntity extends BlockEntity {
         // Storage is the sum of the drives in the network. Without this step
         // the controller stores nothing — which is also true: without a drive
         // there is no space.
-        List<DriveBlockEntity> found = new ArrayList<>();
-        for (BlockPos pos : graph.drives()) {
-            if (level.isLoaded(pos)
-                    && level.getBlockEntity(pos) instanceof DriveBlockEntity drive) {
-                found.add(drive);
-            }
-        }
+        List<DriveBlockEntity> found = loadedOf(graph.drives(), graph.elsewhere().drives(),
+                DriveBlockEntity.class);
         drives.clear();
         drives.addAll(found);
         // The same drives carry the cells of all kinds: a second drive just
@@ -688,12 +694,8 @@ public class ControllerBlockEntity extends BlockEntity {
         power.setDrives(found);
         rebuildBuses();
         racks.clear();
-        for (BlockPos pos : graph.racks()) {
-            if (level.isLoaded(pos) && level.getBlockEntity(pos)
-                    instanceof dev.devpanda.factorynetwork.block.entity.RackBlockEntity rack) {
-                racks.add(rack);
-            }
-        }
+        racks.addAll(loadedOf(graph.racks(), graph.elsewhere().racks(),
+                dev.devpanda.factorynetwork.block.entity.RackBlockEntity.class));
         announceDeviceChanges(before);
     }
 
@@ -919,7 +921,7 @@ public class ControllerBlockEntity extends BlockEntity {
         if (jobs.isEmpty() || level.getGameTime() % CRAFT_INTERVAL != 0) {
             return;
         }
-        int steps = graph.fabricators().size();
+        int steps = graph.fabricators().size() + graph.elsewhere().fabricators().size();
         if (steps == 0) {
             jobs.forEach(job -> job.note(
                     dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
@@ -1808,12 +1810,11 @@ public class ControllerBlockEntity extends BlockEntity {
             return List.of();
         }
         Map<String, BlockPos> byName = new java.util.TreeMap<>();
-        for (BlockPos pos : graph.displays()) {
-            if (level.getBlockEntity(pos) instanceof DisplayBlockEntity panel) {
-                String name = panel.displayName();
-                if (name != null && !name.isBlank()) {
-                    byName.putIfAbsent(name, pos.immutable());
-                }
+        for (DisplayBlockEntity panel : loadedOf(graph.displays(), graph.elsewhere().displays(),
+                DisplayBlockEntity.class)) {
+            String name = panel.displayName();
+            if (name != null && !name.isBlank()) {
+                byName.putIfAbsent(name, panel.getBlockPos().immutable());
             }
         }
         return byName.entrySet().stream()
@@ -2389,11 +2390,8 @@ public class ControllerBlockEntity extends BlockEntity {
         Set<BlockPos> walls = new HashSet<>();
         Set<String> unknown = new java.util.LinkedHashSet<>();
         int nameless = 0;
-        for (BlockPos pos : graph.displays()) {
-            if (!level.isLoaded(pos)
-                    || !(level.getBlockEntity(pos) instanceof DisplayBlockEntity panel)) {
-                continue;
-            }
+        for (DisplayBlockEntity panel : loadedOf(graph.displays(), graph.elsewhere().displays(),
+                DisplayBlockEntity.class)) {
             // A wall once, not once per panel.
             var wall = panel.wall();
             if (!walls.add(wall.anchor())) {

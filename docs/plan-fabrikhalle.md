@@ -107,6 +107,10 @@ die Quantum-Bridge jetzt in den Nether. Geprüft: Spieltest Nether-Brücke;
 Dev-Server, Worker draußen füllt eine Kiste hinter einem Port, auch nach
 Neustart; im Client Port setzen, Kabel daran, Block an die Wand bauen.
 
+Seit a874bc7 und dem Folgecommit zählen auch Laufwerke, Serverschränke,
+Displays, Fabricatoren und Masten in anderen Welten (`FactoryGraph.Elsewhere`):
+„Wo was im Netz steht, muss egal sein“ (User, 03.11.).
+
 Offen ist Modus 2 aus dem Gespräch: die Halle draußen als *eine* Maschine.
 
 ### 2.5 Der Bauplan (Klonen)
