@@ -158,5 +158,10 @@ Am 02.11. mit Vorgaben festgelegt, solange der User nichts anderes sagt:
 - **Raus ohne Tür:** Steht der Block nirgends, führt die Wand zum
   Spawnpunkt, mit Meldung.
 - Jedes Wandstück ist ein Ausgang (Rechtsklick).
+- **Immer hell, keine Mobs von allein:** Die Dimension hat volles
+  Umgebungslicht, die Wand leuchtet, und das Biom `the_void` hat keine
+  Spawn-Liste. Zusätzlich lehnt `HallSpawns` natürliches Spawnen ab, falls ein
+  Pack per Biom-Modifier Spawns hinzufügt. Eier, Spawner und Beschwörungen
+  gehen weiter.
 - Die Spieltest-Welt lädt keine Dimensionen aus Datenpaketen; Rein und Raus
   prüft `/fnhall` im Abnahme-Server.
