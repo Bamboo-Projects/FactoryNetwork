@@ -47,7 +47,6 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.ENTANGLEMENT.get());
                         output.accept(FnItems.DISPLAY.get());
                         output.accept(FnItems.WRENCH.get());
-                        output.accept(FnItems.LABEL_GUN.get());
                         output.accept(FnItems.ANALYSER.get());
                         // The upgrades: first the module, then the cards from
                         // small to large — the same order as in the recipe

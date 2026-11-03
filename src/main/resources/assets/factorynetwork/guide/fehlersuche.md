@@ -51,8 +51,8 @@ kein Ziel. An der Front des Laufwerks siehst du ohne Anklicken, was steckt.
 
 ### Hat der Connector einen Namen — und nur er?
 
-Nimm die **Beschriftungspistole** in die Hand: Solange sie darin ist, schweben
-die Namen über allen Connectoren in der Nähe. **Grün** heißt benannt, **grau**
+Nimm einen **Connector** oder den **Analysator** in die Hand: Solange einer
+davon darin ist, schweben die Namen über allen Connectoren in der Nähe. **Grün** heißt benannt, **grau**
 unbenannt, **rot** doppelt vergeben.
 
 Doppelt vergeben ist der bösere Fall: Dann sind **beide** unbrauchbar, weil
@@ -212,7 +212,7 @@ schreibt sie neben die Programmdateien, und die Erweiterung trägt sie ein;
 eine Sekunde nach dem Speichern stehen sie da.
 
 Dasselbe gilt für die **Gerätenamen**: Sie stehen in keiner Datei, sondern
-kommen aus der Beschriftungspistole — hinter `from` und `to` schlägt die
+kommen aus dem Namensfenster am Connector — hinter `from` und `to` schlägt die
 Erweiterung sie trotzdem vor.
 
 Beides braucht Zugriff auf den Ordner neben der Welt. Im Einzelspieler ist das

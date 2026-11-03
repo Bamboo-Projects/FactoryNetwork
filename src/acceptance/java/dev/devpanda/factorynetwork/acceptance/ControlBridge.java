@@ -47,6 +47,8 @@ import java.util.function.Function;
  *   GET /click?gx=&amp;gy=&amp;button=0&amp;mods=0  mouse click at a GUI position
  *   GET /slot?n=&amp;button=0&amp;mods=0       click a menu slot by index
  *   GET /key?k=73&amp;mods=2               press and release a key (GLFW codes)
+ *   GET /sneak?on=1                    hold the sneak key (0 lets go)
+ *   GET /type?text=x                   set the focused text field
  *   GET /close                         close the screen
  *   GET /shot?name=x                   screenshot into screenshots/x.png
  *   GET /clipboard                     what is on the clipboard
@@ -79,6 +81,21 @@ final class ControlBridge {
             route(server, "/click", q -> click(dbl(q, "gx"), dbl(q, "gy"), num(q, "button", 0), num(q, "mods", 0)));
             route(server, "/slot", ControlBridge::slot);
             route(server, "/key", q -> key(num(q, "k", 0), num(q, "mods", 0)));
+            // Holds the sneak key down (on=1) or lets go (on=0).
+            route(server, "/sneak", q -> {
+                Minecraft.getInstance().options.keyShift.setDown(num(q, "on", 1) != 0);
+                return "ok";
+            });
+            // Types into the focused text field of the open screen.
+            route(server, "/type", q -> {
+                var screen = Minecraft.getInstance().screen;
+                if (screen != null && screen.getFocused()
+                        instanceof net.minecraft.client.gui.components.EditBox box) {
+                    box.setValue(q.getOrDefault("text", ""));
+                    return "ok";
+                }
+                return "no text field";
+            });
             route(server, "/close", q -> {
                 if (Minecraft.getInstance().screen != null) {
                     Minecraft.getInstance().screen.onClose();

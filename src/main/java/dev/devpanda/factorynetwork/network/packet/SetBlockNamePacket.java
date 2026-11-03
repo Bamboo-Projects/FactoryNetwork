@@ -83,6 +83,18 @@ public record SetBlockNamePacket(BlockPos position, int side, String name)
                 nameWall(display, wanted, player);
                 return;
             }
+            if (entity instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity door
+                    && door.hall() != dev.devpanda.factorynetwork.hall.HallBlockEntity.NONE) {
+                if (!wanted.isEmpty() && !ConnectorNaming.isValidIdentifier(wanted)) {
+                    say(player, "message.factorynetwork.label_gun.invalid", wanted);
+                    return;
+                }
+                String now = dev.devpanda.factorynetwork.hall.HallNaming.set(
+                        (net.minecraft.server.level.ServerLevel) player.level(), door, wanted);
+                say(player, now.isEmpty() ? "message.factorynetwork.hall.unnamed"
+                        : "message.factorynetwork.hall.named", now);
+                return;
+            }
             var single = dev.devpanda.factorynetwork.block.entity.Connectors.at(
                     player.level(), pos);
             if (single != null) {

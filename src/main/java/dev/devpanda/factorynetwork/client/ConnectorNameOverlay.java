@@ -2,7 +2,6 @@ package dev.devpanda.factorynetwork.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.devpanda.factorynetwork.FactoryNetwork;
-import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.registry.FnItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -24,8 +23,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Shows the names of the connectors in the world, as long as the label gun is
- * in hand.
+ * Shows the names of the connectors in the world, as long as a connector or
+ * the network analyser is in hand — the moments one is wiring or looking for
+ * a device. The label gun used to be that moment; naming now happens in the
+ * window on the block.
  *
  * <p>SuperFactoryManager solves the same problem with three view modes and an
  * overlay that explains which one you are currently in. That is the price of
@@ -63,15 +64,18 @@ public final class ConnectorNameOverlay {
         if (player == null || level == null) {
             return;
         }
-        if (!holdsLabelGun(player)) {
+        if (!holdsWiringTool(player)) {
             return;
         }
         render(event, minecraft, level, player);
     }
 
-    private static boolean holdsLabelGun(Player player) {
-        return player.getMainHandItem().is(FnItems.LABEL_GUN.get())
-                || player.getOffhandItem().is(FnItems.LABEL_GUN.get());
+    private static boolean holdsWiringTool(Player player) {
+        return isWiringTool(player.getMainHandItem()) || isWiringTool(player.getOffhandItem());
+    }
+
+    private static boolean isWiringTool(net.minecraft.world.item.ItemStack stack) {
+        return stack.is(FnItems.CONNECTOR.get()) || stack.is(FnItems.ANALYSER.get());
     }
 
     private static void render(RenderLevelStageEvent event, Minecraft minecraft,

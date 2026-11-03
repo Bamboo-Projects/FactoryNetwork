@@ -115,7 +115,7 @@ Hinter dem Namen eines Connectors: `brecher_1.count(item:iron_ore)`.
 | Form | Bedeutung |
 |---|---|
 | `bool` | Ob das Gerät gerade im Netz hängt. |
-| `string` | Der Name, den die Beschriftungspistole vergeben hat. |
+| `string` | Der Name, den der Connector im Namensfenster bekommen hat. |
 | `redstone() int, redstone(int)` | Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen. |
 | `count(selection) int` | Wie viel von einer Art in diesem Gerät liegt. Ohne Auswahl alles. |
 | `insert(selection) int` | Legt aus dem Speicher etwas hinein. Gibt zurück, wie viel ankam — weniger ist normal. |

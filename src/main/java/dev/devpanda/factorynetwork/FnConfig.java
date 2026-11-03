@@ -112,7 +112,7 @@ public final class FnConfig {
                         "übernehmen, einen Entwurf speichern, einen Fertigungsauftrag",
                         "abbrechen. Zusehen und Knöpfe drücken bleibt allen offen —",
                         "das ist Benutzen und nicht Umbauen.",
-                        "Die Beschriftungspistole ist nicht dabei: Sie ändert die Welt,",
+                        "Das Benennen von Blöcken ist nicht dabei: Es ändert die Welt,",
                         "und dafür gibt es Schutzmods.")
                 .defineEnum("programs", FnProtection.Mode.OFF);
         builder.pop();

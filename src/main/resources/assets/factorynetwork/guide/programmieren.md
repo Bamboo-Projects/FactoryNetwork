@@ -197,7 +197,7 @@ Wer die Zahl nicht braucht, schreibt `move` einfach als Zeile für sich.
 Hinter dem Punkt eines Connectornamens steht:
 
 - `online` — hängt es gerade im Netz?
-- `name` — der Name, den die Beschriftungspistole vergeben hat.
+- `name` — der Name, den der Connector im Namensfenster bekommen hat.
 - `redstone()` — die Stärke, 0 bis 15. Mit einer Zahl in der Klammer wird sie
   gesetzt.
 - `count(auswahl)` — wie viel von einer Art im **Netzspeicher** liegt. Am

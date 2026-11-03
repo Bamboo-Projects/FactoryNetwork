@@ -66,8 +66,7 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 + LINE + 4 + FIELD + 3 + LINE + 4 + BUTTON + PAD;
         // At a gateway the upper field and its label are missing.
         var level = net.minecraft.client.Minecraft.getInstance().level;
-        if (level != null && level.getBlockEntity(menu.position())
-                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity) {
+        if (level != null && onlyInstance(level.getBlockEntity(menu.position()))) {
             height -= LINE + 4 + FIELD + 4;
         }
         return height;
@@ -118,7 +117,36 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
                 .GatewayBlockEntity gateway) {
             return gateway.instance();
         }
+        if (entity instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity hall) {
+            return hall.installation();
+        }
         return "";
+    }
+
+    /**
+     * What an unnamed connector could be called, after the machine behind
+     * it — the suggestion the label gun used to make. Only offered, never
+     * set: the player confirms it like any typed name.
+     */
+    private String suggestion() {
+        var level = minecraft == null ? null : minecraft.level;
+        if (level == null || isGateway()) {
+            return "";
+        }
+        var part = menu.side() == null
+                ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, menu.position())
+                : dev.devpanda.factorynetwork.block.entity.Connectors.at(
+                        level, menu.position(), menu.side());
+        if (part == null) {
+            return "";
+        }
+        return ConnectorNaming.baseName(level.getBlockState(part.pos().relative(part.facing())));
+    }
+
+    /** Blocks that carry only an installation name and no role. */
+    private static boolean onlyInstance(net.minecraft.world.level.block.entity.@org.jspecify.annotations.Nullable BlockEntity entity) {
+        return entity instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity
+                || entity instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity;
     }
 
     /**
@@ -129,8 +157,14 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
      */
     private boolean isGateway() {
         var level = minecraft == null ? null : minecraft.level;
+        return level != null && onlyInstance(level.getBlockEntity(menu.position()));
+    }
+
+    /** Whether a hall block hangs on the other end — only for the heading. */
+    private boolean isHall() {
+        var level = minecraft == null ? null : minecraft.level;
         return level != null && level.getBlockEntity(menu.position())
-                instanceof dev.devpanda.factorynetwork.block.entity.GatewayBlockEntity;
+                instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity;
     }
 
     /** Whether a display hangs on the other end — only for the heading. */
@@ -163,7 +197,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
         input = new EditBox(font, left, y, width, FIELD,
                 Component.translatable("screen.factorynetwork.name.field"));
         input.setMaxLength(64);
-        input.setValue(isGateway() ? label : rolePart(label));
+        String start = isGateway() ? label : rolePart(label);
+        input.setValue(start.isEmpty() ? suggestion() : start);
         input.setResponder(this::onTyped);
         addRenderableWidget(input);
         setInitialFocus(input);
@@ -280,7 +315,8 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
             second = PAD + LINE + 4 + FIELD + 4;
         }
         graphics.text(font, FnFonts.mono(Component.translatable(
-                        isGateway() ? "screen.factorynetwork.name.title.gateway"
+                        isHall() ? "screen.factorynetwork.name.title.hall"
+                                : isGateway() ? "screen.factorynetwork.name.title.gateway"
                                 : isDisplay() ? "screen.factorynetwork.name.title.display"
                                         : "screen.factorynetwork.name.title.connector")),
                 PAD, second, TerminalScreen.TEXT, false);

@@ -46,7 +46,7 @@ drücken, den Bestand ansehen — das bleibt allen offen. Wer einen Knopf drück
 ruft eine Funktion auf, die jemand anders geschrieben hat; das ist Bedienung
 und kein Umbau.
 
-**Die Beschriftungspistole ist ausdrücklich nicht dabei.** Sie ändert die
+**Das Benennen von Blöcken ist ausdrücklich nicht dabei.** Es ändert die
 Welt, und dafür gibt es Schutzmods — die kennen Claims, Regionen und
 Grundstücke, und diese Mod sollte das nicht ein zweites Mal und schlechter
 tun.

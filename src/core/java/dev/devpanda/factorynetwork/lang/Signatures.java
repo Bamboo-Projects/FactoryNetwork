@@ -329,7 +329,7 @@ public final class Signatures {
             new Member("online", "bool",
                     "Ob das Gerät gerade im Netz hängt."),
             new Member("name", "string",
-                    "Der Name, den die Beschriftungspistole vergeben hat."),
+                    "Der Name, den der Connector im Namensfenster bekommen hat."),
             new Member("redstone", "redstone() int, redstone(int)",
                     "Die Redstone-Stärke, 0 bis 15. Mit Zahl gesetzt, ohne gelesen."),
             new Member("count", "count(selection) int",

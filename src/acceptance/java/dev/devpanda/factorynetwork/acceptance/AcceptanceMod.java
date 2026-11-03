@@ -96,6 +96,16 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallPort(ctx.getSource().getLevel())), false);
                     return 1;
                 }))
+                .then(Commands.literal("rename").then(Commands.argument("name",
+                        com.mojang.brigadier.arguments.StringArgumentType.word()).executes(ctx -> {
+                    var level = ctx.getSource().getLevel();
+                    var door = (dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(HALL_DOOR);
+                    String wanted = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "name");
+                    String now = dev.devpanda.factorynetwork.hall.HallNaming.set(level, door, "-".equals(wanted) ? "" : wanted);
+                    ctx.getSource().sendSuccess(() -> Component.literal("FN_RENAME now=" + now
+                            + " block=" + door.installation()), false);
+                    return 1;
+                })))
                 .then(Commands.literal("portcheck").executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallPortCheck(ctx.getSource().getLevel())), false);
                     return 1;

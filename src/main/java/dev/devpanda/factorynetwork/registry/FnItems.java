@@ -3,7 +3,6 @@ package dev.devpanda.factorynetwork.registry;
 import dev.devpanda.factorynetwork.FactoryNetwork;
 import dev.devpanda.factorynetwork.storage.CellTier;
 import dev.devpanda.factorynetwork.storage.StorageCellItem;
-import dev.devpanda.factorynetwork.item.LabelGunItem;
 import dev.devpanda.factorynetwork.item.NetworkAnalyserItem;
 import dev.devpanda.factorynetwork.block.CableColour;
 import dev.devpanda.factorynetwork.item.ColouredCableItem;
@@ -180,10 +179,6 @@ public final class FnItems {
      */
     public static final DeferredItem<Item> WRENCH = ITEMS.registerItem("wrench",
             props -> new Item(props.stacksTo(1)));
-
-    /** Assigns a connector its name. */
-    public static final DeferredItem<Item> LABEL_GUN = ITEMS.registerItem("label_gun",
-            props -> new LabelGunItem(props.stacksTo(1)));
 
     /**
      * The stamps of the press.

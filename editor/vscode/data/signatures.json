@@ -529,7 +529,7 @@
     {
       "name": "name",
       "shape": "string",
-      "help": "Der Name, den die Beschriftungspistole vergeben hat."
+      "help": "Der Name, den der Connector im Namensfenster bekommen hat."
     },
     {
       "name": "redstone",

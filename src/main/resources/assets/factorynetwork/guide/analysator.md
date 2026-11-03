@@ -83,7 +83,7 @@ In dieser Reihenfolge, weil sie den häufigsten Fehlern folgt:
 2. **Rote Strecken.** Die zeigen dir, *wo* der Kanal ausgeht — meist ein
    einfaches Kabel, wo ein dichtes hingehört.
 3. **Gelbe Würfel.** Ein Connector ohne Namen kostet einen Kanal und bringt
-   nichts. Beschriftungspistole drauf oder abbauen.
+   nichts. Rechtsklick drauf und benennen, oder abbauen.
 4. **Magenta.** Zwei Geräte mit demselben Namen sind der Fehler, den man am
    längsten sucht: Das Programm läuft, es tut nur am falschen Ort etwas.
 5. **Wo die Linie aufhört.** Kein Würfel heißt kein Netz — dort ist das Kabel

@@ -67,8 +67,7 @@ public class HallBlock extends Block implements EntityBlock {
     protected InteractionResult useItemOn(net.minecraft.world.item.ItemStack held, BlockState state, Level level,
                                           BlockPos pos, Player player, net.minecraft.world.InteractionHand hand,
                                           BlockHitResult hit) {
-        if (held.getItem() instanceof BlueprintItem
-                || held.getItem() instanceof dev.devpanda.factorynetwork.item.LabelGunItem) {
+        if (held.getItem() instanceof BlueprintItem) {
             return InteractionResult.PASS;
         }
         return super.useItemOn(held, state, level, pos, player, hand, hit);
@@ -82,6 +81,25 @@ public class HallBlock extends Block implements EntityBlock {
         }
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
+        }
+        // Sneaking asks for the hall's installation name instead of going in.
+        if (player.isSecondaryUseActive()) {
+            if (door.hall() == HallBlockEntity.NONE) {
+                dev.devpanda.factorynetwork.platform.Chat.tell(player,
+                        net.minecraft.network.chat.Component.translatable(
+                                "message.factorynetwork.hall.name_needs_hall"), true);
+                return InteractionResult.CONSUME;
+            }
+            player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                            (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu
+                                    .NameMenu(id, pos),
+                            net.minecraft.network.chat.Component.translatable(
+                                    "screen.factorynetwork.name.title.hall")),
+                    buffer -> {
+                        buffer.writeBlockPos(pos);
+                        buffer.writeByte(dev.devpanda.factorynetwork.network.packet.SetBlockNamePacket.NO_SIDE);
+                    });
+            return InteractionResult.CONSUME;
         }
         if (player instanceof ServerPlayer server) {
             HallDoor.enter(server, door);

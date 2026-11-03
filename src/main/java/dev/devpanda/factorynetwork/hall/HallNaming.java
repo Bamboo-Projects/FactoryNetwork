@@ -18,15 +18,15 @@ public final class HallNaming {
     private HallNaming() {
     }
 
-    /** Names the hall, or takes the name away if it already has this one. Returns the name now. */
-    public static String toggle(ServerLevel level, HallBlockEntity door, String wanted) {
+    /** Names the hall; blank takes the name away. Returns the name now. */
+    public static String set(ServerLevel level, HallBlockEntity door, String wanted) {
         Halls halls = Halls.of(level.getServer());
-        Halls.Entry entry = halls.get(door.hall());
-        if (entry == null) {
+        if (halls.get(door.hall()) == null) {
             return "";
         }
-        String now = entry.name().filter(wanted::equals).isPresent() ? "" : wanted;
+        String now = wanted == null ? "" : wanted.trim();
         halls.setName(door.hall(), now);
+        door.showInstallation(now);
         // The names of the connectors inside change: the networks touching
         // the hall's block rebuild.
         ControllerRegistry.markChanged(level, door.getBlockPos());

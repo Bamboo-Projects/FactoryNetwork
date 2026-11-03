@@ -24,6 +24,13 @@ public class HallBlockEntity extends BlockEntity {
 
     private int hall = NONE;
 
+    /**
+     * The hall's installation name, copied from the hall list for the
+     * client: the name window shows what the hall is called. The hall list
+     * stays the truth; this copy is never saved.
+     */
+    private String installation = "";
+
     public HallBlockEntity(BlockPos pos, BlockState state) {
         super(FnBlockEntities.HALL.get(), pos, state);
     }
@@ -37,6 +44,22 @@ public class HallBlockEntity extends BlockEntity {
         setChanged();
     }
 
+    /** The installation name, as far as this side knows it. */
+    public String installation() {
+        return installation;
+    }
+
+    /** Takes the name from the hall list and tells the client. */
+    void showInstallation(String name) {
+        String now = name == null ? "" : name;
+        if (!now.equals(installation)) {
+            installation = now;
+            if (level != null && !level.isClientSide()) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
+        }
+    }
+
     public HallTier tier() {
         return getBlockState().getBlock() instanceof HallBlock block ? block.tier() : HallTier.SMALL;
     }
@@ -45,6 +68,10 @@ public class HallBlockEntity extends BlockEntity {
     public void onLoad() {
         super.onLoad();
         HallLoading.hold(this, true);
+        if (level instanceof net.minecraft.server.level.ServerLevel server && hall != NONE) {
+            Halls.Entry entry = Halls.of(server.getServer()).get(hall);
+            showInstallation(entry == null ? "" : entry.name().orElse(""));
+        }
     }
 
     /** Only the block going for good stops its hall, not its chunk unloading. */
@@ -66,6 +93,23 @@ public class HallBlockEntity extends BlockEntity {
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         hall = input.getIntOr("Hall", NONE);
+        installation = input.getStringOr("Installation", "");
+    }
+
+    @Override
+    public net.minecraft.nbt.CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        net.minecraft.nbt.CompoundTag tag = super.getUpdateTag(registries);
+        if (hall != NONE) {
+            tag.putInt("Hall", hall);
+        }
+        tag.putString("Installation", installation);
+        return tag;
+    }
+
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener>
+            getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

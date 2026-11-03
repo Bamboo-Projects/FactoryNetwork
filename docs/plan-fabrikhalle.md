@@ -112,7 +112,8 @@ Displays, Fabricatoren und Masten in anderen Welten (`FactoryGraph.Elsewhere`):
 „Wo was im Netz steht, muss egal sein“ (User, 03.11.).
 
 Modus 2, die Halle draußen als *eine* Maschine, ist eine benannte Halle:
-Die Beschriftungspistole auf dem Hallenblock setzt `Halls.Entry.name`, und
+Das Namensfenster am Hallenblock (Schleichen + Rechtsklick; bis 03.11. die
+Beschriftungspistole, die es seitdem nicht mehr gibt) setzt `Halls.Entry.name`, und
 `FactoryGraph.instanceOf` nimmt ihn als Anlagennamen für alles in der Halle,
 wie ein Gateway (`HallNaming`). Geprüft im Client: Name setzen und wieder
 wegnehmen, `erzhalle/hallen_kiste` im Netz, ein Programm mit

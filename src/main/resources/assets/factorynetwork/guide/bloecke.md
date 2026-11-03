@@ -126,8 +126,10 @@ an die Kanalgrenze, oder an die Leitung.
 
 ### Benennen und Redstone
 
-Benannt wird er mit der Beschriftungspistole oder per Rechtsklick mit leerer
-Hand — am Kabel gilt dabei die Fläche, die du triffst.
+Benannt wird er per Rechtsklick mit leerer Hand: Es öffnet sich das
+Namensfenster, und für einen Connector ohne Namen steht dort schon ein
+Vorschlag aus der Maschine dahinter. Am Kabel gilt die Fläche, die du
+triffst.
 
 Redstone gibt er aus, wenn das Programm es verlangt: `alarm.redstone(15)`.
 Eine Fläche mit Anschluss gibt genau dessen Stärke, eine freie die stärkste
@@ -247,11 +249,11 @@ draußen spricht sie mit ihrem Namen an.
 Schleichen mit leerer Hand macht einen Port wieder zur Wand und gibt ihn
 zurück.
 
-**Halle als eine Maschine.** Mit der Beschriftungspistole auf den Hallenblock
-bekommt die Halle einen Anlagennamen, z. B. `erzhalle` — wie mit einem
-Gateway. Dann heißt der Connector `ofen` drinnen im Netz `erzhalle/ofen`, und
+**Halle als eine Maschine.** Schleichen und Rechtsklick mit leerer Hand auf
+den Hallenblock öffnet das Namensfenster: Dort bekommt die Halle einen
+Anlagennamen, z. B. `erzhalle` — wie ein Gateway. Dann heißt der Connector `ofen` drinnen im Netz `erzhalle/ofen`, und
 eine `multiblock`-Vorlage steuert die ganze Halle als eine Anlage:
-`erzhalle.befuellen()`. Derselbe Name noch einmal nimmt ihn wieder weg; dann
+`erzhalle.befuellen()`. Ein leeres Feld nimmt den Namen wieder weg; dann
 heißt drinnen jeder Connector wieder nur, wie er beschriftet ist. Mehr unter
 *Anlagen*.
 
@@ -271,7 +273,7 @@ Programm, der genauso heißt wie die Tafel.
 Tafeln, die **in dieselbe Richtung zeigen und sich in ihrer Ebene berühren**,
 sind zusammen eine Wand mit einem einzigen Text; geschrieben wird von der
 Tafel unten links. Über Ecken gilt das nicht — eine Nordwand und eine Ostwand
-sind zwei Bildschirme. Die Beschriftungspistole benennt immer die ganze Wand.
+sind zwei Bildschirme. Der Rechtsklick benennt immer die ganze Wand.
 
 *Kostet: keinen Kanal, 1 FE/t.*
 

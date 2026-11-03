@@ -90,7 +90,7 @@ Eine **Vorlage** steht überall, wo eine Auswahl steht. Ändert sich, was
 ausgenommen wird, ändert es sich an einer Stelle.
 
 Sie verdeckt ein Gerät gleichen Namens — der Editor warnt davor. Gerätenamen
-kommen aus der Beschriftungspistole, Vorlagennamen aus dem Programm; hinge die
+kommen aus dem Namensfenster am Connector, Vorlagennamen aus dem Programm; hinge die
 Bedeutung eines Programms daran, wie jemand später einen Connector benennt,
 wäre es aus der Ferne nicht mehr zu lesen.
 

@@ -36,7 +36,7 @@ gehören `devices` und Funktionen, sonst nichts. Kein Worker, keine Anzeige, kei
 globaler Wert. Die Trennung zwischen innen und außen fällt damit mit der
 zwischen Gerät und Funktion zusammen.
 
-## Gebaut wird mit der Beschriftungspistole
+## Gebaut wird im Namensfenster
 
 Eine Anlage entsteht allein dadurch, dass du ihre Connectoren benennst — mit
 dem **Namen der Anlage, einem Schrägstrich und der Rolle**:
@@ -79,9 +79,9 @@ Umbenennen ist damit **ein Block statt zwölf**.
 
 ## Oder: eine ganze Fabrikhalle
 
-Eine Halle wirkt wie ein Gateway, sobald sie einen Namen hat: Beschriftungs-
-pistole auf den Hallenblock, und alles, was drinnen über einen Hallen-Port am
-Netz hängt, gehört zu dieser Anlage. Draußen ist die Halle damit eine
+Eine Halle wirkt wie ein Gateway, sobald sie einen Namen hat: Schleichen und
+Rechtsklick auf den Hallenblock öffnet das Namensfenster, und alles, was
+drinnen über einen Hallen-Port am Netz hängt, gehört zu dieser Anlage. Draußen ist die Halle damit eine
 Maschine, drinnen stehen beliebig viele.
 
 ### Drei Regeln, die du kennen solltest

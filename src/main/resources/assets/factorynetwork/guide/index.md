@@ -50,9 +50,9 @@ worker mahlen {
 }
 ```
 
-`lager` und `brecher` sind Namen, die du mit der **Beschriftungspistole**
-vergeben hast. Rechtsklick auf einen Connector, und sie schlägt einen aus der
-Maschine dahinter vor.
+`lager` und `brecher` sind Namen, die du den Connectoren gegeben hast:
+Rechtsklick auf einen Connector öffnet das Namensfenster, mit einem Vorschlag
+aus der Maschine dahinter.
 
 ## Wenn nichts passiert
 

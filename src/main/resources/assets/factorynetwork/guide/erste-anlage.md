@@ -28,8 +28,7 @@ Sieben Dinge, und **keines davon ist entbehrlich**:
 | Brennkammer + Kohle | 40 FE/t, reicht für den Anfang |
 | Kabel + drei Connectoren | die Zuständigkeit bis zur Maschine |
 
-Dazu die **Beschriftungspistole** und eine Truhe und einen Ofen als die beiden
-Maschinen.
+Dazu eine Truhe und einen Ofen als die beiden Maschinen.
 
 Die häufigste Enttäuschung beim ersten Versuch ist der Serverschrank: Er ist
 zwei Blöcke hoch, hat zwölf Einschübe, und ein Einschub mit zwei von drei
@@ -89,10 +88,10 @@ Netz haben will, hängt einen dritten Connector an eine **Seite** des Ofens.
 Ein Connector ohne Namen hängt im Netz, kostet seinen Kanal und ist im Code
 **nicht ansprechbar**.
 
-Nimm die **Beschriftungspistole** und klick alle Connectoren an. Sie schlägt
-einen Namen aus der Maschine dahinter vor — nimm ihn oder tipp einen eigenen.
+Klick jeden Connector mit leerer Hand an. Im Namensfenster steht schon ein
+Vorschlag aus der Maschine dahinter — nimm ihn oder tipp einen eigenen.
 Sagen wir `lager` für die Truhe, `ofen_ein` für den oberen und `ofen_aus` für
-den unteren. Ein Rechtsklick mit leerer Hand tut dasselbe.
+den unteren.
 
 Zwei Namen für dieselbe Maschine sind kein Behelf, sondern die Wahrheit: Das
 Netz spricht nicht mit Öfen, sondern mit Stellen, an denen etwas hinein- oder
