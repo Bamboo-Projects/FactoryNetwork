@@ -414,6 +414,18 @@ dependencies {
     // Ressourcenart, an der die offene Registry ihren Beweis bekommt.
     runtimeOnly "maven.modrinth:sophisticated-core:${sophisticated_core_version}"
     runtimeOnly "maven.modrinth:sophisticated-storage:${sophisticated_storage_version}"
+    // More storage and machine mods to check against, only with -Pextramods:
+    // Functional Storage and Storage Drawers as stores, Powah and Ender IO
+    // as power and machines. All offer the standard capabilities; this run
+    // is how we find out what a connector really gets from them.
+    if (project.hasProperty('extramods')) {
+        runtimeOnly "maven.modrinth:titanium:${titanium_version}"
+        runtimeOnly "maven.modrinth:functional-storage:${functional_storage_version}"
+        runtimeOnly "curse.maven:storage-drawers-${storage_drawers_file}"
+        runtimeOnly "maven.modrinth:cloth-config:${cloth_config_version}"
+        runtimeOnly "maven.modrinth:powah:${powah_version}"
+        runtimeOnly "maven.modrinth:enderio:${enderio_version}"
+    }
     // Ars Nouveau auch zum Uebersetzen: Source ist eine Ressourcenart, und
     // ihr Zugriff steht in compat/ars gegen deren ISourceCap. Geladen werden
     // die Klassen erst, wenn FnArs.installed() wahr ist — dasselbe Muster wie
