@@ -45,11 +45,13 @@ public class HallBlockEntity extends BlockEntity {
     public void onLoad() {
         super.onLoad();
         HallLoading.hold(this, true);
+        HallLoading.holdDoorChunk(this, true);
     }
 
     @Override
     public void setRemoved() {
         HallLoading.hold(this, false);
+        HallLoading.holdDoorChunk(this, false);
         super.setRemoved();
     }
 

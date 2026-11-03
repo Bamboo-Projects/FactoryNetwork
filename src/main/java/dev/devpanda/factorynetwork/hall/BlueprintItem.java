@@ -127,6 +127,7 @@ public class BlueprintItem extends Item {
         door.setHall(id);
         halls.setDoor(id, GlobalPos.of(level.dimension(), door.getBlockPos()));
         HallLoading.hold(door, true);
+        HallLoading.holdDoorChunk(door, true);
         ServerLevel hall = level.getServer().getLevel(Halls.DIMENSION);
         Halls.buildRoom(hall, id, door.tier(), FnBlocks.HALL_WALL.get().defaultBlockState());
         blueprint.build(hall, id);

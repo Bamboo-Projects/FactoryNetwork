@@ -62,6 +62,7 @@ public final class FnConfig {
     private static final ModConfigSpec.IntValue GLOBAL_LIST;
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
     private static final ModConfigSpec.BooleanValue KEEP_AWAKE;
+    private static final ModConfigSpec.EnumValue<HallChunks> HALL_CHUNKS;
 
     public static final ModConfigSpec SERVER_SPEC;
 
@@ -124,6 +125,12 @@ public final class FnConfig {
                         "true: Solange ein Controller geladen ist, pausiert der Server nicht.",
                         "Gleichwertig: pause-when-empty-seconds=0 in server.properties.")
                 .define("keepAwakeWhileFactoriesRun", false);
+        HALL_CHUNKS = builder
+                .comment("Ob ein Hallenblock seinen eigenen Chunk geladen hält, damit die Halle",
+                        "auch läuft, wenn niemand in der Nähe ist.",
+                        "AUTO: ja, außer FTB Chunks ist installiert — dann lädt man dort.",
+                        "ALWAYS: immer. NEVER: nie, wie andere Fabrik-Mods.")
+                .defineEnum("hallBlocksLoadTheirChunk", HallChunks.AUTO);
         builder.pop();
         SERVER_SPEC = builder.build();
     }
@@ -183,5 +190,18 @@ public final class FnConfig {
     /** Whether a server with a running factory should skip the empty-server pause. */
     public static boolean keepAwakeWhileFactoriesRun() {
         return SERVER_SPEC.isLoaded() && KEEP_AWAKE.get();
+    }
+
+    /** Who keeps a hall block's chunk loaded. */
+    public enum HallChunks { AUTO, ALWAYS, NEVER }
+
+    /** Whether a hall block should hold its own chunk now. */
+    public static boolean hallBlocksLoadTheirChunk() {
+        HallChunks mode = SERVER_SPEC.isLoaded() ? HALL_CHUNKS.get() : HallChunks.AUTO;
+        return switch (mode) {
+            case ALWAYS -> true;
+            case NEVER -> false;
+            case AUTO -> !net.neoforged.fml.ModList.get().isLoaded("ftbchunks");
+        };
     }
 }

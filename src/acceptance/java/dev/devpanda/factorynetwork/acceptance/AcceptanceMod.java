@@ -98,9 +98,16 @@ public final class AcceptanceMod {
                 }))
                 .then(Commands.literal("loaded").executes(ctx -> {
                     var hall = ctx.getSource().getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
-                    BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(1);
+                    // Asked before anything touches the door's chunk: what the server loaded by itself.
+                    var overworld = ctx.getSource().getServer().overworld();
+                    BlockPos door = HALL_DOOR;
+                    boolean doorLoaded = overworld.isLoaded(door);
+                    int id = doorLoaded && overworld.getBlockEntity(door)
+                            instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity block ? block.hall() : 1;
+                    BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(id);
                     ctx.getSource().sendSuccess(() -> Component.literal("FN_HALL_LOADED " + hall.isLoaded(low)
-                            + " ticking=" + hall.shouldTickBlocksAt(low)), false);
+                            + " ticking=" + hall.shouldTickBlocksAt(low) + " hall=" + id
+                            + " doorChunk=" + doorLoaded), false);
                     return 1;
                 })));
         event.getDispatcher().register(Commands.literal("fnacceptance")
@@ -277,8 +284,11 @@ public final class AcceptanceMod {
                         .get(dev.devpanda.factorynetwork.hall.HallTier.SMALL).get().defaultBlockState());
     }
 
+    /** Far from spawn, so nothing but the hall block itself keeps its chunk loaded. */
+    private static final BlockPos HALL_DOOR = new BlockPos(2000, 64, 2000);
+
     private static String hallRoundTrip(net.minecraft.server.level.ServerLevel level) {
-        BlockPos door = new BlockPos(20, 64, 20);
+        BlockPos door = HALL_DOOR;
         level.getChunk(door);
         level.setBlockAndUpdate(door.below(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
         level.setBlockAndUpdate(door, dev.devpanda.factorynetwork.registry.FnBlocks.HALLS
@@ -305,7 +315,7 @@ public final class AcceptanceMod {
     private static String hallCouple(net.minecraft.server.level.ServerLevel level) {
         var reg = dev.devpanda.factorynetwork.registry.FnBlocks.class;
         var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
-        int id = ((dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(new BlockPos(20, 64, 20))).hall();
+        int id = ((dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(HALL_DOOR)).hall();
         BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(id);
         BlockPos controllerPos = low.offset(2, 1, 2);
         BlockPos drivePos = low.offset(3, 1, 2);

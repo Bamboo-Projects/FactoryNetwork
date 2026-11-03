@@ -140,6 +140,26 @@ Strom und Leistung, und das soll der Betreiber entscheiden, nicht die Mod.
 Ist der Server schon in der Pause, wenn du den Wert einschaltest, wacht er
 erst mit dem nächsten Spieler auf. Ab da hält er die Fabriken wach.
 
+## Fabrikhallen laden
+
+Eine Halle läuft, solange ihr Block geladen ist. Damit sie auch läuft, wenn
+niemand in der Nähe steht, hält der Hallenblock seinen eigenen Chunk geladen —
+auch nach einem Neustart.
+
+```toml
+[server]
+hallBlocksLoadTheirChunk = "AUTO"
+```
+
+- **`AUTO`** (Vorgabe): Der Block lädt seinen Chunk selbst, außer FTB Chunks
+  ist installiert. Dann lädst du den Chunk dort, wie jeden anderen.
+- **`ALWAYS`**: Der Block lädt immer, auch neben FTB Chunks.
+- **`NEVER`**: Der Block lädt nie. Die Halle läuft nur, solange ihr Chunk
+  anders geladen ist, durch einen Spieler oder eine andere Mod.
+
+Geladen wird nur der Chunk des Blocks und die Halle dahinter, nichts drumherum.
+Ein abgebauter Block gibt beides frei.
+
 ## Was nicht in dieser Datei steht
 
 **Die Schrankplätze und die Kanäle.** Sie sind Spielinhalt und gehören zum
