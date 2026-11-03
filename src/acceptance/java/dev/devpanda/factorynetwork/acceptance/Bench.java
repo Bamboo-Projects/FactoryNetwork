@@ -270,6 +270,9 @@ final class Bench {
         }
         results.put("fillMs", round((System.nanoTime() - start) / 1e6));
         results.put("fillRejected", left);
+        // One plain sort behind all the named papers: what a worker filtering
+        // on iron has to find.
+        results.put("ironRejected", controller.storage().insert(ItemKey.bare(Items.IRON_INGOT), 100));
         results.put("storedTypes", controller.storage().contents().size());
 
         Random random = new Random(1);
@@ -350,6 +353,11 @@ final class Bench {
         results.put("indexBuildMs", round(indexNanos / 1e6 / 10));
         results.put("firstCountAfterRebuildMs", round(countNanos / 1e6 / 10));
         results.put("firstIronAfterRebuildMs", round(firstNanos / 1e6 / 10));
+        results.put("firstIronFound", String.valueOf(controller.storage().firstPresent(List.of(Items.IRON_INGOT))));
+        results.put("typesAfterRebuild", controller.storage().distinctTypes());
+        results.put("drivesBuilt", drives);
+        results.put("drivesInGraph", controller.graph().drives().size());
+        results.put("graphTruncated", controller.graph().isTruncated());
         controller.storage().distinctTypes();
         start = System.nanoTime();
         for (int i = 0; i < 20; i++) {
@@ -358,7 +366,6 @@ final class Bench {
         results.put("plainCopyMs", round((System.nanoTime() - start) / 1e6 / 20));
         // By item across all variants, as a condition or display asks: one
         // with every sort a variant of it, one with a single bare sort.
-        controller.storage().insert(ItemKey.bare(Items.IRON_INGOT), 100);
         start = System.nanoTime();
         for (int i = 0; i < 1_000; i++) {
             controller.storage().count(Items.PAPER);
@@ -412,6 +419,10 @@ final class Bench {
             results.put("terminalViewer", "client");
         }
         terminalViewer = player;
+        // Placing the terminal rebuilt the network and with it the stock
+        // index; opening a terminal in the game does not. Rebuild it first so
+        // the first send is timed on its own.
+        controller.storage().distinctTypes();
         long start = System.nanoTime();
         controller.watchStorage(player);
         results.put("firstPushMs", round((System.nanoTime() - start) / 1e6));
