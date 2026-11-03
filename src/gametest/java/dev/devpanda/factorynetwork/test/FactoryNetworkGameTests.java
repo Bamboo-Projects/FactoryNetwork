@@ -4136,8 +4136,47 @@ public final class FactoryNetworkGameTests {
                     helper.assertValueEqual(globals.get("gruppe"),
                             new dev.devpanda.factorynetwork.runtime.Value.Int(15), "die Gruppe hört ihr Mitglied");
                     helper.assertValueEqual(globals.get("quelle"),
-                            new dev.devpanda.factorynetwork.runtime.Value.Int(1),
-                            "quarry_output hört nur seinen ersten Blick, nicht das Signal am depot");
+                            new dev.devpanda.factorynetwork.runtime.Value.Int(0),
+                            "quarry_output hört das Signal am depot nicht");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * {@code await redstone_changed[depot]} wakes on depot only and returns
+     * the strength; a signal at another connector leaves it waiting.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFilteredAwaitWakesOnItsConnectorOnly(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn warten() {
+                    let stärke = await redstone_changed[depot]
+                    return stärke
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        BlockPos nebenQuelle = controller.east().north().east();
+        BlockPos nebenDepot = controller.east().south().east();
+        var started = new java.util.ArrayList<dev.devpanda.factorynetwork.runtime.flow.Flow>();
+        helper.startSequence()
+                .thenIdle(25)
+                .thenExecute(() -> started.add(entity.startFlow("warten", java.util.List.of())))
+                .thenIdle(5)
+                .thenExecute(() -> helper.setBlock(nebenQuelle, Blocks.REDSTONE_BLOCK))
+                .thenIdle(25)
+                .thenExecute(() -> {
+                    var flow = started.get(0);
+                    helper.assertValueEqual(flow.status().name(), "AWAITING",
+                            "Ein Signal an quarry_output weckt den Wartenden nicht");
+                    helper.setBlock(nebenDepot, Blocks.REDSTONE_BLOCK);
+                })
+                .thenIdle(25)
+                .thenExecute(() -> {
+                    var flow = started.get(0);
+                    helper.assertValueEqual(flow.status().name(), "DONE", "Das Signal am depot weckt ihn");
+                    helper.assertValueEqual(resultOf(flow), 15L, "Er bekommt die Stärke");
                 })
                 .thenSucceed();
     }

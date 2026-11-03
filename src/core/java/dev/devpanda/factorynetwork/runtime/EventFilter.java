@@ -29,6 +29,12 @@ public final class EventFilter {
         return device != null && accepts(program, handler.devices(), device);
     }
 
+    /** Whether the event's device is named in this filter. */
+    public static boolean matchesDevices(Program program, List<String> filter, List<Value> arguments) {
+        String device = deviceOf(arguments);
+        return device != null && accepts(program, filter, device);
+    }
+
     /** Whether a device is named in a filter, directly or through a group. */
     public static boolean accepts(Program program, List<String> filter, String device) {
         for (String wanted : filter) {

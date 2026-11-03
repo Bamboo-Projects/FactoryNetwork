@@ -253,7 +253,7 @@ Ein Argument mit vorangestelltem Namen ist ein benanntes Argument
 ### Warten
 
 ```
-awaitStmt   = 'await' NAME [ 'where' expr ] [ 'timeout' DURATION elseBlock ]
+awaitStmt   = 'await' NAME [ '[' nameList ']' ] [ 'where' expr ] [ 'timeout' DURATION elseBlock ]
 elseBlock   = 'else' block
 ```
 

@@ -1048,6 +1048,12 @@ public final class Parser {
     private Expr parseAwait() {
         Token keyword = advance();
         String eventName = expectName("des Ereignisses");
+        List<String> devices = parseDeviceFilter();
+        if (!devices.isEmpty() && !dev.devpanda.factorynetwork.lang.EventCheck.DEVICE_EVENTS.contains(eventName)) {
+            error(keyword.span(), "Nur Geräte-Ereignisse lassen sich auf Connectoren eingrenzen.",
+                    "Die eckigen Klammern passen zu redstone_changed, device_changed, device_output, "
+                            + "device_online und device_offline.");
+        }
         Expr where = null;
         if (match(TokenType.WHERE)) {
             where = parseOr();
@@ -1067,7 +1073,7 @@ public final class Parser {
                                 + "Schreibe: timeout " + timeout(timeout) + " else { return }");
             }
         }
-        return new Expr.Await(eventName, where, timeout, elseBody,
+        return new Expr.Await(eventName, devices, where, timeout, elseBody,
                 keyword.span().to(previous().span()));
     }
 

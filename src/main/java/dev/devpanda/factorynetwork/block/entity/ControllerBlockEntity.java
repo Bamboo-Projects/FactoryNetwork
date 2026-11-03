@@ -2534,10 +2534,8 @@ public class ControllerBlockEntity extends BlockEntity {
         boolean allOutput = watchOutput && listensToAll(BuiltinEvents.DEVICE_OUTPUT);
         for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
                 : graph.connectors().entrySet()) {
-            boolean changes = watchChanges && (allChanges || dev.devpanda.factorynetwork.runtime.EventFilter
-                    .listensTo(program, BuiltinEvents.DEVICE_CHANGED, entry.getKey()));
-            boolean output = watchOutput && (allOutput || dev.devpanda.factorynetwork.runtime.EventFilter
-                    .listensTo(program, BuiltinEvents.DEVICE_OUTPUT, entry.getKey()));
+            boolean changes = watchChanges && (allChanges || listensToDevice(BuiltinEvents.DEVICE_CHANGED, entry.getKey()));
+            boolean output = watchOutput && (allOutput || listensToDevice(BuiltinEvents.DEVICE_OUTPUT, entry.getKey()));
             if (!changes && !output) {
                 continue;
             }
@@ -2647,7 +2645,13 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private boolean listensToAll(String event) {
         return dev.devpanda.factorynetwork.runtime.EventFilter.listensToAll(program, event)
-                || flows != null && flows.awaits(event);
+                || flows != null && flows.awaitsAll(event);
+    }
+
+    /** Whether some block or waiting flow wants this event from this device. */
+    private boolean listensToDevice(String event, String device) {
+        return dev.devpanda.factorynetwork.runtime.EventFilter.listensTo(program, event, device)
+                || flows != null && flows.awaitsDevice(event, device);
     }
 
     private boolean listensTo(String event) {
@@ -2668,8 +2672,7 @@ public class ControllerBlockEntity extends BlockEntity {
         for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
                 : graph.connectors().entrySet()) {
             // Only what some block names, unless one hears everything.
-            if (!all && !dev.devpanda.factorynetwork.runtime.EventFilter
-                    .listensTo(program, BuiltinEvents.REDSTONE_CHANGED, entry.getKey())) {
+            if (!all && !listensToDevice(BuiltinEvents.REDSTONE_CHANGED, entry.getKey())) {
                 continue;
             }
             if (!level.isLoaded(entry.getValue().pos())) {
@@ -2680,7 +2683,10 @@ public class ControllerBlockEntity extends BlockEntity {
             // connector on it.
             int strength = level.getBestNeighborSignal(entry.getValue().pos());
             Integer previous = lastRedstone.put(entry.getKey(), strength);
-            if (previous != null && previous == strength) {
+            // The first look only sets the baseline, as for device_changed:
+            // nothing changed there, it was only unknown. Reported, it woke a
+            // filtered await the moment its device started being watched.
+            if (previous == null || previous == strength) {
                 continue;
             }
             // Through the flow engine, so that an on redstone_changed may

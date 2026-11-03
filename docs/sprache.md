@@ -1188,9 +1188,15 @@ Namen und nicht Texte: Ein Name, den es im Netz nicht gibt, meldet der Editor.
 Die Klammern gibt es für die Geräte-Ereignisse `redstone_changed`,
 `device_changed`, `device_output`, `device_online` und `device_offline`.
 
+Auch `await` nimmt die Klammer: `let s = await redstone_changed[sensor]`
+wartet nur auf `sensor` und bekommt die Stärke.
+
 **Und sie sparen Arbeit:** Das Netz fragt nur noch die genannten Connectoren
-nach Redstone und Inhalt, nicht mehr alle. Ein `await` auf das Ereignis und
-ein Block ohne Klammern hören weiter auf alle.
+nach Redstone und Inhalt, nicht mehr alle. Ein Block oder ein `await` ohne
+Klammern hört weiter auf alle.
+
+Der erste Blick auf einen Connector meldet nichts, auch bei
+`redstone_changed`: Es hat sich nichts geändert, es war nur unbekannt.
 
 ### Eigene Ereignisse
 

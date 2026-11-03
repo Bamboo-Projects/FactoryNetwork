@@ -299,6 +299,33 @@ public final class FlowEngine {
         return flows.values().stream().anyMatch(flow -> flow.waitsFor(event));
     }
 
+    /** Whether some flow awaits this event without naming devices: then all are watched. */
+    public boolean awaitsAll(String event) {
+        for (Flow flow : flows.values()) {
+            if (flow.waitsFor(event)) {
+                Expr.Await await = awaitOf(flow);
+                if (await == null || await.devices().isEmpty()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Whether some flow awaits this event from this device. */
+    public boolean awaitsDevice(String event, String device) {
+        for (Flow flow : flows.values()) {
+            if (flow.waitsFor(event)) {
+                Expr.Await await = awaitOf(flow);
+                if (await == null || await.devices().isEmpty()
+                        || dev.devpanda.factorynetwork.runtime.EventFilter.accepts(program, await.devices(), device)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /** Starts a flow for every block listening for this event. */
     public List<Flow> fire(String event, List<Value> arguments) {
         List<Flow> started = new ArrayList<>();
@@ -426,11 +453,20 @@ public final class FlowEngine {
                 continue;
             }
             Expr.Await await = awaitOf(flow);
+            if (await != null && !await.devices().isEmpty()
+                    && !dev.devpanda.factorynetwork.runtime.EventFilter.matchesDevices(
+                            program, await.devices(), arguments)) {
+                continue;
+            }
             if (await != null && await.where() != null
                     && !matches(flow, await.where(), declaration, arguments)) {
                 continue;
             }
-            flow.bind(flow.awaitResultName(), resultOf(arguments));
+            // A filtered await knows its device; it gets the rest, like a
+            // filtered on block: await redstone_changed[sensor] is the strength.
+            List<Value> values = await != null && !await.devices().isEmpty() && arguments.size() > 1
+                    ? arguments.subList(1, arguments.size()) : arguments;
+            flow.bind(flow.awaitResultName(), resultOf(values));
             flow.resume();
             woken++;
         }

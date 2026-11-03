@@ -207,14 +207,15 @@ public sealed interface Expr {
     }
 
     /**
-     * {@code await BatchFinished where id == jobId timeout 30s else { … }}
+     * {@code await BatchFinished where id == jobId timeout 30s else { … }}, or
+     * for a device event with a filter: {@code await redstone_changed[sensor]}.
      *
      * <p>{@code timeout} and {@code elseBody} only occur together; without
      * {@code else} a value would stand there after the timeout that never
      * existed.
      */
-    record Await(String eventName, Expr where, Expr timeout, Block elseBody, Span span)
-            implements Expr {}
+    record Await(String eventName, java.util.List<String> devices, Expr where, Expr timeout,
+                 Block elseBody, Span span) implements Expr {}
 
     /**
      * {@code m => storage.count(m.input) > 0}

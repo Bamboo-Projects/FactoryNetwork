@@ -79,6 +79,15 @@ schon sagt, welches gemeint ist: `(stärke)` bekommt nur die Stärke.
 Ein Name, den es im Netz nicht gibt, meldet der Editor. Und das Netz spart
 Arbeit: Es schaut nur noch bei den genannten Connectoren nach.
 
+Dasselbe geht beim Warten:
+
+```
+let stärke = await redstone_changed[schalter]
+```
+
+Der Ablauf wacht nur auf, wenn sich das Signal am `schalter` ändert, und
+bekommt die Stärke.
+
 ## `device_output` gegen `device_changed`
 
 Der Unterschied entscheidet, ob deine Fabrik im Kreis läuft.

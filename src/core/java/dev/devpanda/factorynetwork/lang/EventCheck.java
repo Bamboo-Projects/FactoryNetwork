@@ -51,7 +51,7 @@ public final class EventCheck {
     }
 
     /** The events whose first value is a device, and so can be narrowed to devices. */
-    static final Set<String> DEVICE_EVENTS = Set.of(BuiltinEvents.REDSTONE_CHANGED,
+    public static final Set<String> DEVICE_EVENTS = Set.of(BuiltinEvents.REDSTONE_CHANGED,
             BuiltinEvents.DEVICE_CHANGED, BuiltinEvents.DEVICE_OUTPUT,
             BuiltinEvents.DEVICE_ONLINE, BuiltinEvents.DEVICE_OFFLINE);
 
