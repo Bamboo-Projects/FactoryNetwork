@@ -1263,13 +1263,26 @@ public final class FactoryGraph {
         return false;
     }
 
+    /** Hall blocks and ports abroad: they stand in {@link #abroad} but are no cable. */
+    private int portsAbroad() {
+        int count = 0;
+        for (GlobalPos pos : abroad) {
+            if (pos.dimension() == dev.devpanda.factorynetwork.hall.Halls.DIMENSION
+                    && dev.devpanda.factorynetwork.hall.HallPorts.of(
+                            dev.devpanda.factorynetwork.hall.Halls.hallAt(pos.pos())).contains(pos.pos())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     /** Does the network reach into other worlds at all? */
     public boolean reachesAbroad() {
         return !abroad.isEmpty();
     }
 
     public int cableCount() {
-        return cables.size() + abroad.size() - routersAbroad - bridgesAbroad;
+        return cables.size() + abroad.size() - routersAbroad - bridgesAbroad - portsAbroad();
     }
 
     /** Was the build aborted because the network is too large? */

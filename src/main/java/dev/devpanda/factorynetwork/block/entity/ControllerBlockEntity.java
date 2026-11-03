@@ -629,6 +629,9 @@ public class ControllerBlockEntity extends BlockEntity {
      * Notes that the network changed. The rebuild follows on one of the next
      * ticks, bundled: placing ten cables in one tick rebuilds once.
      */
+    /** How many devices the last rebuild found in other worlds and left out. */
+    private int skippedAbroad;
+
     public void markNetworkDirty() {
         networkDirty = true;
     }
@@ -642,6 +645,17 @@ public class ControllerBlockEntity extends BlockEntity {
         // beside us learns them only from us.
         projectPersistence.markStatusStale();
         graph = FactoryGraph.build(level, worldPosition);
+        // Drives, racks, displays behind a bridge or a hall port in another
+        // world do not count. Said once when the number changes, not on
+        // every rebuild.
+        if (graph.skippedAbroad() != skippedAbroad) {
+            skippedAbroad = graph.skippedAbroad();
+            if (skippedAbroad > 0) {
+                note(dev.devpanda.factorynetwork.runtime.LogLevel.WARN, "Netz", skippedAbroad
+                        + " Geräte in einer anderen Welt zählen nicht mit: Laufwerke, Serverschränke, "
+                        + "Displays und Fabricatoren gehören in die Welt des Controllers.");
+            }
+        }
         // Counted here and not on every query: Bandwidth.at hits the
         // controller per slot per worker per tick, and the attachments change
         // only when someone builds.

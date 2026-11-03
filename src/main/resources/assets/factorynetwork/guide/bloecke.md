@@ -247,6 +247,11 @@ zurück.
 
 *Kostet: keinen Kanal, keinen Strom.*
 
+**In der Halle zählen Kabel, Router, Brücken und Connector.** Laufwerke,
+Serverschränke, Displays und Fabricatoren gehören in die Welt des
+Controllers; in der Halle hängen sie nicht am Netz draußen, und das Protokoll
+des Controllers sagt es.
+
 **Der Port bleibt eine Wand:** unzerstörbar, die Halle bleibt zu. Ein
 Rechtsklick mit leerer Hand auf eine Wand führt hinaus, auf einen Port nicht.
 
