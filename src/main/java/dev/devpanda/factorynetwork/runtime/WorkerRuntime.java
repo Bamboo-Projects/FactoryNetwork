@@ -655,10 +655,13 @@ public final class WorkerRuntime {
 
     /** The path of a named device, or empty. */
     private List<FactoryGraph.Node> pathOfDevice(Expr device, FactoryGraph graph) {
-        if (!(device instanceof Expr.Name name)) {
+        SlotTarget slots = SlotTarget.of(device);
+        String named = slots != null ? slots.device()
+                : device instanceof Expr.Name name ? name.value() : null;
+        if (named == null) {
             return List.of();
         }
-        var stellen = graph.positionsOf(name.value());
+        var stellen = graph.positionsOf(named);
         return stellen.isEmpty() ? List.of() : graph.pathTo(stellen.get(0));
     }
 
@@ -700,6 +703,17 @@ public final class WorkerRuntime {
      * choice: a full device must not end the transfer.
      */
     private IItemHandler handlerOf(Expr target, FactoryGraph graph, WorkerState state) {
+        // Particular slots: the undivided inventory, cut down to them — the
+        // same handle a move with slots(…) takes, so the fuel goes into the
+        // fuel slot from one connector.
+        SlotTarget slots = SlotTarget.of(target);
+        if (slots != null) {
+            return resolveDevice(slots.device(), graph, state,
+                    connector -> NotifyingHandlers.items(
+                            SlotView.of(connector.machineInventoryAll(), slots.slots()),
+                            noticeFor(connector)),
+                    "An diesem Connector hängt keine Maschine mit Inventar");
+        }
         return resolve(target, graph, state,
                 connector -> NotifyingHandlers.items(
                         connector.machineInventory(), noticeFor(connector)),
@@ -802,6 +816,38 @@ public final class WorkerRuntime {
             used += handler.getStackInSlot(slot).getCount();
         }
         return used;
+    }
+
+    /**
+     * {@code ofen.slots(1)} or {@code ofen.slots(0..2)} as a worker's source
+     * or target, or {@code null} for anything else. Only literal numbers: a
+     * worker is a declaration and computes nothing.
+     */
+    record SlotTarget(String device, List<Integer> slots) {
+
+        static SlotTarget of(Expr expr) {
+            if (!(expr instanceof Expr.Call call)
+                    || !(call.callee() instanceof Expr.Member member)
+                    || !"slots".equals(member.name())
+                    || !(member.target() instanceof Expr.Name device)
+                    || call.arguments().size() != 1) {
+                return null;
+            }
+            Expr argument = call.arguments().get(0).value();
+            if (argument instanceof Expr.IntLit single) {
+                return new SlotTarget(device.value(), List.of((int) single.value()));
+            }
+            if (argument instanceof Expr.Range range
+                    && range.from() instanceof Expr.IntLit from
+                    && range.to() instanceof Expr.IntLit to) {
+                List<Integer> slots = new ArrayList<>();
+                for (long slot = from.value(); slot <= to.value() && slots.size() < 4096; slot++) {
+                    slots.add((int) slot);
+                }
+                return new SlotTarget(device.value(), List.copyOf(slots));
+            }
+            return null;
+        }
     }
 
     /** The graph of the current tick — only for the fill-level query. */

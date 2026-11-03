@@ -10392,6 +10392,38 @@ public final class FactoryNetworkGameTests {
      * connector per machine, the fuel still goes into the fuel slot), and
      * exactly why the price is stated in sprache.md.
      */
+    /** A worker keeps a certain slot stocked, the fuel case from the guide. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aWorkerKeepsACertainSlotStocked(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.COAL, 32);
+
+        helper.assertTrue(entity.deploy("""
+                worker kohle {
+                    from storage
+                    to depot.slots(5)
+                    filter item:coal
+                    maintain 8
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        BlockPos ziel = controller.east().south().south();
+        helper.startSequence()
+                .thenIdle(100)
+                .thenExecute(() -> {
+                    var state = entity.runtime().states().get("kohle");
+                    if (!(blockEntity(helper, ziel) instanceof ChestBlockEntity container)) {
+                        helper.fail("Am Ziel hängt keine Kiste", ziel);
+                        return;
+                    }
+                    helper.assertValueEqual(container.getItem(5).getCount(), 8,
+                            "Acht Kohle in Fach 5; der Worker sagt: " + state.status + " " + state.detail);
+                    helper.assertTrue(container.getItem(0).isEmpty(), "Fach 0 bleibt leer");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void movingIntoACertainSlot(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);
