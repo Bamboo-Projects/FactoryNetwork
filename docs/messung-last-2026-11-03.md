@@ -201,3 +201,19 @@ sind durch die Änderungen nicht berührt, das ist aber aus dem Code geschlossen
 nicht beobachtet.
 
 Tests: 664 Unit-Tests, 378 Spieltests (einer neu), alle grün.
+
+## Nachtrag: Netz über Welten (03.11. abends)
+
+Seit dem Netz über Dimensionen fragt ein gesetzter Netzblock auch Controller
+anderer Welten, aber nur solche, deren Netz die eigene Welt verlässt
+(`ControllerRegistry.REACHING`). Gleicher Bench (5.000 Sorten, 64 Worker,
+4.000 Kabel), `0805029` gegen `440de92`:
+
+| | vorher | nachher |
+|---|--:|--:|
+| `markChanged` neben keinem Netz | 1,00 µs | 1,18 µs |
+| `contains` im Worker-Netz | 0,10 µs | 0,11 µs |
+| Neuaufbau mit 4.000 Kabeln | 17,3 ms | 15,6 ms |
+
+Im Rauschen; nichts zu optimieren. Nicht gemessen: viele Controller, deren
+Netze durch Brücken oder Hallen-Ports in andere Welten reichen.
