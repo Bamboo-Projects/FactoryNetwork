@@ -545,10 +545,10 @@ class CodeEditorTest {
 
     @org.junit.jupiter.api.Test
     void itemsStartsAGridOnlyInFrontOfAValue() {
-        var grid = dev.devpanda.factorynetwork.lang.parse.Lexer.tokenize("    items storage.items()").tokens();
+        var grid = dev.devpanda.factorynetwork.lang.Lexer.tokenize("    items storage.items()").tokens();
         org.junit.jupiter.api.Assertions.assertSame(grid.get(0), CodeEditor.displayGridWord(grid));
         for (String name : new String[]{"items = 3", "items.count()", "items(1)", "items"}) {
-            var tokens = dev.devpanda.factorynetwork.lang.parse.Lexer.tokenize(name).tokens();
+            var tokens = dev.devpanda.factorynetwork.lang.Lexer.tokenize(name).tokens();
             org.junit.jupiter.api.Assertions.assertNull(CodeEditor.displayGridWord(tokens), name);
         }
     }
