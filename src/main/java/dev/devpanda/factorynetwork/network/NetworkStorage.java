@@ -62,6 +62,35 @@ public final class NetworkStorage implements ResourceStore {
     private final Map<ItemKey, List<Holder>> holders = new java.util.HashMap<>();
 
     /**
+     * The amount per item across all its variants, kept with {@link #index}.
+     *
+     * <p>{@link #count(Item)} is what conditions, {@code maintain} and
+     * displays ask, often every tick; summing the whole index for it cost
+     * 30 µs at 5,000 sorts even for an item with a single sort.
+     */
+    private final Map<Item, Long> totals = new java.util.HashMap<>();
+
+    /**
+     * The sorts of each item, in the order they stand in {@link #index}.
+     *
+     * <p>So that a worker filtering on one item finds its first sort without
+     * walking the whole stock: the plain iron ingot behind 5,000 named papers
+     * was the last entry of the walk.
+     */
+    private final Map<Item, java.util.LinkedHashSet<ItemKey>> variants = new java.util.HashMap<>();
+
+    private void noteSort(ItemKey key) {
+        variants.computeIfAbsent(key.item(), item -> new java.util.LinkedHashSet<>()).add(key);
+    }
+
+    private void forgetSort(ItemKey key) {
+        java.util.Set<ItemKey> sorts = variants.get(key.item());
+        if (sorts != null && sorts.remove(key) && sorts.isEmpty()) {
+            variants.remove(key.item());
+        }
+    }
+
+    /**
      * The sorts that changed since {@link #drainChanges}, or {@code null} when
      * more changed than can be named (a cell pulled, a bus refreshed).
      */
@@ -162,11 +191,15 @@ public final class NetworkStorage implements ResourceStore {
     private void rebuildIndex() {
         index.clear();
         holders.clear();
+        totals.clear();
+        variants.clear();
         List<CellInventory<ItemKey>> all = cells();
         for (int i = 0; i < all.size(); i++) {
             Holder holder = new Holder(all.get(i), cellOwners.get(i));
             all.get(i).contentsView().forEach((item, count) -> {
                 index.merge(item, count, Long::sum);
+                totals.merge(item.item(), count, Long::sum);
+                noteSort(item);
                 holders.computeIfAbsent(item, key -> new ArrayList<>(1)).add(holder);
             });
         }
@@ -175,7 +208,11 @@ public final class NetworkStorage implements ResourceStore {
         // And whatever lies in the foreign inventories. Nothing is read here —
         // refreshBuses does that per tick; here stands only what stood there last.
         for (StorageBus bus : buses) {
-            bus.contents().forEach((item, count) -> index.merge(item, count, Long::sum));
+            bus.contents().forEach((item, count) -> {
+                index.merge(item, count, Long::sum);
+                totals.merge(item.item(), count, Long::sum);
+                noteSort(item);
+            });
         }
         seenRevisions = new long[drives.size()];
         for (int i = 0; i < seenRevisions.length; i++) {
@@ -363,6 +400,8 @@ public final class NetworkStorage implements ResourceStore {
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
+            totals.merge(item.item(), count - left, Long::sum);
+            noteSort(item);
             noteChanged(item);
             if (touchedBus || left < afterCells) {
                 // A bus took part: what it holds is not one drive's matter.
@@ -415,11 +454,20 @@ public final class NetworkStorage implements ResourceStore {
             taken += bus.extract(item, count - taken);
         }
         if (taken > 0) {
-            long rest = stock.getOrDefault(item, 0L) - taken;
+            long before = stock.getOrDefault(item, 0L);
+            long rest = before - taken;
             if (rest > 0) {
                 stock.put(item, rest);
             } else {
                 stock.remove(item);
+                forgetSort(item);
+            }
+            // By what left the index, so the total stays its sum.
+            long total = totals.getOrDefault(item.item(), 0L) - (before - Math.max(rest, 0));
+            if (total != 0) {
+                totals.put(item.item(), total);
+            } else {
+                totals.remove(item.item());
             }
             noteChanged(item);
             if (taken > fromCells) {
@@ -443,13 +491,36 @@ public final class NetworkStorage implements ResourceStore {
      * a question for the stock, not a question of grammar.
      */
     public long count(Item item) {
-        long found = 0;
-        for (Map.Entry<ItemKey, Long> entry : index().entrySet()) {
-            if (entry.getKey().item() == item) {
-                found += entry.getValue();
+        index();
+        return totals.getOrDefault(item, 0L);
+    }
+
+    /**
+     * The first sort in stock order whose item is in {@code filter} (any for
+     * an empty one) and that is present, or {@code null}. Walks the index itself instead of a copy: a worker asks
+     * this on every step, and copying 5,000 sorts for it cost half a
+     * millisecond.
+     */
+    public @org.jetbrains.annotations.Nullable ItemKey firstPresent(List<Item> filter) {
+        Map<ItemKey, Long> stock = index();
+        if (filter.size() == 1) {
+            // One item: its own sorts, in the same order as the index.
+            java.util.Set<ItemKey> sorts = variants.get(filter.get(0));
+            if (sorts != null) {
+                for (ItemKey key : sorts) {
+                    if (stock.getOrDefault(key, 0L) > 0) {
+                        return key;
+                    }
+                }
+            }
+            return null;
+        }
+        for (Map.Entry<ItemKey, Long> entry : stock.entrySet()) {
+            if (entry.getValue() > 0 && (filter.isEmpty() || filter.contains(entry.getKey().item()))) {
+                return entry.getKey();
             }
         }
-        return found;
+        return null;
     }
 
     /**
@@ -532,6 +603,8 @@ public final class NetworkStorage implements ResourceStore {
         }
         stock.clear();
         holders.clear();
+        totals.clear();
+        variants.clear();
         changed = null;
         markChanged();
     }

@@ -302,6 +302,22 @@ final class Bench {
             controller.storage().count(Items.IRON_INGOT);
         }
         results.put("countIronUs", round((System.nanoTime() - start) / 1e3 / 1_000));
+        // The first present sort for a worker from storage, filtered on iron:
+        // as a copy of the whole stock (the way it was), and from the store.
+        List<net.minecraft.world.item.Item> iron = List.of(Items.IRON_INGOT);
+        start = System.nanoTime();
+        for (int i = 0; i < 100; i++) {
+            controller.storage().contents().keySet().stream()
+                    .filter(key -> iron.contains(key.item()))
+                    .filter(key -> controller.storage().count(key) > 0)
+                    .findFirst();
+        }
+        results.put("firstIronByCopyUs", round((System.nanoTime() - start) / 1e3 / 100));
+        start = System.nanoTime();
+        for (int i = 0; i < 1_000; i++) {
+            controller.storage().firstPresent(iron);
+        }
+        results.put("firstIronUs", round((System.nanoTime() - start) / 1e3 / 1_000));
         controller.setChanged();
     }
 
@@ -545,6 +561,21 @@ final class Bench {
         }
         results.put("rebuildMs", round((System.nanoTime() - start) / 1e6 / rounds));
         results.put("cableEdges", controller.graph().edges().size());
+        // What every placed or broken network block costs: each controller in
+        // the level is asked whether the spot touches its network. A spot
+        // next to none of them is the case that looks at everything.
+        BlockPos nowhere = CABLES.above(10);
+        start = System.nanoTime();
+        for (int i = 0; i < 10_000; i++) {
+            dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, nowhere);
+        }
+        results.put("markChangedUs", round((System.nanoTime() - start) / 1e3 / 10_000));
+        ControllerBlockEntity workers = (ControllerBlockEntity) level.getBlockEntity(WORKERS);
+        start = System.nanoTime();
+        for (int i = 0; i < 10_000; i++) {
+            workers.graph().contains(nowhere);
+        }
+        results.put("containsWorkersNetUs", round((System.nanoTime() - start) / 1e3 / 10_000));
     }
 
     // ---- Building blocks ----------------------------------------------------

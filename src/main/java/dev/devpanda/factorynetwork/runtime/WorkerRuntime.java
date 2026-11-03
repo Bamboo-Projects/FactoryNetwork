@@ -583,12 +583,7 @@ public final class WorkerRuntime {
         // <b>An entry and not a type:</b> what is chosen here goes into the
         // machine as a stack afterwards — and a named pickaxe would arrive
         // as a plain one if only the id stood here.
-        dev.devpanda.factorynetwork.storage.ItemKey item = storage.contents().keySet()
-                .stream()
-                .filter(key -> filter.isEmpty() || filter.contains(key.item()))
-                .filter(key -> storage.count(key) > 0)
-                .findFirst()
-                .orElse(null);
+        dev.devpanda.factorynetwork.storage.ItemKey item = storage.firstPresent(filter);
         if (item == null) {
             state.status = Status.WAITING_SOURCE;
             return 0;
