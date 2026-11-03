@@ -83,6 +83,20 @@ erste eben eingelegt hat.
 Den Brennstoff legst du für den Anfang von Hand nach. Wer ihn auch aus dem
 Netz haben will, hängt einen dritten Connector an eine **Seite** des Ofens.
 
+So sieht es fertig aus. Die Szene lässt sich mit der Maus drehen; ein Klick
+auf einen Block nennt ihn.
+
+<GameScene zoom="4" interactive={true}>
+  <ImportStructure src="scenes/erste_anlage.snbt" />
+  <BlockAnnotation x="1" y="0" z="1" color="#ffb48ef0">Controller — das Terminal kommt direkt daneben</BlockAnnotation>
+  <BlockAnnotation x="0" y="0" z="1" color="#ffb48ef0">Serverschrank</BlockAnnotation>
+  <BlockAnnotation x="1" y="0" z="0" color="#ffb48ef0">Laufwerk mit Zelle</BlockAnnotation>
+  <BlockAnnotation x="3" y="0" z="1" color="#ff5aa9e6">Connector lager, zeigt nach oben in die Truhe</BlockAnnotation>
+  <BlockAnnotation x="4" y="0" z="1" color="#ff7bd389">Connector ofen_aus, zeigt von unten in den Ofen: das Ergebnis</BlockAnnotation>
+  <BlockAnnotation x="4" y="2" z="1" color="#fff2b84b">Connector ofen_ein, zeigt von oben in den Ofen: das Material</BlockAnnotation>
+  <IsometricCamera yaw="200" pitch="30" />
+</GameScene>
+
 ## 3. Namen vergeben
 
 Ein Connector ohne Namen hängt im Netz, kostet seinen Kanal und ist im Code

@@ -72,6 +72,8 @@ public final class FactoryNetwork {
         if (net.neoforged.fml.ModList.get().isLoaded("guideme")
                 && net.neoforged.fml.loading.FMLEnvironment.getDist().isClient()) {
             dev.devpanda.factorynetwork.compat.guide.FnGuide.register();
+            dev.devpanda.factorynetwork.client.ManualTopics.setOpener(
+                    dev.devpanda.factorynetwork.compat.guide.FnGuide::open);
         }
     }
 }

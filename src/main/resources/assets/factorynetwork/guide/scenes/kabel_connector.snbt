@@ -1,0 +1,19 @@
+{
+    DataVersion: 4790,
+    size: [3, 3, 3],
+    data: [
+        {pos: [0, 1, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [1, 1, 0], state: "minecraft:furnace{facing:north,lit:false}", nbt: {Items: [], RecipesUsed: {}, components: {}, cooking_time_spent: 0, cooking_total_time: 0, id: "minecraft:furnace", lit_time_remaining: 0, lit_total_time: 0}},
+        {pos: [1, 1, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:true,south:false,up:true,west:true}", nbt: {Parts: [{ChannelCost: 1, Label: "kiste", Redstone: 0, Side: 1, State: 0b}, {ChannelCost: 1, Label: "ofen", Redstone: 0, Side: 2, State: 0b}, {ChannelCost: 1, Label: "fass", Redstone: 0, Side: 5, State: 0b}], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [2, 1, 1], state: "minecraft:barrel{facing:north,open:false}", nbt: {Items: [], components: {}, id: "minecraft:barrel"}},
+        {pos: [1, 2, 1], state: "minecraft:chest{facing:north,type:single,waterlogged:false}", nbt: {Items: [], components: {}, id: "minecraft:chest"}}
+    ],
+    entities: [],
+    palette: [
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}",
+        "minecraft:furnace{facing:north,lit:false}",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:true,south:false,up:true,west:true}",
+        "minecraft:barrel{facing:north,open:false}",
+        "minecraft:chest{facing:north,type:single,waterlogged:false}"
+    ]
+}

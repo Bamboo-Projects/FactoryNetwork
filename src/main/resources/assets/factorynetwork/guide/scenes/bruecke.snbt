@@ -1,0 +1,21 @@
+{
+    DataVersion: 4790,
+    size: [9, 2, 3],
+    data: [
+        {pos: [0, 0, 1], state: "factorynetwork:controller", nbt: {DataVersion: 1, Files: {main.mf: ""}, Fluids: {}, Globals: {}, Jobs: [], Log: [], NextJob: 1L, Power: {Boot: 0, Energy: 0, State: "OFF"}, Source: "", Storage: {}, components: {}, id: "factorynetwork:controller"}},
+        {pos: [1, 0, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [2, 0, 1], state: "factorynetwork:bridge{linked:true}", nbt: {Items: [{Slot: 0b, components: {"factorynetwork:entanglement": [I; -2054994942, -536131770, -1144317373, 1976547789]}, count: 1, id: "factorynetwork:entanglement"}], components: {}, id: "factorynetwork:bridge"}},
+        {pos: [6, 0, 1], state: "factorynetwork:bridge{linked:true}", nbt: {Items: [{Slot: 0b, components: {"factorynetwork:entanglement": [I; -2054994942, -536131770, -1144317373, 1976547789]}, count: 1, id: "factorynetwork:entanglement"}], components: {}, id: "factorynetwork:bridge"}},
+        {pos: [7, 0, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [8, 0, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:false,north:false,south:false,up:true,west:true}", nbt: {Parts: [{ChannelCost: 1, Label: "fern", Redstone: 0, Side: 1, State: 0b}], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [8, 1, 1], state: "minecraft:chest{facing:north,type:single,waterlogged:false}", nbt: {Items: [], components: {}, id: "minecraft:chest"}}
+    ],
+    entities: [],
+    palette: [
+        "factorynetwork:controller",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}",
+        "factorynetwork:bridge{linked:true}",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:false,north:false,south:false,up:true,west:true}",
+        "minecraft:chest{facing:north,type:single,waterlogged:false}"
+    ]
+}

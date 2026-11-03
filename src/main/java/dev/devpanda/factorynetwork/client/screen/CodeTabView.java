@@ -337,7 +337,9 @@ public class CodeTabView {
         String word = editor.wordAt(mouseX, mouseY);
         NameJump.Jump jump = NameJump.resolve(word, project);
         if (jump == null) {
-            return false;
+            // A word of the language has no definition in the code: its
+            // explanation is the page in the manual, with its scenes.
+            return dev.devpanda.factorynetwork.client.ManualTopics.open(word);
         }
         if (jump.inCode() != null) {
             openFile(jump.inCode().file());

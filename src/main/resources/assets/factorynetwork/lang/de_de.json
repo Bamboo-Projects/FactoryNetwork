@@ -428,7 +428,7 @@
   "screen.factorynetwork.code.help.close": "Diese Liste schließen",
   "screen.factorynetwork.code.saving": "sichert…",
   "screen.factorynetwork.code.unsaved": "nicht übernommen",
-  "screen.factorynetwork.code.help.goto": "Zur Erklärung springen",
+  "screen.factorynetwork.code.help.goto": "Zur Erklärung springen, bei Sprachwörtern ins Handbuch",
   "screen.factorynetwork.code.declared_in": "erklärt in %s, Zeile %s",
   "screen.factorynetwork.code.used": "%s weitere Fundstellen",
   "screen.factorynetwork.code.at": "steht bei %s %s %s",

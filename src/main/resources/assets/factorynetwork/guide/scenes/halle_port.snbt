@@ -1,0 +1,41 @@
+{
+    DataVersion: 4790,
+    size: [5, 4, 3],
+    data: [
+        {pos: [0, 0, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 0, 0], state: "factorynetwork:hall_wall"},
+        {pos: [2, 0, 0], state: "factorynetwork:hall_wall"},
+        {pos: [3, 0, 0], state: "factorynetwork:hall_wall"},
+        {pos: [4, 0, 0], state: "factorynetwork:hall_wall"},
+        {pos: [0, 1, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 1, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 1, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:true,up:false,west:false}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [1, 1, 2], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:false,north:true,south:false,up:true,west:false}", nbt: {Parts: [{ChannelCost: 1, Label: "lager", Redstone: 0, Side: 1, State: 0b}], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [2, 1, 0], state: "factorynetwork:hall_port", nbt: {components: {}, id: "factorynetwork:hall_port"}},
+        {pos: [2, 1, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:true}", nbt: {Parts: [{ChannelCost: 1, Label: "ofen", Redstone: 0, Side: 5, State: 0b}], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [3, 1, 0], state: "factorynetwork:hall_wall"},
+        {pos: [3, 1, 1], state: "minecraft:furnace{facing:north,lit:false}", nbt: {Items: [], RecipesUsed: {}, components: {}, cooking_time_spent: 0, cooking_total_time: 0, id: "minecraft:furnace", lit_time_remaining: 0, lit_total_time: 0}},
+        {pos: [4, 1, 0], state: "factorynetwork:hall_wall"},
+        {pos: [0, 2, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 2, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 2, 2], state: "minecraft:chest{facing:north,type:single,waterlogged:false}", nbt: {Items: [], components: {}, id: "minecraft:chest"}},
+        {pos: [2, 2, 0], state: "factorynetwork:hall_wall"},
+        {pos: [3, 2, 0], state: "factorynetwork:hall_wall"},
+        {pos: [4, 2, 0], state: "factorynetwork:hall_wall"},
+        {pos: [0, 3, 0], state: "factorynetwork:hall_wall"},
+        {pos: [1, 3, 0], state: "factorynetwork:hall_wall"},
+        {pos: [2, 3, 0], state: "factorynetwork:hall_wall"},
+        {pos: [3, 3, 0], state: "factorynetwork:hall_wall"},
+        {pos: [4, 3, 0], state: "factorynetwork:hall_wall"}
+    ],
+    entities: [],
+    palette: [
+        "factorynetwork:hall_wall",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:true,up:false,west:false}",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:false,north:true,south:false,up:true,west:false}",
+        "factorynetwork:hall_port",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:true}",
+        "minecraft:furnace{facing:north,lit:false}",
+        "minecraft:chest{facing:north,type:single,waterlogged:false}"
+    ]
+}

@@ -47,6 +47,7 @@ import java.util.function.Function;
  *   GET /click?gx=&amp;gy=&amp;button=0&amp;mods=0  mouse click at a GUI position
  *   GET /slot?n=&amp;button=0&amp;mods=0       click a menu slot by index
  *   GET /key?k=73&amp;mods=2               press and release a key (GLFW codes)
+ *   GET /scroll?gx=&amp;gy=&amp;dy=-3          mouse wheel at a GUI position
  *   GET /sneak?on=1                    hold the sneak key (0 lets go)
  *   GET /type?text=x                   set the focused text field
  *   GET /close                         close the screen
@@ -81,6 +82,17 @@ final class ControlBridge {
             route(server, "/click", q -> click(dbl(q, "gx"), dbl(q, "gy"), num(q, "button", 0), num(q, "mods", 0)));
             route(server, "/slot", ControlBridge::slot);
             route(server, "/key", q -> key(num(q, "k", 0), num(q, "mods", 0)));
+            // Scrolls the mouse wheel at a GUI position: dy > 0 up, < 0 down.
+            route(server, "/scroll", q -> {
+                Minecraft client = Minecraft.getInstance();
+                move(dbl(q, "gx"), dbl(q, "gy"));
+                invoke(client.mouseHandler, "onScroll", new Class<?>[]{long.class, double.class, double.class},
+                        client.getWindow().handle(), 0.0, dbl(q, "dy"));
+                return "ok";
+            });
+            // The manual page for a word of the language, as Ctrl+click in the editor opens it.
+            route(server, "/manual", q -> String.valueOf(
+                    dev.devpanda.factorynetwork.client.ManualTopics.open(q.getOrDefault("word", ""))));
             // Holds the sneak key down (on=1) or lets go (on=0).
             route(server, "/sneak", q -> {
                 Minecraft.getInstance().options.keyShift.setDown(num(q, "on", 1) != 0);

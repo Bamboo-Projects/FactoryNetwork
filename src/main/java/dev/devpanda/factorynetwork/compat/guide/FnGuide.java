@@ -34,6 +34,16 @@ public final class FnGuide {
     private FnGuide() {
     }
 
+    /** Opens the manual at this page, client side; see {@code ManualTopics}. */
+    public static void open(String page) {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null) {
+            guideme.GuidesCommon.openGuide(player,
+                    Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "guide"),
+                    guideme.PageAnchor.page(Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, page)));
+        }
+    }
+
     /** Creates the manual. Called from the mod constructor. */
     public static void register() {
         Guide.builder(Identifier.fromNamespaceAndPath(FactoryNetwork.MOD_ID, "guide"))

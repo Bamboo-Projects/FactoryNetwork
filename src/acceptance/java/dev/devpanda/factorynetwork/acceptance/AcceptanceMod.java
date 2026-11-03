@@ -136,6 +136,20 @@ public final class AcceptanceMod {
                             + " doorChunk=" + server.overworld().isLoaded(HALL_DOOR)), false);
                     return 1;
                 }))));
+        // /fnscene all|<name>: builds the guide scenes and saves them as structure files.
+        event.getDispatcher().register(Commands.literal("fnscene")
+                .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
+                .then(Commands.argument("name", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(ctx -> {
+                            String name = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "name");
+                            var level = ctx.getSource().getServer().overworld();
+                            StringBuilder out = new StringBuilder();
+                            for (String one : "all".equals(name) ? SceneMaker.names() : java.util.Set.of(name)) {
+                                out.append(SceneMaker.make(level, one)).append(" | ");
+                            }
+                            ctx.getSource().sendSuccess(() -> Component.literal(out.toString().trim()), false);
+                            return 1;
+                        })));
         event.getDispatcher().register(Commands.literal("fnacceptance")
                 .requires(Commands.hasPermission(Commands.LEVEL_OWNERS))
                 .then(Commands.literal("setup").executes(ctx -> {

@@ -86,6 +86,12 @@ final class EditorSession {
                     publish(true);
                 }
                 case "close" -> close(true);
+                // Ctrl+click on a word of the language: its page in the manual.
+                case "guide" -> {
+                    String word = request.get("word").getAsString();
+                    net.minecraft.client.Minecraft.getInstance().execute(() ->
+                            dev.devpanda.factorynetwork.client.ManualTopics.open(word));
+                }
                 default -> throw new IllegalArgumentException("Unbekannte Editor-Aktion.");
             }
         } catch (RuntimeException invalid) {

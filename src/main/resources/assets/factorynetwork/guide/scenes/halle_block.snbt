@@ -1,0 +1,17 @@
+{
+    DataVersion: 4790,
+    size: [4, 2, 3],
+    data: [
+        {pos: [0, 0, 1], state: "factorynetwork:controller", nbt: {DataVersion: 1, Files: {main.mf: ""}, Fluids: {}, Globals: {}, Jobs: [], Log: [], NextJob: 1L, Power: {Boot: 0, Energy: 0, State: "OFF"}, Source: "", Storage: {}, components: {}, id: "factorynetwork:controller"}},
+        {pos: [1, 0, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [2, 0, 1], state: "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:true}", nbt: {Parts: [], components: {}, id: "factorynetwork:cable_bus"}},
+        {pos: [3, 0, 1], state: "factorynetwork:hall_16", nbt: {components: {}, id: "factorynetwork:hall"}}
+    ],
+    entities: [],
+    palette: [
+        "factorynetwork:controller",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:false}",
+        "factorynetwork:cable{cable:true,colour:none,down:false,east:true,north:false,south:false,up:false,west:true}",
+        "factorynetwork:hall_16"
+    ]
+}

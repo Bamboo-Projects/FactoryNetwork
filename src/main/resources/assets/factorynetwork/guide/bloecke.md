@@ -131,6 +131,17 @@ Namensfenster, und für einen Connector ohne Namen steht dort schon ein
 Vorschlag aus der Maschine dahinter. Am Kabel gilt die Fläche, die du
 triffst.
 
+<GameScene zoom="4" interactive={true}>
+  <ImportStructure src="scenes/kabel_connector.snbt" />
+  <BlockAnnotation x="1" y="2" z="1" color="#ff5aa9e6">kiste — Connector oben</BlockAnnotation>
+  <BlockAnnotation x="1" y="1" z="0" color="#ff7bd389">ofen — Connector nach Norden</BlockAnnotation>
+  <BlockAnnotation x="2" y="1" z="1" color="#fff2b84b">fass — Connector nach Osten</BlockAnnotation>
+  <IsometricCamera yaw="225" pitch="30" />
+</GameScene>
+
+Ein Kabelblock trägt bis zu sechs Connectoren, je Fläche einen, und jeder hat
+seinen eigenen Namen.
+
 Redstone gibt er aus, wenn das Programm es verlangt: `alarm.redstone(15)`.
 Eine Fläche mit Anschluss gibt genau dessen Stärke, eine freie die stärkste
 am Block — sechs Anschlüsse an einem Kabel schalten also sechs Maschinen
@@ -230,6 +241,14 @@ jeden anderen.
 
 *Kostet: keinen Kanal, 6 FE/t je Ende.*
 
+<GameScene zoom="3" interactive={true}>
+  <ImportStructure src="scenes/bruecke.snbt" />
+  <BlockAnnotation x="2" y="0" z="1" color="#ffb48ef0">Brücke mit der einen Hälfte</BlockAnnotation>
+  <BlockAnnotation x="6" y="0" z="1" color="#ffb48ef0">Brücke mit der anderen Hälfte — gern in einer anderen Dimension</BlockAnnotation>
+  <BlockAnnotation x="8" y="1" z="1" color="#ff5aa9e6">fern: hängt am Netz, ohne Kabel zum Controller</BlockAnnotation>
+  <IsometricCamera yaw="200" pitch="30" />
+</GameScene>
+
 **Wo etwas steht, ist dem Netz egal.** Laufwerke, Serverschränke, Displays,
 Fabricatoren und Masten hinter der Brücke gehören genauso dazu wie neben dem
 Controller.
@@ -248,6 +267,25 @@ draußen spricht sie mit ihrem Namen an.
 
 Schleichen mit leerer Hand macht einen Port wieder zur Wand und gibt ihn
 zurück.
+
+
+Draußen hängt der Hallenblock am Kabel wie jedes andere Netzteil:
+
+<GameScene zoom="4" interactive={true}>
+  <ImportStructure src="scenes/halle_block.snbt" />
+  <BlockAnnotation x="3" y="0" z="1" color="#fff2b84b">Hallenblock</BlockAnnotation>
+  <IsometricCamera yaw="200" pitch="30" />
+</GameScene>
+
+Drinnen geht dasselbe Kabel hinter einem Port weiter:
+
+<GameScene zoom="4" interactive={true}>
+  <ImportStructure src="scenes/halle_port.snbt" />
+  <BlockAnnotation x="2" y="1" z="0" color="#fff2b84b">Port in der Wand</BlockAnnotation>
+  <BlockAnnotation x="2" y="1" z="1" color="#ff7bd389">ofen — Connector am Kabel hinter dem Port</BlockAnnotation>
+  <BlockAnnotation x="1" y="1" z="2" color="#ff5aa9e6">lager</BlockAnnotation>
+  <IsometricCamera yaw="160" pitch="30" />
+</GameScene>
 
 **Halle als eine Maschine.** Schleichen und Rechtsklick mit leerer Hand auf
 den Hallenblock öffnet das Namensfenster: Dort bekommt die Halle einen

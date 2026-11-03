@@ -102,6 +102,10 @@ Auf einen Namen im Code:
 - Ist es ein Connector, setzt er eine **Marke in der Welt**. Sie steht eine
   halbe Minute und ist durch Wände zu sehen; du musst also nicht erst die
   Kammer finden, in der das Gerät hängt.
+- Ist es ein Wort der Sprache — `worker`, `filter`, `multiblock`, `on`,
+  `display` und so weiter —, öffnet sich **die Seite im Handbuch**, die es
+  erklärt, mit ihren 3D-Szenen. Das geht im Editor im Terminal wie im großen
+  Editor.
 
 ## Ordner im Projekt
 

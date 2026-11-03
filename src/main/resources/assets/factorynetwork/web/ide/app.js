@@ -403,6 +403,12 @@
       bracketPairColorization: { enabled: true }, renderWhitespace: 'selection', scrollBeyondLastLine: false,
       smoothScrolling: false, wordWrap: 'off', mouseWheelZoom: true, readOnly: true });
     editor.onDidChangeCursorPosition(updatePosition);
+    // Ctrl+click on a word of the language opens its page in the manual.
+    editor.onMouseDown(event => {
+      if (!(event.event.ctrlKey || event.event.metaKey) || !event.target.position) return;
+      const word = editor.getModel() && editor.getModel().getWordAtPosition(event.target.position);
+      if (word) send({ type: 'guide', word: word.word });
+    });
     loaded = true; render();
     window.fnIde = { editor, modelle: models, waehle: selectFile, dateien: () => Object.keys(session.files) };
     console.log('Factory Network IDE bereit');

@@ -70,6 +70,15 @@ Controller ── Kabel ── [Gateway "werk_1"] ── Kabel ── Connector 
                                               └────── Connector "ausgang"
 ```
 
+
+<GameScene zoom="4" interactive={true}>
+  <ImportStructure src="scenes/gateway.snbt" />
+  <BlockAnnotation x="2" y="0" z="1" color="#ffb48ef0">Gateway werk_1</BlockAnnotation>
+  <BlockAnnotation x="3" y="0" z="1" color="#ff5aa9e6">eingang — im Netz werk_1/eingang</BlockAnnotation>
+  <BlockAnnotation x="4" y="0" z="1" color="#ff7bd389">ausgang — im Netz werk_1/ausgang</BlockAnnotation>
+  <IsometricCamera yaw="200" pitch="30" />
+</GameScene>
+
 Rechtsklick auf den Gateway, Namen eintragen — **alles, was dahinter am Kabel
 hängt, gehört zu dieser Anlage.** An den Connectoren steht weiterhin nur
 `eingang` und `ausgang`; das Netz kennt sie als `werk_1/eingang` und
