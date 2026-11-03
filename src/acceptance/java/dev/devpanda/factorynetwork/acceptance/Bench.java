@@ -289,6 +289,73 @@ final class Bench {
             controller.storage().contents();
         }
         results.put("contentsMs", round((System.nanoTime() - start) / 1e6 / 20));
+        // How well the keys spread in a hash map: few distinct hashes would
+        // make every map of the stock slow.
+        results.put("distinctKeyHashes", keys.stream().mapToInt(ItemKey::hashCode).distinct().count());
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            new java.util.ArrayList<>(controller.storage().contents().keySet());
+        }
+        long copyAndList = System.nanoTime() - start;
+        var once = controller.storage().contents();
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            new java.util.ArrayList<>(once.keySet());
+        }
+        results.put("listOnlyMs", round((System.nanoTime() - start) / 1e6 / 20));
+        results.put("contentsAgainMs", round(copyAndList / 1e6 / 20));
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            controller.storage().distinctTypes();
+        }
+        results.put("indexOnlyMs", round((System.nanoTime() - start) / 1e6 / 20));
+        // A network rebuild drops the stock index; the next question builds
+        // it again from all cells.
+        start = System.nanoTime();
+        for (int i = 0; i < 5; i++) {
+            controller.rebuildNetwork();
+            controller.storage().distinctTypes();
+        }
+        results.put("rebuildWithIndexMs", round((System.nanoTime() - start) / 1e6 / 5));
+        start = System.nanoTime();
+        for (int i = 0; i < 5; i++) {
+            controller.rebuildNetwork();
+        }
+        results.put("rebuildAloneMs", round((System.nanoTime() - start) / 1e6 / 5));
+        // And the first question by item after it, which groups the index.
+        start = System.nanoTime();
+        for (int i = 0; i < 5; i++) {
+            controller.rebuildNetwork();
+            controller.storage().count(Items.PAPER);
+        }
+        results.put("rebuildWithCountMs", round((System.nanoTime() - start) / 1e6 / 5));
+        // The two parts on their own: building the index, then the first
+        // questions by item after it.
+        long indexNanos = 0;
+        long countNanos = 0;
+        long firstNanos = 0;
+        for (int i = 0; i < 10; i++) {
+            controller.rebuildNetwork();
+            long t0 = System.nanoTime();
+            controller.storage().distinctTypes();
+            long t1 = System.nanoTime();
+            controller.storage().count(Items.PAPER);
+            long t2 = System.nanoTime();
+            controller.storage().firstPresent(List.of(Items.IRON_INGOT));
+            long t3 = System.nanoTime();
+            indexNanos += t1 - t0;
+            countNanos += t2 - t1;
+            firstNanos += t3 - t2;
+        }
+        results.put("indexBuildMs", round(indexNanos / 1e6 / 10));
+        results.put("firstCountAfterRebuildMs", round(countNanos / 1e6 / 10));
+        results.put("firstIronAfterRebuildMs", round(firstNanos / 1e6 / 10));
+        controller.storage().distinctTypes();
+        start = System.nanoTime();
+        for (int i = 0; i < 20; i++) {
+            new java.util.LinkedHashMap<>(once);
+        }
+        results.put("plainCopyMs", round((System.nanoTime() - start) / 1e6 / 20));
         // By item across all variants, as a condition or display asks: one
         // with every sort a variant of it, one with a single bare sort.
         controller.storage().insert(ItemKey.bare(Items.IRON_INGOT), 100);

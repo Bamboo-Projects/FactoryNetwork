@@ -61,32 +61,83 @@ public final class NetworkStorage implements ResourceStore {
      */
     private final Map<ItemKey, List<Holder>> holders = new java.util.HashMap<>();
 
-    /**
-     * The amount per item across all its variants, kept with {@link #index}.
-     *
-     * <p>{@link #count(Item)} is what conditions, {@code maintain} and
-     * displays ask, often every tick; summing the whole index for it cost
-     * 30 µs at 5,000 sorts even for an item with a single sort.
-     */
-    private final Map<Item, Long> totals = new java.util.HashMap<>();
-
-    /**
-     * The sorts of each item, in the order they stand in {@link #index}.
-     *
-     * <p>So that a worker filtering on one item finds its first sort without
-     * walking the whole stock: the plain iron ingot behind 5,000 named papers
-     * was the last entry of the walk.
-     */
-    private final Map<Item, java.util.LinkedHashSet<ItemKey>> variants = new java.util.HashMap<>();
-
-    private void noteSort(ItemKey key) {
-        variants.computeIfAbsent(key.item(), item -> new java.util.LinkedHashSet<>()).add(key);
+    /** The summed amount of one item and, once asked for, its sorts in index order. */
+    private static final class Group {
+        long total;
+        java.util.LinkedHashSet<ItemKey> sorts;
     }
 
-    private void forgetSort(ItemKey key) {
-        java.util.Set<ItemKey> sorts = variants.get(key.item());
-        if (sorts != null && sorts.remove(key) && sorts.isEmpty()) {
-            variants.remove(key.item());
+    /**
+     * The index grouped by item, or {@code null} until someone asks.
+     *
+     * <p>{@link #count(Item)} is what conditions, {@code maintain} and
+     * displays ask, often every tick, and a worker from storage looks for the
+     * first sort of its filter item. Summing or walking the whole index for
+     * that cost 30 µs to 0.5 ms at 5,000 sorts. The totals are built in one
+     * pass over the index on first use, the sorts of an item only when a
+     * worker asks for them; both are then kept up to date with the index. A
+     * rebuild of the index drops them again, so a rebuild nobody follows with
+     * such a question costs nothing extra (docs/messung-last-2026-11-03.md).
+     */
+    private Map<Item, Group> groups;
+
+    private Map<Item, Group> groups() {
+        Map<ItemKey, Long> stock = index();
+        if (groups == null) {
+            Map<Item, Group> built = new java.util.HashMap<>();
+            Item lastItem = null;
+            Group last = null;
+            for (Map.Entry<ItemKey, Long> entry : stock.entrySet()) {
+                Item item = entry.getKey().item();
+                // Runs of the same item are common: a cell is filled sort by sort.
+                Group group = item == lastItem ? last : built.computeIfAbsent(item, key -> new Group());
+                group.total += entry.getValue();
+                lastItem = item;
+                last = group;
+            }
+            groups = built;
+        }
+        return groups;
+    }
+
+    /** The sorts of an item in index order, gathered on first use; {@code null} for none. */
+    private java.util.Set<ItemKey> sortsOf(Item item) {
+        Group group = groups().get(item);
+        if (group == null) {
+            return null;
+        }
+        if (group.sorts == null) {
+            group.sorts = new java.util.LinkedHashSet<>();
+            for (ItemKey key : index.keySet()) {
+                if (key.item() == item) {
+                    group.sorts.add(key);
+                }
+            }
+        }
+        return group.sorts;
+    }
+
+    /** Folds an own change of the index into the groups, if they are built. */
+    private void regroup(ItemKey key, long delta, boolean gone) {
+        if (groups == null) {
+            return;
+        }
+        if (gone) {
+            Group group = groups.get(key.item());
+            if (group != null) {
+                group.total += delta;
+                // An item with no sort left keeps its group at zero until
+                // the next rebuild; the answers are the same either way.
+                if (group.sorts != null) {
+                    group.sorts.remove(key);
+                }
+            }
+            return;
+        }
+        Group group = groups.computeIfAbsent(key.item(), item -> new Group());
+        group.total += delta;
+        if (group.sorts != null) {
+            group.sorts.add(key);
         }
     }
 
@@ -191,15 +242,12 @@ public final class NetworkStorage implements ResourceStore {
     private void rebuildIndex() {
         index.clear();
         holders.clear();
-        totals.clear();
-        variants.clear();
+        groups = null;
         List<CellInventory<ItemKey>> all = cells();
         for (int i = 0; i < all.size(); i++) {
             Holder holder = new Holder(all.get(i), cellOwners.get(i));
             all.get(i).contentsView().forEach((item, count) -> {
                 index.merge(item, count, Long::sum);
-                totals.merge(item.item(), count, Long::sum);
-                noteSort(item);
                 holders.computeIfAbsent(item, key -> new ArrayList<>(1)).add(holder);
             });
         }
@@ -208,11 +256,7 @@ public final class NetworkStorage implements ResourceStore {
         // And whatever lies in the foreign inventories. Nothing is read here —
         // refreshBuses does that per tick; here stands only what stood there last.
         for (StorageBus bus : buses) {
-            bus.contents().forEach((item, count) -> {
-                index.merge(item, count, Long::sum);
-                totals.merge(item.item(), count, Long::sum);
-                noteSort(item);
-            });
+            bus.contents().forEach((item, count) -> index.merge(item, count, Long::sum));
         }
         seenRevisions = new long[drives.size()];
         for (int i = 0; i < seenRevisions.length; i++) {
@@ -400,8 +444,7 @@ public final class NetworkStorage implements ResourceStore {
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
-            totals.merge(item.item(), count - left, Long::sum);
-            noteSort(item);
+            regroup(item, count - left, false);
             noteChanged(item);
             if (touchedBus || left < afterCells) {
                 // A bus took part: what it holds is not one drive's matter.
@@ -460,15 +503,9 @@ public final class NetworkStorage implements ResourceStore {
                 stock.put(item, rest);
             } else {
                 stock.remove(item);
-                forgetSort(item);
             }
             // By what left the index, so the total stays its sum.
-            long total = totals.getOrDefault(item.item(), 0L) - (before - Math.max(rest, 0));
-            if (total != 0) {
-                totals.put(item.item(), total);
-            } else {
-                totals.remove(item.item());
-            }
+            regroup(item, Math.max(rest, 0) - before, rest <= 0);
             noteChanged(item);
             if (taken > fromCells) {
                 markChanged();
@@ -491,8 +528,8 @@ public final class NetworkStorage implements ResourceStore {
      * a question for the stock, not a question of grammar.
      */
     public long count(Item item) {
-        index();
-        return totals.getOrDefault(item, 0L);
+        Group group = groups().get(item);
+        return group == null ? 0 : group.total;
     }
 
     /**
@@ -505,7 +542,7 @@ public final class NetworkStorage implements ResourceStore {
         Map<ItemKey, Long> stock = index();
         if (filter.size() == 1) {
             // One item: its own sorts, in the same order as the index.
-            java.util.Set<ItemKey> sorts = variants.get(filter.get(0));
+            java.util.Set<ItemKey> sorts = sortsOf(filter.get(0));
             if (sorts != null) {
                 for (ItemKey key : sorts) {
                     if (stock.getOrDefault(key, 0L) > 0) {
@@ -603,8 +640,7 @@ public final class NetworkStorage implements ResourceStore {
         }
         stock.clear();
         holders.clear();
-        totals.clear();
-        variants.clear();
+        groups = null;
         changed = null;
         markChanged();
     }
