@@ -130,6 +130,13 @@ public final class CellInventory<T> implements CellView {
         return CellFormat.total(contents) + unreadableAmount;
     }
 
+    /** How full the cell is, 0 to 1: the tighter of amount and types, as the item bar shows. */
+    public double fill() {
+        double byAmount = size.amount() <= 0 ? 0 : (double) usedAmount() / size.amount();
+        double byTypes = size.types() <= 0 ? 0 : (double) usedTypes() / size.types();
+        return Math.min(1, Math.max(byAmount, byTypes));
+    }
+
     /** How many entries the cell keeps without being able to read them. */
     public int unreadableTypes() {
         return unreadableTypes;

@@ -167,6 +167,12 @@ Arten sie führt und wie viel Menge sie fasst. Meist ist die erste die knappe.
 Ein zweites Laufwerk daneben vergrößert den Speicher wie ein zweites Regal;
 alle Laufwerke im Netz zählen zusammen.
 
+**Ein Komparator am Laufwerk** liest, wie voll die Zellen sind: 0, solange
+nichts darin liegt, 15, wenn alles voll ist — wie bei einer Truhe, nur ohne
+Programm. Gezählt werden Item-, Flüssigkeits- und Essenzzellen; voll ist eine
+Zelle, sobald ihr die Menge **oder** die Arten ausgehen. Der Wert wird
+höchstens einmal pro Sekunde neu bestimmt.
+
 ## Serverschrank
 
 Die Rechenleistung. Er ist **zwei Blöcke hoch** und hat zwölf Einschübe. In

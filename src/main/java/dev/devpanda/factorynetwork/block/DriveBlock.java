@@ -165,4 +165,25 @@ public class DriveBlock extends HorizontalDirectionalBlock implements EntityBloc
         super.affectNeighborsAfterRemoval(state, level, pos, moved);
         dev.devpanda.factorynetwork.network.ControllerRegistry.markChanged(level, pos);
     }
+
+    @Override
+    public <T extends BlockEntity> net.minecraft.world.level.block.entity.@org.jspecify.annotations.Nullable BlockEntityTicker<T> getTicker(
+            Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        if (level.isClientSide() || type != dev.devpanda.factorynetwork.registry.FnBlockEntities.DRIVE.get()) {
+            return null;
+        }
+        return (l, p, s, entity) -> ((DriveBlockEntity) entity).serverTick();
+    }
+
+    /** A comparator reads how full the cells are; see {@link DriveBlockEntity#comparatorLevel()}. */
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos,
+                                        net.minecraft.core.Direction direction) {
+        return level.getBlockEntity(pos) instanceof DriveBlockEntity drive ? drive.comparatorLevel() : 0;
+    }
 }

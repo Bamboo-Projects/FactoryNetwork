@@ -277,4 +277,59 @@ public class DriveBlockEntity extends ShelfBlockEntity {
             }
         }
     }
+
+    // ---- Comparator --------------------------------------------------------
+
+    private int comparatorLevel;
+    private boolean comparatorDirty = true;
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        comparatorDirty = true;
+    }
+
+    /**
+     * What a comparator reads: how full the cells are, 0 to 15.
+     *
+     * <p>Like a vanilla chest: 0 only when nothing is stored, otherwise at
+     * least 1, and 15 when every cell is full. Averaged over the item, fluid
+     * and essentia cells; energy and chemical cells are not storage a
+     * comparator would count.
+     */
+    public int comparatorLevel() {
+        return comparatorLevel;
+    }
+
+    /** Recounts at most once a second, and tells the comparators only when the level moved. */
+    public void serverTick() {
+        if (level == null || !comparatorDirty || level.getGameTime() % 20 != 0) {
+            return;
+        }
+        comparatorDirty = false;
+        int fresh = computeComparatorLevel();
+        if (fresh != comparatorLevel) {
+            comparatorLevel = fresh;
+            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        }
+    }
+
+    private int computeComparatorLevel() {
+        double sum = 0;
+        int cells = 0;
+        boolean anything = false;
+        List<CellInventory<?>> all = new java.util.ArrayList<>();
+        all.addAll(inventories());
+        all.addAll(fluidInventories());
+        all.addAll(essentiaCells());
+        for (CellInventory<?> cell : all) {
+            sum += cell.fill();
+            cells++;
+            anything |= cell.usedAmount() > 0 || cell.usedTypes() > 0;
+        }
+        if (!anything || cells == 0) {
+            return 0;
+        }
+        return Math.min(15, 1 + (int) Math.floor(sum / cells * 14));
+    }
 }

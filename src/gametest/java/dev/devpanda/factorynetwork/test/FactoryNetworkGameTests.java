@@ -10560,6 +10560,29 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /** A comparator reads the drive: 0 while empty, more once items are stored. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aComparatorReadsTheDrive(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        BlockPos drive = helper.absolutePos(controller.above());
+        var level = helper.getLevel();
+        helper.startSequence()
+                .thenIdle(25)
+                .thenExecute(() -> helper.assertValueEqual(level.getBlockState(drive)
+                        .getAnalogOutputSignal(level, drive, net.minecraft.core.Direction.NORTH), 0, "leeres Laufwerk"))
+                .thenExecute(() -> entity.storage().insert(Items.IRON_INGOT, 300_000))
+                .thenIdle(25)
+                .thenExecute(() -> {
+                    int signal = level.getBlockState(drive)
+                            .getAnalogOutputSignal(level, drive, net.minecraft.core.Direction.NORTH);
+                    helper.assertTrue(signal >= 8 && signal <= 15,
+                            "300.000 von 512.000 sind gut die Hälfte, also 9: " + signal);
+                })
+                .thenSucceed();
+    }
+
     /** A worker keeps a certain slot stocked, the fuel case from the guide. */
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aWorkerKeepsACertainSlotStocked(GameTestHelper helper) {
