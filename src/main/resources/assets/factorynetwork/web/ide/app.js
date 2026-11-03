@@ -49,11 +49,41 @@
     if (type === 'deploy' && $('deploy').disabled) return;
     send({ type });
   }
+  // The same chain the Java editor reads: kiste.count(item:x), storage.count(...).
+  function expressionAt(line, column) {
+    const word = c => /[A-Za-z0-9_]/.test(c);
+    if (column >= line.length || !word(line[column])) column--;
+    if (column < 0 || column >= line.length || !word(line[column])) return '';
+    let from = column, to = column;
+    while (from > 0 && word(line[from - 1])) from--;
+    while (to + 1 < line.length && word(line[to + 1])) to++;
+    while (from > 1 && line[from - 1] === '.' && word(line[from - 2])) {
+      from -= 2;
+      while (from > 0 && word(line[from - 1])) from--;
+    }
+    let end = to + 1;
+    while (end < line.length) {
+      if (line[end] === '(') {
+        let depth = 0, at = end;
+        for (; at < line.length; at++) {
+          if (line[at] === '(') depth++;
+          else if (line[at] === ')' && --depth === 0) break;
+        }
+        if (at >= line.length) break;
+        end = at + 1;
+      } else if (line[end] === '.' && end + 1 < line.length && word(line[end + 1])) {
+        end++;
+        while (end < line.length && word(line[end])) end++;
+      } else break;
+    }
+    return line.substring(from, end);
+  }
   window.fnReceive = function (message) {
     if (typeof message === 'string') {
       try { message = JSON.parse(message); } catch (_) { return; }
     }
     if (!message) return;
+    if (message.type === 'value') { if (window.fnValueAnswer) window.fnValueAnswer(message); return; }
     if (message.type === 'error') {
       latestError = message.message || 'Die Änderung konnte nicht übernommen werden.';
       log(latestError, 'error');
@@ -403,6 +433,25 @@
       bracketPairColorization: { enabled: true }, renderWhitespace: 'selection', scrollBeyondLastLine: false,
       smoothScrolling: false, wordWrap: 'off', mouseWheelZoom: true, readOnly: true });
     editor.onDidChangeCursorPosition(updatePosition);
+    // Hover: the current value of a reading expression, asked of the game.
+    const pendingValues = new Map();
+    let valueId = 0;
+    window.fnValueAnswer = message => {
+      const resolve = pendingValues.get(message.id);
+      if (resolve) { pendingValues.delete(message.id); resolve(message.value); }
+    };
+    monaco.languages.registerHoverProvider('manifold', {
+      provideHover: (model, position) => {
+        const expression = expressionAt(model.getLineContent(position.lineNumber), position.column - 1);
+        if (!expression || typeof window.fnSend !== 'function') return null;
+        const id = ++valueId;
+        return new Promise(resolve => {
+          pendingValues.set(id, value => resolve({ contents: [{ value: '`' + expression + '` = **' + value + '**' }] }));
+          send({ type: 'evaluate', id, expression });
+          setTimeout(() => { if (pendingValues.delete(id)) resolve(null); }, 1500);
+        });
+      }
+    });
     // Ctrl+click on a word of the language opens its page in the manual.
     editor.onMouseDown(event => {
       if (!(event.event.ctrlKey || event.event.metaKey) || !event.target.position) return;

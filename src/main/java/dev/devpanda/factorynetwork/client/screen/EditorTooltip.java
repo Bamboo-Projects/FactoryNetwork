@@ -64,9 +64,11 @@ public final class EditorTooltip {
 
         var signature = editor.signatureAt(mouseX, mouseY);
         if (signature != null) {
-            graphics.setTooltipForNextFrame(font, List.of(
+            List<Component> lines = new ArrayList<>(List.of(
                     FnFonts.mono(signature.shape()),
-                    Component.literal("§7" + signature.help())), java.util.Optional.empty(), mouseX, mouseY);
+                    Component.literal("§7" + signature.help())));
+            addLiveValue(lines, editor, mouseX, mouseY);
+            graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
             return;
         }
 
@@ -166,8 +168,25 @@ public final class EditorTooltip {
         if (declared.isPresent()) {
             addDeclaration(lines, project, word, declared.get());
         }
+        addLiveValue(lines, editor, mouseX, mouseY);
         graphics.setTooltipForNextFrame(font, lines, java.util.Optional.empty(), mouseX, mouseY);
         return true;
+    }
+
+    /**
+     * What the expression under the pointer is worth right now, asked of the
+     * server. Only reading expressions get an answer with a value; the line
+     * stays away until the first answer is there.
+     */
+    private static void addLiveValue(List<Component> lines, CodeEditor editor, int mouseX, int mouseY) {
+        String expression = editor.expressionAt(mouseX, mouseY);
+        if (expression.isEmpty()) {
+            return;
+        }
+        String value = dev.devpanda.factorynetwork.client.LiveValues.hovering(expression);
+        if (value != null) {
+            lines.add(Component.literal("§a= " + value));
+        }
     }
 
     /** What the machine is, can do, and currently holds. */

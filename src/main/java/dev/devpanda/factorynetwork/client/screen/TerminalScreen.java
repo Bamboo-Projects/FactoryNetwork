@@ -531,6 +531,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // What was in the devices applied to this visit. On the next opening
         // it is asked anew.
         dev.devpanda.factorynetwork.client.ClientDeviceState.clear();
+        dev.devpanda.factorynetwork.client.LiveValues.clear();
         super.onClose();
     }
 

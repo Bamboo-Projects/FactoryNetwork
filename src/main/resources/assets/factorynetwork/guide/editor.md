@@ -107,6 +107,19 @@ Auf einen Namen im Code:
   erklärt, mit ihren 3D-Szenen. Das geht im Editor im Terminal wie im großen
   Editor.
 
+## Werte unter der Maus
+
+Bleibt die Maus auf einem Ausdruck stehen, zeigt der Editor seinen
+**aktuellen Wert**: über `zaehler` die Zahl, die gerade drinsteht, über
+`kiste.count(item:iron_ingot)` wie viel jetzt in der Kiste liegt. Der Wert
+kommt vom Controller und wird jede Sekunde neu gefragt, solange die Maus dort
+bleibt.
+
+**Nur Fragen, nie Taten.** Ausgewertet wird nur, was bloß liest: Werte,
+Zählungen, Rechnungen, `redstone()` ohne Zahl. Was etwas ändern würde —
+`redstone(15)`, `insert`, `click`, `craft`, eine Funktion des Programms —
+zeigt statt eines Werts einen Hinweis.
+
 ## Ordner im Projekt
 
 Ein Dateiname darf einen Ordner nennen: `erz/brecher.mf`, auch zwei Ebenen

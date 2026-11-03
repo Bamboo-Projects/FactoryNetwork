@@ -910,6 +910,32 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /**
+     * The editor's hover asks the controller for the value of an expression:
+     * a reading one gets its value, one that would change something gets a
+     * refusal, and nothing in the world moves.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theHoverReadsAndNeverWrites(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = threeChests(helper, controller);
+        entity.rebuildNetwork();
+        if (blockEntity(helper, controller.east(2).above(2)) instanceof ChestBlockEntity first) {
+            first.setItem(0, new ItemStack(Items.COBBLESTONE, 12));
+        }
+        helper.assertTrue(entity.deploy("""
+                global zaehler = 41
+                """), "Das Programm wurde nicht übernommen");
+        helper.assertValueEqual(entity.evaluateReading("kiste_1.count(item:cobblestone)"), "12",
+                "Wert unter der Maus");
+        helper.assertValueEqual(entity.evaluateReading("zaehler + 1"), "42", "globaler Wert");
+        String refused = entity.evaluateReading("kiste_1.redstone(15)");
+        helper.assertTrue(refused.contains("ändern"), "redstone(15) wurde nicht abgelehnt: " + refused);
+        helper.assertTrue(helper.getLevel().getBestNeighborSignal(helper.absolutePos(controller.east(2).above()))
+                < 15, "der Hover hat Redstone gesetzt");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aGroupTakesEveryMatchingConnector(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

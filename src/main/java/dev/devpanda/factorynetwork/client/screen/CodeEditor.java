@@ -727,6 +727,74 @@ public class CodeEditor {
                 line, columnAt(lineIndex, mouseX));
     }
 
+    /**
+     * The expression under the pointer whose value is worth showing: a name,
+     * or a chain of members with their arguments —
+     * {@code kiste.count(item:iron_ingot)}, {@code storage.count(tag:c/ores)},
+     * {@code network.power}. Empty when the pointer is on nothing.
+     */
+    public String expressionAt(double mouseX, double mouseY) {
+        if (!inside(mouseX, mouseY)) {
+            return "";
+        }
+        int lineIndex = lineAt(mouseY);
+        return expressionIn(lines.get(lineIndex), columnAt(lineIndex, mouseX));
+    }
+
+    /** {@link #expressionAt} on one line of text; separate for tests. */
+    public static String expressionIn(String line, int column) {
+        if (column >= line.length() || !isWordChar(line.charAt(column))) {
+            column--;
+        }
+        if (column < 0 || column >= line.length() || !isWordChar(line.charAt(column))) {
+            return "";
+        }
+        int from = column;
+        while (from > 0 && isWordChar(line.charAt(from - 1))) {
+            from--;
+        }
+        int to = column;
+        while (to + 1 < line.length() && isWordChar(line.charAt(to + 1))) {
+            to++;
+        }
+        // Leftwards over ".name" links: kiste.count -> the whole chain.
+        while (from > 1 && line.charAt(from - 1) == '.' && isWordChar(line.charAt(from - 2))) {
+            from -= 2;
+            while (from > 0 && isWordChar(line.charAt(from - 1))) {
+                from--;
+            }
+        }
+        // Rightwards over arguments and further links.
+        int end = to + 1;
+        while (end < line.length()) {
+            char next = line.charAt(end);
+            if (next == '(') {
+                int depth = 0;
+                int at = end;
+                for (; at < line.length(); at++) {
+                    char c = line.charAt(at);
+                    if (c == '(') {
+                        depth++;
+                    } else if (c == ')' && --depth == 0) {
+                        break;
+                    }
+                }
+                if (at >= line.length()) {
+                    break;
+                }
+                end = at + 1;
+            } else if (next == '.' && end + 1 < line.length() && isWordChar(line.charAt(end + 1))) {
+                end++;
+                while (end < line.length() && isWordChar(line.charAt(end))) {
+                    end++;
+                }
+            } else {
+                break;
+            }
+        }
+        return line.substring(from, end);
+    }
+
     public String wordAt(double mouseX, double mouseY) {
         if (!inside(mouseX, mouseY)) {
             return "";

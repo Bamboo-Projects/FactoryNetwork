@@ -38,6 +38,10 @@ public final class FnPackets {
                 OpenRemotePacket::handle);
         registrar.playToServer(SetBlockNamePacket.TYPE, SetBlockNamePacket.STREAM_CODEC,
                 SetBlockNamePacket::handle);
+        registrar.playToServer(EvaluatePacket.TYPE, EvaluatePacket.STREAM_CODEC,
+                EvaluatePacket::handle);
+        registrar.playToClient(EvaluatedPacket.TYPE, EvaluatedPacket.STREAM_CODEC,
+                EvaluatedPacket::handle);
         registrar.playToClient(FlowStatePacket.TYPE, FlowStatePacket.STREAM_CODEC,
                 FlowStatePacket::handle);
         registrar.playToClient(LogStatePacket.TYPE, LogStatePacket.STREAM_CODEC,

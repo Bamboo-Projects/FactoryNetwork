@@ -2837,6 +2837,33 @@ public class ControllerBlockEntity extends BlockEntity {
         return List.copyOf(log);
     }
 
+    /**
+     * The value of an expression for the editor's hover, as text — only if it
+     * merely reads ({@link dev.devpanda.factorynetwork.lang.ReadOnly}).
+     * Otherwise, or on an error, a short reason instead of a value.
+     */
+    public String evaluateReading(String written) {
+        var expr = dev.devpanda.factorynetwork.lang.ReadOnly.parse(written);
+        if (expr == null) {
+            return "?";
+        }
+        if (!dev.devpanda.factorynetwork.lang.ReadOnly.onlyReads(expr)) {
+            return "(würde etwas ändern — nur lesende Ausdrücke)";
+        }
+        if (level == null) {
+            return "?";
+        }
+        Interpreter interpreter = new Interpreter(program, newHost(),
+                dev.devpanda.factorynetwork.FnConfig.interpreterLimits());
+        try {
+            return interpreter.evaluateWith(expr, null).describe();
+        } catch (ScriptError error) {
+            return "(" + error.getMessage() + ")";
+        } catch (RuntimeException unexpected) {
+            return "?";
+        }
+    }
+
     /** Clears the log — only on explicit request in the terminal. */
     public void clearLog() {
         log.clear();

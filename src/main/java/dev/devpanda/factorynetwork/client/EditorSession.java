@@ -87,6 +87,18 @@ final class EditorSession {
                 }
                 case "close" -> close(true);
                 // Ctrl+click on a word of the language: its page in the manual.
+                // The web editor's hover: the value of a reading expression.
+                case "evaluate" -> {
+                    String expression = request.get("expression").getAsString();
+                    long id = request.get("id").getAsLong();
+                    dev.devpanda.factorynetwork.client.LiveValues.ask(expression, value -> {
+                        JsonObject answer = new JsonObject();
+                        answer.addProperty("type", "value");
+                        answer.addProperty("id", id);
+                        answer.addProperty("value", value);
+                        surface.postMessage(JSON.toJson(answer));
+                    });
+                }
                 case "guide" -> {
                     String word = request.get("word").getAsString();
                     net.minecraft.client.Minecraft.getInstance().execute(() ->
