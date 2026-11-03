@@ -713,20 +713,25 @@ public class ControllerBlockEntity extends BlockEntity {
         if (level == null || foreignSave != null) {
             return;
         }
+        long mark = System.nanoTime();
         long sinceRebuild = level.getGameTime() - lastRebuild;
         if (sinceRebuild >= REBUILD_INTERVAL || (networkDirty && sinceRebuild >= REBUILD_GAP)) {
             rebuildNetwork();
         }
+        mark = phase("rebuild", mark);
         // A chest on the storage bus changes without telling anyone. Looking
         // once per tick is the price of its contents counting toward the
         // inventory — and cheaper than counting on every query.
         storage.refreshBuses();
+        mark = phase("buses", mark);
         power.setDraw(powerDraw());
         power.tick();
+        mark = phase("power", mark);
 
         // Before the early return below: a network without power or without a
         // server is exactly the network whose program you are working on.
         checkProgramFile();
+        mark = phase("programFile", mark);
 
         // Without a server rack or without power the network stands still —
         // and runs on where it was, as soon as both are back. Nothing is
@@ -755,18 +760,36 @@ public class ControllerBlockEntity extends BlockEntity {
             // What neither storage nor device accepted, the controller keeps.
             runtime.takeDropped().forEach(this::holdBack);
         }
+        mark = phase("workers", mark);
         // Outside the worker block, and deliberately so: held-back items
         // belong back as soon as there is room — even in a network whose
         // program currently has no worker.
         retryHeldBack();
+        mark = phase("heldBack", mark);
         tickFlows();
+        mark = phase("flows", mark);
         tickCrafting();
+        mark = phase("crafting", mark);
         fireRedstoneEvents();
         fireInventoryEvents();
+        mark = phase("events", mark);
         pushStorageIfDue();
         pushFlowsIfDue();
         pushTraffic();
+        mark = phase("push", mark);
         setChanged();
+        phase("setChanged", mark);
+    }
+
+    /**
+     * Notes the time since {@code mark} under {@code name} and returns now.
+     * Two clock reads per phase: cheap enough to stay on, and the only way to
+     * tell which part of a slow controller tick was slow.
+     */
+    private static long phase(String name, long mark) {
+        long now = System.nanoTime();
+        dev.devpanda.factorynetwork.network.TickCost.phase(name, now - mark);
+        return now;
     }
 
     // ---- Crafting -----------------------------------------------------------

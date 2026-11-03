@@ -7195,6 +7195,61 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * Counting by item and a worker's first sort come from the store's
+     * grouping by item; they must give what a walk over the whole stock gives,
+     * also after sorts left and came back and after a rebuild.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void storageGroupsByItemLikeTheWholeStock(GameTestHelper helper) {
+        BlockPos controller = threeChestsSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var storage = entity.storage();
+        var pick = Items.DIAMOND_PICKAXE;
+        var a = key("a");
+        var b = key("b");
+        var plain = dev.devpanda.factorynetwork.storage.ItemKey.bare(pick);
+        var iron = dev.devpanda.factorynetwork.storage.ItemKey.bare(Items.IRON_INGOT);
+        java.util.function.Consumer<String> agrees = when -> {
+            for (var filter : java.util.List.of(java.util.List.of(pick), java.util.List.of(Items.IRON_INGOT),
+                    java.util.List.of(Items.IRON_INGOT, pick), java.util.List.<net.minecraft.world.item.Item>of(),
+                    java.util.List.of(Items.STONE))) {
+                var expected = storage.contents().entrySet().stream()
+                        .filter(entry -> entry.getValue() > 0
+                                && (filter.isEmpty() || filter.contains(entry.getKey().item())))
+                        .map(java.util.Map.Entry::getKey).findFirst().orElse(null);
+                helper.assertTrue(java.util.Objects.equals(storage.firstPresent(filter), expected),
+                        "erste Sorte für " + filter + " " + when + ": " + storage.firstPresent(filter)
+                                + " statt " + expected);
+            }
+            for (var item : java.util.List.of(pick, Items.IRON_INGOT, Items.STONE)) {
+                long expected = storage.contents().entrySet().stream()
+                        .filter(entry -> entry.getKey().item() == item)
+                        .mapToLong(java.util.Map.Entry::getValue).sum();
+                helper.assertValueEqual(storage.count(item), expected, "Menge von " + item + " " + when);
+            }
+        };
+        storage.insert(a, 2);
+        storage.insert(iron, 5);
+        agrees.accept("vor der ersten Frage");
+        storage.insert(b, 1);
+        storage.insert(plain, 3);
+        agrees.accept("nach dem Einlagern");
+        storage.extract(a, 2);
+        agrees.accept("nachdem eine Sorte ganz ging");
+        storage.insert(a, 1);
+        agrees.accept("nachdem sie zurückkam");
+        storage.extract(pick, 2);
+        storage.extract(iron, 1);
+        agrees.accept("nach dem Auslagern über alle Varianten");
+        entity.rebuildNetwork();
+        agrees.accept("nach dem Neuaufbau");
+        storage.extract(Items.IRON_INGOT, 4);
+        agrees.accept("nachdem das Eisen ganz ging");
+        helper.succeed();
+    }
+
     /** A diamond pickaxe with a name. */
     static ItemStack named(String name) {
         ItemStack stack = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);

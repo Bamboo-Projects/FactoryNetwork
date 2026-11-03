@@ -143,6 +143,12 @@ public final class Ae2Link implements StorageLinkAdapter, IInWorldGridNodeHost, 
     private final ItemStock items = new ItemStock() {
         @Override
         public void find(List<Item> wanted, ObjLongConsumer<ItemKey> into) {
+            findRaw(wanted, (raw, amount) -> into.accept(keyOf(raw), amount));
+        }
+
+        /** Hands over AE2's own keys: the conversion waits for {@link #keyOf}. */
+        @Override
+        public void findRaw(List<Item> wanted, ObjLongConsumer<Object> into) {
             KeyCounter stock = cached();
             if (stock == null) {
                 return;
@@ -150,7 +156,7 @@ public final class Ae2Link implements StorageLinkAdapter, IInWorldGridNodeHost, 
             if (wanted.isEmpty()) {
                 for (var entry : stock) {
                     if (entry.getKey() instanceof AEItemKey key && entry.getLongValue() > 0) {
-                        into.accept(ItemKey.of(key.toStack()), entry.getLongValue());
+                        into.accept(key, entry.getLongValue());
                     }
                 }
                 return;
@@ -161,10 +167,15 @@ public final class Ae2Link implements StorageLinkAdapter, IInWorldGridNodeHost, 
                 for (var entry : stock.findFuzzy(AEItemKey.of(item), FuzzyMode.IGNORE_ALL)) {
                     if (entry.getKey() instanceof AEItemKey key && key.getItem() == item
                             && entry.getLongValue() > 0) {
-                        into.accept(ItemKey.of(key.toStack()), entry.getLongValue());
+                        into.accept(key, entry.getLongValue());
                     }
                 }
             }
+        }
+
+        @Override
+        public ItemKey keyOf(Object raw) {
+            return ItemKey.of(((AEItemKey) raw).toStack());
         }
 
         @Override

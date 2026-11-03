@@ -61,6 +61,86 @@ public final class NetworkStorage implements ResourceStore {
      */
     private final Map<ItemKey, List<Holder>> holders = new java.util.HashMap<>();
 
+    /** The summed amount of one item and, once asked for, its sorts in index order. */
+    private static final class Group {
+        long total;
+        java.util.LinkedHashSet<ItemKey> sorts;
+    }
+
+    /**
+     * The index grouped by item, or {@code null} until someone asks.
+     *
+     * <p>{@link #count(Item)} is what conditions, {@code maintain} and
+     * displays ask, often every tick, and a worker from storage looks for the
+     * first sort of its filter item. Summing or walking the whole index for
+     * that cost 30 µs to 0.5 ms at 5,000 sorts. The totals are built in one
+     * pass over the index on first use, the sorts of an item only when a
+     * worker asks for them; both are then kept up to date with the index. A
+     * rebuild of the index drops them again, so a rebuild nobody follows with
+     * such a question costs nothing extra (docs/messung-last-2026-11-03.md).
+     */
+    private Map<Item, Group> groups;
+
+    private Map<Item, Group> groups() {
+        Map<ItemKey, Long> stock = index();
+        if (groups == null) {
+            Map<Item, Group> built = new java.util.HashMap<>();
+            Item lastItem = null;
+            Group last = null;
+            for (Map.Entry<ItemKey, Long> entry : stock.entrySet()) {
+                Item item = entry.getKey().item();
+                // Runs of the same item are common: a cell is filled sort by sort.
+                Group group = item == lastItem ? last : built.computeIfAbsent(item, key -> new Group());
+                group.total += entry.getValue();
+                lastItem = item;
+                last = group;
+            }
+            groups = built;
+        }
+        return groups;
+    }
+
+    /** The sorts of an item in index order, gathered on first use; {@code null} for none. */
+    private java.util.Set<ItemKey> sortsOf(Item item) {
+        Group group = groups().get(item);
+        if (group == null) {
+            return null;
+        }
+        if (group.sorts == null) {
+            group.sorts = new java.util.LinkedHashSet<>();
+            for (ItemKey key : index.keySet()) {
+                if (key.item() == item) {
+                    group.sorts.add(key);
+                }
+            }
+        }
+        return group.sorts;
+    }
+
+    /** Folds an own change of the index into the groups, if they are built. */
+    private void regroup(ItemKey key, long delta, boolean gone) {
+        if (groups == null) {
+            return;
+        }
+        if (gone) {
+            Group group = groups.get(key.item());
+            if (group != null) {
+                group.total += delta;
+                // An item with no sort left keeps its group at zero until
+                // the next rebuild; the answers are the same either way.
+                if (group.sorts != null) {
+                    group.sorts.remove(key);
+                }
+            }
+            return;
+        }
+        Group group = groups.computeIfAbsent(key.item(), item -> new Group());
+        group.total += delta;
+        if (group.sorts != null) {
+            group.sorts.add(key);
+        }
+    }
+
     /**
      * The sorts that changed since {@link #drainChanges}, or {@code null} when
      * more changed than can be named (a cell pulled, a bus refreshed).
@@ -162,6 +242,7 @@ public final class NetworkStorage implements ResourceStore {
     private void rebuildIndex() {
         index.clear();
         holders.clear();
+        groups = null;
         List<CellInventory<ItemKey>> all = cells();
         for (int i = 0; i < all.size(); i++) {
             Holder holder = new Holder(all.get(i), cellOwners.get(i));
@@ -363,6 +444,7 @@ public final class NetworkStorage implements ResourceStore {
         }
         if (left < count) {
             stock.merge(item, count - left, Long::sum);
+            regroup(item, count - left, false);
             noteChanged(item);
             if (touchedBus || left < afterCells) {
                 // A bus took part: what it holds is not one drive's matter.
@@ -415,12 +497,15 @@ public final class NetworkStorage implements ResourceStore {
             taken += bus.extract(item, count - taken);
         }
         if (taken > 0) {
-            long rest = stock.getOrDefault(item, 0L) - taken;
+            long before = stock.getOrDefault(item, 0L);
+            long rest = before - taken;
             if (rest > 0) {
                 stock.put(item, rest);
             } else {
                 stock.remove(item);
             }
+            // By what left the index, so the total stays its sum.
+            regroup(item, Math.max(rest, 0) - before, rest <= 0);
             noteChanged(item);
             if (taken > fromCells) {
                 markChanged();
@@ -443,13 +528,36 @@ public final class NetworkStorage implements ResourceStore {
      * a question for the stock, not a question of grammar.
      */
     public long count(Item item) {
-        long found = 0;
-        for (Map.Entry<ItemKey, Long> entry : index().entrySet()) {
-            if (entry.getKey().item() == item) {
-                found += entry.getValue();
+        Group group = groups().get(item);
+        return group == null ? 0 : group.total;
+    }
+
+    /**
+     * The first sort in stock order whose item is in {@code filter} (any for
+     * an empty one) and that is present, or {@code null}. Walks the index itself instead of a copy: a worker asks
+     * this on every step, and copying 5,000 sorts for it cost half a
+     * millisecond.
+     */
+    public @org.jetbrains.annotations.Nullable ItemKey firstPresent(List<Item> filter) {
+        Map<ItemKey, Long> stock = index();
+        if (filter.size() == 1) {
+            // One item: its own sorts, in the same order as the index.
+            java.util.Set<ItemKey> sorts = sortsOf(filter.get(0));
+            if (sorts != null) {
+                for (ItemKey key : sorts) {
+                    if (stock.getOrDefault(key, 0L) > 0) {
+                        return key;
+                    }
+                }
+            }
+            return null;
+        }
+        for (Map.Entry<ItemKey, Long> entry : stock.entrySet()) {
+            if (entry.getValue() > 0 && (filter.isEmpty() || filter.contains(entry.getKey().item()))) {
+                return entry.getKey();
             }
         }
-        return found;
+        return null;
     }
 
     /**
@@ -532,6 +640,7 @@ public final class NetworkStorage implements ResourceStore {
         }
         stock.clear();
         holders.clear();
+        groups = null;
         changed = null;
         markChanged();
     }

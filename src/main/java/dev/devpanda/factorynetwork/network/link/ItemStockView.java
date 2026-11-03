@@ -20,8 +20,11 @@ import java.util.List;
 public final class ItemStockView implements IItemHandler, KeyedItems {
 
     private final ItemStock stock;
-    private final List<ItemKey> keys = new ArrayList<>();
-    private final List<Long> amounts = new ArrayList<>();
+    /** The sorts as the stock handed them over; turned into keys on demand. */
+    private final List<Object> raws = new ArrayList<>();
+    /** The key of each slot, built on first look; {@code null} until then. */
+    private ItemKey[] keys = new ItemKey[0];
+    private long[] amounts = new long[8];
 
     private final List<Item> wanted;
     private boolean read;
@@ -40,12 +43,25 @@ public final class ItemStockView implements IItemHandler, KeyedItems {
             return;
         }
         read = true;
-        stock.find(wanted, (key, amount) -> {
+        stock.findRaw(wanted, (raw, amount) -> {
             if (amount > 0) {
-                keys.add(key);
-                amounts.add(amount);
+                if (raws.size() == amounts.length) {
+                    amounts = java.util.Arrays.copyOf(amounts, amounts.length * 2);
+                }
+                amounts[raws.size()] = amount;
+                raws.add(raw);
             }
         });
+        keys = new ItemKey[raws.size()];
+    }
+
+    private ItemKey keyAt(int slot) {
+        ItemKey key = keys[slot];
+        if (key == null) {
+            key = stock.keyOf(raws.get(slot));
+            keys[slot] = key;
+        }
+        return key;
     }
 
     @Override
@@ -56,17 +72,17 @@ public final class ItemStockView implements IItemHandler, KeyedItems {
     @Override
     public int getSlots() {
         read();
-        return keys.size() + 1;
+        return raws.size() + 1;
     }
 
     @Override
     public ItemStack getStackInSlot(int slot) {
         read();
-        if (slot < 0 || slot >= keys.size()) {
+        if (slot < 0 || slot >= raws.size()) {
             return ItemStack.EMPTY;
         }
-        ItemKey key = keys.get(slot);
-        return key.toStack((int) Math.min(amounts.get(slot), key.maxStackSize()));
+        ItemKey key = keyAt(slot);
+        return key.toStack((int) Math.min(amounts[slot], key.maxStackSize()));
     }
 
     @Override
@@ -82,16 +98,16 @@ public final class ItemStockView implements IItemHandler, KeyedItems {
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
         read();
-        if (slot < 0 || slot >= keys.size() || amount <= 0) {
+        if (slot < 0 || slot >= raws.size() || amount <= 0) {
             return ItemStack.EMPTY;
         }
-        ItemKey key = keys.get(slot);
+        ItemKey key = keyAt(slot);
         long taken = stock.extract(key, Math.min(amount, key.maxStackSize()), simulate);
         if (taken <= 0) {
             return ItemStack.EMPTY;
         }
         if (!simulate) {
-            amounts.set(slot, Math.max(0, amounts.get(slot) - taken));
+            amounts[slot] = Math.max(0, amounts[slot] - taken);
         }
         return key.toStack((int) taken);
     }
