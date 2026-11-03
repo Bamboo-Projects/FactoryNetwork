@@ -22,8 +22,9 @@ import java.util.UUID;
  * A quantum bridge: one end of a connection with no cable in between.
  *
  * <p>It holds one half of an entanglement. The other half sits in a second
- * bridge, somewhere in the same world — and the two join their networks as if
- * a solid cable ran between them.
+ * bridge, anywhere — in the same world or another, the Nether, the End, a
+ * factory hall — and the two join their networks as if a solid cable ran
+ * between them.
  *
  * <p><b>What it does not do: search.</b> On load it registers itself in
  * {@link BridgeRegistry} under the id of its half. A bridge that had to search
@@ -57,8 +58,17 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
     }
 
     /** The counterpart, or {@code null}: see {@link BridgeRegistry}. */
-    public @Nullable BlockPos partner() {
+    public net.minecraft.core.@Nullable GlobalPos partner() {
         return level == null ? null : BridgeRegistry.partnerOf(level, worldPosition);
+    }
+
+    /** The world the counterpart stands in, if it is loaded there. */
+    private net.minecraft.world.level.@Nullable Level partnerLevel(net.minecraft.core.GlobalPos partner) {
+        if (level == null || level.getServer() == null) {
+            return null;
+        }
+        net.minecraft.world.level.Level there = level.getServer().getLevel(partner.dimension());
+        return there != null && there.isLoaded(partner.pos()) ? there : null;
     }
 
     /**
@@ -83,8 +93,11 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         if (now != null) {
             BridgeRegistry.add(level, now, worldPosition);
         }
-        // The network looks different the moment a bridge opens or closes.
+        // The network looks different the moment a bridge opens or closes —
+        // on both sides: a network ending at the far bridge grows the moment
+        // this one comes, and the far one may stand in another world.
         ControllerRegistry.refreshAround(level, worldPosition);
+        refreshPartner();
         showLink();
     }
 
@@ -98,17 +111,24 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
         if (level == null || level.isClientSide()) {
             return;
         }
-        BlockPos partner = partner();
-        setLinked(worldPosition, partner != null);
-        if (partner != null && level.isLoaded(partner)) {
-            setLinked(partner, true);
+        net.minecraft.core.GlobalPos partner = partner();
+        setLinked(level, worldPosition, partner != null);
+        net.minecraft.world.level.Level there = partner == null ? null : partnerLevel(partner);
+        if (there != null) {
+            setLinked(there, partner.pos(), true);
         }
     }
 
-    private void setLinked(BlockPos pos, boolean linked) {
-        if (level == null) {
-            return;
+    /** The networks at the far end learn that this end came or went. */
+    private void refreshPartner() {
+        net.minecraft.core.GlobalPos partner = partner();
+        net.minecraft.world.level.Level there = partner == null ? null : partnerLevel(partner);
+        if (there != null) {
+            ControllerRegistry.refreshAround(there, partner.pos());
         }
+    }
+
+    private static void setLinked(net.minecraft.world.level.Level level, BlockPos pos, boolean linked) {
         net.minecraft.world.level.block.state.BlockState state = level.getBlockState(pos);
         if (state.getBlock() instanceof dev.devpanda.factorynetwork.block.BridgeBlock
                 && state.getValue(dev.devpanda.factorynetwork.block.BridgeBlock.LINKED)
@@ -132,11 +152,13 @@ public class BridgeBlockEntity extends BlockEntity implements Container {
             // unfindable: it is not touched when this one is broken, and would
             // otherwise never learn that it is alone — a light with nothing
             // behind it any more.
-            BlockPos partner = partner();
+            net.minecraft.core.GlobalPos partner = partner();
+            net.minecraft.world.level.Level there = partner == null ? null : partnerLevel(partner);
             BridgeRegistry.remove(level, registered, worldPosition);
             registered = null;
-            if (partner != null && level.isLoaded(partner)) {
-                setLinked(partner, false);
+            if (there != null) {
+                setLinked(there, partner.pos(), false);
+                ControllerRegistry.refreshAround(there, partner.pos());
             }
             ControllerRegistry.refreshAround(level, worldPosition);
         }

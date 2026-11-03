@@ -46,19 +46,58 @@ public final class ControllerRegistry {
     }
 
     /**
+     * Every loaded controller, in every world, with the world it stands in.
+     *
+     * <p>A network may reach through a quantum bridge or a hall port into
+     * another world, so the question "which network is this spot in" cannot
+     * stop at the spot's own world.
+     */
+    private static java.util.List<ControllerBlockEntity> loaded() {
+        java.util.List<ControllerBlockEntity> found = new java.util.ArrayList<>();
+        java.util.List<Map.Entry<LevelAccessor, Set<BlockPos>>> entries;
+        synchronized (ControllerRegistry.class) {
+            entries = new java.util.ArrayList<>();
+            for (Map.Entry<LevelAccessor, Set<BlockPos>> entry : BY_LEVEL.entrySet()) {
+                entries.add(Map.entry(entry.getKey(), Set.copyOf(entry.getValue())));
+            }
+        }
+        for (Map.Entry<LevelAccessor, Set<BlockPos>> entry : entries) {
+            if (!(entry.getKey() instanceof Level level) || level.isClientSide()) {
+                continue;
+            }
+            for (BlockPos candidate : entry.getValue()) {
+                if (level.isLoaded(candidate)
+                        && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller) {
+                    found.add(controller);
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
      * The controller whose network contains this spot.
      *
      * <p>If it belongs to several, the first one wins — for a display that is
      * enough. For execution it makes no difference: there a specific controller
-     * always does the asking.
+     * always does the asking. Controllers in the spot's own world are asked
+     * first; then those whose network reaches into it from elsewhere.
      */
     public static Optional<ControllerBlockEntity> owning(Level level, BlockPos pos) {
-        for (BlockPos candidate : in(level)) {
+        for (BlockPos candidate : Set.copyOf(in(level))) {
             if (!level.isLoaded(candidate)) {
                 continue;
             }
             if (level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
                     && controller.graph().contains(pos)) {
+                return Optional.of(controller);
+            }
+        }
+        if (level.isClientSide()) {
+            return Optional.empty();
+        }
+        for (ControllerBlockEntity controller : loaded()) {
+            if (controller.getLevel() != level && controller.graph().contains(level, pos)) {
                 return Optional.of(controller);
             }
         }
@@ -80,12 +119,8 @@ public final class ControllerRegistry {
         if (level.isClientSide()) {
             return;
         }
-        for (BlockPos candidate : Set.copyOf(in(level))) {
-            if (!level.isLoaded(candidate)) {
-                continue;
-            }
-            if (level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
-                    && touches(controller.graph(), pos)) {
+        for (ControllerBlockEntity controller : loaded()) {
+            if (touches(controller.graph(), level, pos)) {
                 controller.rebuildNetwork();
             }
         }
@@ -104,10 +139,8 @@ public final class ControllerRegistry {
         if (level.isClientSide()) {
             return;
         }
-        for (BlockPos candidate : Set.copyOf(in(level))) {
-            if (level.isLoaded(candidate)
-                    && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
-                    && touches(controller.graph(), pos)) {
+        for (ControllerBlockEntity controller : loaded()) {
+            if (touches(controller.graph(), level, pos)) {
                 controller.markNetworkDirty();
             }
         }
@@ -122,21 +155,19 @@ public final class ControllerRegistry {
             return;
         }
         net.minecraft.world.level.ChunkPos chunk = event.getChunk().getPos();
-        for (BlockPos candidate : Set.copyOf(in(level))) {
-            if (level.isLoaded(candidate)
-                    && level.getBlockEntity(candidate) instanceof ControllerBlockEntity controller
-                    && controller.graph().nearChunk(chunk.x(), chunk.z())) {
+        for (ControllerBlockEntity controller : loaded()) {
+            if (controller.graph().nearChunk(level.dimension(), chunk.x(), chunk.z())) {
                 controller.markNetworkDirty();
             }
         }
     }
 
-    private static boolean touches(FactoryGraph graph, BlockPos pos) {
-        if (graph.contains(pos)) {
+    private static boolean touches(FactoryGraph graph, Level level, BlockPos pos) {
+        if (graph.contains(level, pos)) {
             return true;
         }
         for (net.minecraft.core.Direction direction : net.minecraft.core.Direction.values()) {
-            if (graph.contains(pos.relative(direction))) {
+            if (graph.contains(level, pos.relative(direction))) {
                 return true;
             }
         }

@@ -117,11 +117,12 @@ public record DeviceSnapshotPacket(String connector, DeviceProfileCodec.Flat pro
             return null;
         }
         var where = controller.graph().connectors().get(connector);
-        if (where == null || where.side() == null) {
+        var at = where == null ? null : where.level(controller.getLevel());
+        if (where == null || where.side() == null || at == null || !at.isLoaded(where.pos())) {
             return null;
         }
         var entity = dev.devpanda.factorynetwork.block.entity.Connectors.at(
-                controller.getLevel(), where.pos(), where.side());
+                at, where.pos(), where.side());
         if (entity == null) {
             return null;
         }

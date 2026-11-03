@@ -480,10 +480,12 @@ public class ControllerBlockEntity extends BlockEntity {
         int total = dev.devpanda.factorynetwork.network.Power.CONTROLLER;
         total += graph.connectorCount() * dev.devpanda.factorynetwork.network.Power.CONNECTOR;
         total += graph.displays().size() * dev.devpanda.factorynetwork.network.Power.DISPLAY;
-        total += graph.routers().size() * dev.devpanda.factorynetwork.network.Power.ROUTER;
+        total += (graph.routers().size() + graph.routersAbroad())
+                * dev.devpanda.factorynetwork.network.Power.ROUTER;
         total += graph.extensions().size() * dev.devpanda.factorynetwork.network.Power.EXTENSION;
         // Both ends pay; both stand in the graph when both are loaded.
-        total += graph.bridges().size() * dev.devpanda.factorynetwork.network.Power.BRIDGE;
+        total += (graph.bridges().size() + graph.bridgesAbroad())
+                * dev.devpanda.factorynetwork.network.Power.BRIDGE;
         total += graph.fabricators().size()
                 * dev.devpanda.factorynetwork.network.Power.FABRICATOR;
         // A mast costs according to its build-out: what it draws hangs on its
@@ -746,10 +748,7 @@ public class ControllerBlockEntity extends BlockEntity {
         // Flows run on even without workers — a program may consist solely of
         // functions that wait on events.
         if (!program.workers().isEmpty()) {
-            runtime.setConnectorLookup(where ->
-                    where.side() != null && level.isLoaded(where.pos())
-                            ? dev.devpanda.factorynetwork.block.entity.Connectors.at(level, where.pos(), where.side())
-                            : null);
+            runtime.setConnectorLookup(this::connectorAt);
             runtime.setPower(power);
             runtime.setCrafting(craftingForWorkers);
             runtime.tick(level, program, graph, stores,
@@ -1914,13 +1913,22 @@ public class ControllerBlockEntity extends BlockEntity {
     }
 
     private void stamp(DevicePos where, DeviceState state) {
-        if (level == null || where.side() == null || !level.isLoaded(where.pos())) {
-            return;
-        }
-        ConnectorPart part = Connectors.at(level, where.pos(), where.side());
+        ConnectorPart part = connectorAt(where);
         if (part != null) {
             part.setState(state);
         }
+    }
+
+    /**
+     * The connector at this spot, in whatever world it stands, or
+     * {@code null} if that world or its chunk is not loaded.
+     */
+    private @org.jspecify.annotations.Nullable ConnectorPart connectorAt(DevicePos where) {
+        net.minecraft.world.level.Level at = level == null ? null : where.level(level);
+        if (at == null || where.side() == null || !at.isLoaded(where.pos())) {
+            return null;
+        }
+        return Connectors.at(at, where.pos(), where.side());
     }
 
     /** What is in the editor, even if it is not running yet. */
@@ -2592,11 +2600,7 @@ public class ControllerBlockEntity extends BlockEntity {
      */
     private ConnectorPart connectorNamed(String device) {
         var where = graph.connector(device).orElse(null);
-        if (where == null || where.side() == null || level == null
-                || !level.isLoaded(where.pos())) {
-            return null;
-        }
-        return Connectors.at(level, where.pos(), where.side());
+        return where == null ? null : connectorAt(where);
     }
 
     /**
@@ -2675,13 +2679,14 @@ public class ControllerBlockEntity extends BlockEntity {
             if (!all && !listensToDevice(BuiltinEvents.REDSTONE_CHANGED, entry.getKey())) {
                 continue;
             }
-            if (!level.isLoaded(entry.getValue().pos())) {
+            net.minecraft.world.level.Level at = entry.getValue().level(level);
+            if (at == null || !at.isLoaded(entry.getValue().pos())) {
                 continue;
             }
             // Read at the block and not at the face — the same rule as in
             // WorldHost.redstone: what reaches the block reaches every
             // connector on it.
-            int strength = level.getBestNeighborSignal(entry.getValue().pos());
+            int strength = at.getBestNeighborSignal(entry.getValue().pos());
             Integer previous = lastRedstone.put(entry.getKey(), strength);
             // The first look only sets the baseline, as for device_changed:
             // nothing changed there, it was only unknown. Reported, it woke a

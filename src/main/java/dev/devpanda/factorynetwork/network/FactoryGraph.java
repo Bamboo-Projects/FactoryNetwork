@@ -12,6 +12,9 @@ import dev.devpanda.factorynetwork.block.entity.RouterBlockEntity;
 import dev.devpanda.factorynetwork.util.NameDistance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.resources.ResourceKey;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -122,6 +125,24 @@ public final class FactoryGraph {
     private final Set<BlockPos> bridges;
     private final boolean truncated;
 
+    /** The controller's world; {@code null} only for the empty graph. */
+    private final @Nullable ResourceKey<Level> home;
+    /**
+     * What the network has in other worlds: cables, routers, bridges, ports.
+     * Kept apart from the lists above, which hold the controller's world
+     * only — they feed the energy bill and the analyser there.
+     */
+    private final Set<GlobalPos> abroad;
+    /** Routers and bridges among {@link #abroad}, for the energy bill. */
+    private final int routersAbroad;
+    private final int bridgesAbroad;
+    /**
+     * Drives, racks, displays and the like found in another world. They are
+     * not part of the network: storage, computing power and screens stay
+     * with the controller. Counted, so the controller can say so.
+     */
+    private final int skippedAbroad;
+
     /** A connection between two nodes of the network. */
     public record Edge(Node from, Node to) {}
 
@@ -133,7 +154,14 @@ public final class FactoryGraph {
                          List<BlockPos> drives, List<BlockPos> racks, List<BlockPos> extensions,
                          List<BlockPos> fabricators, Set<BlockPos> contested,
                          List<BlockPos> masts, Set<BlockPos> bridges,
-                         boolean truncated) {
+                         boolean truncated, @Nullable ResourceKey<Level> home,
+                         Set<GlobalPos> abroad, int routersAbroad, int bridgesAbroad,
+                         int skippedAbroad) {
+        this.home = home;
+        this.abroad = abroad;
+        this.routersAbroad = routersAbroad;
+        this.bridgesAbroad = bridgesAbroad;
+        this.skippedAbroad = skippedAbroad;
         this.masts = masts;
         this.bridges = bridges;
         this.contested = contested;
@@ -155,7 +183,23 @@ public final class FactoryGraph {
     public static FactoryGraph empty() {
         return new FactoryGraph(Map.of(), List.of(), Map.of(), List.of(),
                 Set.of(), Set.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), Set.of(), List.of(), Set.of(), false);
+                List.of(), List.of(), Set.of(), List.of(), Set.of(), false,
+                null, Set.of(), 0, 0, 0);
+    }
+
+    /** Routers in other worlds; they draw power like the ones at home. */
+    public int routersAbroad() {
+        return routersAbroad;
+    }
+
+    /** Bridge ends in other worlds. */
+    public int bridgesAbroad() {
+        return bridgesAbroad;
+    }
+
+    /** Devices in other worlds that only work at home (drives, racks, displays). */
+    public int skippedAbroad() {
+        return skippedAbroad;
     }
 
     /** The fabricators on the network. */
@@ -210,7 +254,18 @@ public final class FactoryGraph {
      * strand would run over a block that also holds a red one, and the two
      * would suddenly be connected.
      */
-    public record Node(BlockPos pos, CableColour colour, int lane) {
+    public record Node(BlockPos pos, CableColour colour, int lane,
+                       @Nullable ResourceKey<Level> dimension) {
+
+        /** In the controller's world. */
+        public Node(BlockPos pos, CableColour colour, int lane) {
+            this(pos, colour, lane, null);
+        }
+
+        /** Anywhere; {@code null} is the controller's world. */
+        public Node(BlockPos pos, CableColour colour, @Nullable ResourceKey<Level> dimension) {
+            this(pos, colour, RouterBlockEntity.OFF, dimension);
+        }
 
         /**
          * A node without a lane — everything except a router.
@@ -247,6 +302,7 @@ public final class FactoryGraph {
         Set<BlockPos> routers = new HashSet<>();
         List<BlockPos> masts = new ArrayList<>();
         Set<BlockPos> bridges = new HashSet<>();
+        Abroad abroad = new Abroad();
         Set<BlockPos> gateways = new LinkedHashSet<>();
         List<BlockPos> drives = new ArrayList<>();
         List<BlockPos> racks = new ArrayList<>();
@@ -283,6 +339,14 @@ public final class FactoryGraph {
                 break;
             }
             Node current = queue.poll();
+            // Every step is asked in the world of the node it starts from: a
+            // network that went through a bridge into the Nether goes on
+            // there.
+            ResourceKey<Level> dim = current.dimension();
+            Level here = Dimensions.levelOf(level, dim);
+            if (here == null) {
+                continue;
+            }
             // If the search stands in a router, it applies to one lane only.
             // The filter must come before everything else, not just before
             // the cable branch: a device on a foreign lane does not belong
@@ -290,34 +354,34 @@ public final class FactoryGraph {
             // Asked at the block and not at the node: the node used to carry
             // the lane number, and that is gone — a router is now one node,
             // not four.
-            boolean atRouter = level.getBlockState(current.pos()).getBlock()
+            boolean atRouter = here.getBlockState(current.pos()).getBlock()
                     instanceof RouterBlock;
             for (Direction direction : Direction.values()) {
                 // Out of a router only where the side allows it. Previously a
                 // lane comparison stood here; now the filter of the exit side
                 // decides — see mayLeaveRouter.
-                if (atRouter && !mayLeaveRouter(level, current.pos(), direction,
+                if (atRouter && !mayLeaveRouter(here, current.pos(), direction,
                         current.colour())) {
                     continue;
                 }
                 BlockPos next = current.pos().relative(direction);
-                if (!level.isLoaded(next)) {
+                if (!here.isLoaded(next)) {
                     // An unloaded chunk ends the branch, without error.
                     continue;
                 }
-                BlockState state = level.getBlockState(next);
+                BlockState state = here.getBlockState(next);
                 // A holder without a cable does not conduct. Its connector
                 // sits inside it and waits for a cable — until then it belongs
                 // to no network.
                 if (state.getBlock() instanceof CableBlock
                         && dev.devpanda.factorynetwork.block.CableBlock.carries(state)) {
-                    Node node = visitCable(level, next, current, parents, queue, cables);
+                    Node node = visitCable(here, next, current, parents, queue, cables, abroad);
                     // Every connector on a face of this cable is its own
                     // device — and its path to the controller runs over the
                     // cable itself, not over the one before it.
                     if (node != null) {
-                        for (Direction side : partsAt(level, next)) {
-                            DevicePos device = DevicePos.of(next, side);
+                        for (Direction side : partsAt(here, next)) {
+                            DevicePos device = DevicePos.of(next, side, dim);
                             reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                     .add(node);
                             kinds.put(device, Consumer.CONNECTOR);
@@ -332,20 +396,26 @@ public final class FactoryGraph {
                     // neighbourhood at the cable and not by the path to the
                     // controller; that is why it lives in GatewayRegions and
                     // not here.
-                    visitCable(level, next, current, parents, queue, cables);
-                    gateways.add(next.immutable());
+                    visitCable(here, next, current, parents, queue, cables, abroad);
+                    // Installation names stay at home: abroad a gateway is
+                    // a piece of cable.
+                    if (dim == null) {
+                        gateways.add(next.immutable());
+                    }
                 } else if (state.getBlock()
                         instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
-                    visitBridge(level, next, current, parents, queue, bridges);
+                    visitBridge(level, here, next, current, parents, queue, bridges, abroad);
                 } else if (state.getBlock() instanceof RouterBlock) {
-                    visitRouter(level, next, direction, current, parents, queue, routers);
+                    visitRouter(here, next, direction, current, parents, queue, routers, abroad);
                 } else {
                     // Everything that costs a channel goes the same way — do
                     // not assign yet: a device can hang on several strands,
                     // and which one carries it is decided only once all paths
                     // are known.
                     Consumer kind = consumerAt(state);
-                    if (kind != null) {
+                    if (kind != null && dim != null) {
+                        abroad.skipped++;
+                    } else if (kind != null) {
                         DevicePos device = deviceAt(state, next);
                         reachable.computeIfAbsent(device, key -> new ArrayList<>())
                                 .add(current);
@@ -384,7 +454,21 @@ public final class FactoryGraph {
                 Set.copyOf(routers), List.copyOf(edges),
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
-                List.copyOf(masts), Set.copyOf(bridges), truncated);
+                List.copyOf(masts), Set.copyOf(bridges), truncated, level.dimension(),
+                Set.copyOf(abroad.members), abroad.routers, abroad.bridges, abroad.skipped);
+    }
+
+    /** What the search collects in other worlds. */
+    private static final class Abroad {
+        final Set<GlobalPos> members = new HashSet<>();
+        int routers;
+        int bridges;
+        int skipped;
+
+        /** Adds a spot; {@code false} if it was there already or is at home. */
+        boolean add(@Nullable ResourceKey<Level> dim, BlockPos pos) {
+            return dim != null && members.add(GlobalPos.of(dim, pos.immutable()));
+        }
     }
 
     /**
@@ -496,16 +580,20 @@ public final class FactoryGraph {
      */
     private static Node visitCable(Level level, BlockPos pos, Node from,
                                    Map<Node, Node> parents,
-                                   Deque<Node> queue, Set<BlockPos> cables) {
+                                   Deque<Node> queue, Set<BlockPos> cables, Abroad abroad) {
         CableColour colour = CableBlock.colourOf(level.getBlockState(pos));
         if (!from.colour().connectsTo(colour)) {
             return null;
         }
-        Node node = new Node(pos.immutable(), colour);
+        Node node = new Node(pos.immutable(), colour, from.dimension());
         if (!parents.containsKey(node)) {
             parents.put(node, from);
             queue.add(node);
-            cables.add(pos.immutable());
+            if (from.dimension() == null) {
+                cables.add(pos.immutable());
+            } else {
+                abroad.add(from.dimension(), pos);
+            }
         }
         // Even an already-visited cable may contribute its parts: the node is
         // the same, and their path to the controller runs through it.
@@ -526,24 +614,35 @@ public final class FactoryGraph {
      * <p>The ping-pong between the two ends is caught by {@code parents}: a
      * node that already has a path gets no second one.
      */
-    private static void visitBridge(Level level, BlockPos pos, Node from,
+    private static void visitBridge(Level home, Level level, BlockPos pos, Node from,
                                     Map<Node, Node> parents, Deque<Node> queue,
-                                    Set<BlockPos> bridges) {
-        Node here = new Node(pos.immutable(), from.colour());
+                                    Set<BlockPos> bridges, Abroad abroad) {
+        Node here = new Node(pos.immutable(), from.colour(), from.dimension());
         if (!parents.containsKey(here)) {
             parents.put(here, from);
-            bridges.add(pos.immutable());
+            countBridge(here, bridges, abroad);
         }
-        BlockPos partner = dev.devpanda.factorynetwork.network.BridgeRegistry
+        // The counterpart may stand in another world: that is what a bridge
+        // into the Nether is for.
+        GlobalPos partner = dev.devpanda.factorynetwork.network.BridgeRegistry
                 .partnerOf(level, pos);
-        if (partner == null || !level.isLoaded(partner)) {
+        Level there = partner == null ? null : Dimensions.levelOf(home, partner.dimension());
+        if (there == null || !there.isLoaded(partner.pos())) {
             return;
         }
-        Node there = new Node(partner.immutable(), from.colour());
-        if (!parents.containsKey(there)) {
-            parents.put(there, here);
-            queue.add(there);
-            bridges.add(partner.immutable());
+        Node far = new Node(partner.pos(), from.colour(), Dimensions.keyOf(home, there));
+        if (!parents.containsKey(far)) {
+            parents.put(far, here);
+            queue.add(far);
+            countBridge(far, bridges, abroad);
+        }
+    }
+
+    private static void countBridge(Node node, Set<BlockPos> bridges, Abroad abroad) {
+        if (node.dimension() == null) {
+            bridges.add(node.pos());
+        } else if (abroad.add(node.dimension(), node.pos())) {
+            abroad.bridges++;
         }
     }
 
@@ -577,7 +676,7 @@ public final class FactoryGraph {
      */
     private static void visitRouter(Level level, BlockPos pos, Direction direction, Node from,
                                     Map<Node, Node> parents, Deque<Node> queue,
-                                    Set<BlockPos> routers) {
+                                    Set<BlockPos> routers, Abroad abroad) {
         Direction eintritt = direction.getOpposite();
         int lane = RouterBlockEntity.laneAt(level, pos, eintritt);
         if (lane == RouterBlockEntity.OFF) {
@@ -606,8 +705,12 @@ public final class FactoryGraph {
         //
         // The node's colour is the one it arrived with — the filter decides
         // whether something may pass through, not what it is afterward.
-        Node node = new Node(pos.immutable(), from.colour());
-        routers.add(pos.immutable());
+        Node node = new Node(pos.immutable(), from.colour(), from.dimension());
+        if (from.dimension() == null) {
+            routers.add(pos.immutable());
+        } else if (abroad.add(from.dimension(), pos)) {
+            abroad.routers++;
+        }
         if (!parents.containsKey(node)) {
             parents.put(node, from);
             queue.add(node);
@@ -671,10 +774,11 @@ public final class FactoryGraph {
             // Via Connectors and not via the BlockEntity: a connector sits
             // either alone in a connector block or on a face of a cable. Which
             // build form is no concern of the assignment — the face is.
+            Level at = device.level(level);
             dev.devpanda.factorynetwork.block.entity.ConnectorPart connector =
-                    device.side() == null ? null
+                    device.side() == null || at == null ? null
                             : dev.devpanda.factorynetwork.block.entity.Connectors
-                                    .at(level, pos, device.side());
+                                    .at(at, pos, device.side());
             if (kind == null || (kind == Consumer.CONNECTOR && connector == null)) {
                 continue;
             }
@@ -702,7 +806,8 @@ public final class FactoryGraph {
                     // The installation sits at the place and not at the face:
                     // a gateway names what hangs around it, and a cable block
                     // hangs there with all its connectors.
-                    String label = effectiveLabel(connector.label(), regions.instanceAt(pos));
+                    String label = effectiveLabel(connector.label(),
+                            device.dimension() == null ? regions.instanceAt(pos) : null);
                     if (label == null || label.isBlank()) {
                         unnamed.add(device);
                     } else {
@@ -751,7 +856,11 @@ public final class FactoryGraph {
             // the most important entry: it lies on every path, so all workers
             // share its bandwidth. That is exactly what is meant by "a network
             // is only as good as its weakest link".
-            var state = level.getBlockState(node.pos());
+            Level at = Dimensions.levelOf(level, node.dimension());
+            if (at == null) {
+                continue;
+            }
+            var state = at.getBlockState(node.pos());
             var block = state.getBlock();
             if ((block instanceof CableBlock
                     && dev.devpanda.factorynetwork.block.CableBlock.carries(state))
@@ -811,7 +920,10 @@ public final class FactoryGraph {
     public int throughputTo(Level level, DevicePos device) {
         int least = Bandwidth.UNLIMITED;
         for (Node node : pathTo(device)) {
-            least = Math.min(least, Bandwidth.at(level, node.pos()));
+            Level at = Dimensions.levelOf(level, node.dimension());
+            if (at != null) {
+                least = Math.min(least, Bandwidth.at(at, node.pos()));
+            }
         }
         return least;
     }
@@ -973,25 +1085,78 @@ public final class FactoryGraph {
         found.addAll(bridges);
         // For the connectors only the place counts: the question is whether
         // this block belongs to the network, not which of its faces.
+        Set<GlobalPos> far = new HashSet<>(abroad);
         for (DevicePos device : unnamed) {
-            found.add(device.pos().immutable());
+            addDevice(found, far, device);
         }
         for (List<DevicePos> named : connectorsByName.values()) {
             for (DevicePos device : named) {
-                found.add(device.pos().immutable());
+                addDevice(found, far, device);
             }
         }
+        membersAbroad = far;
         members = found;
         return found;
     }
+
+    private static void addDevice(Set<BlockPos> found, Set<GlobalPos> far, DevicePos device) {
+        if (device.dimension() == null) {
+            found.add(device.pos().immutable());
+        } else {
+            far.add(GlobalPos.of(device.dimension(), device.pos()));
+        }
+    }
+
+    /** {@link #members()} in other worlds; filled together with it. */
+    private volatile Set<GlobalPos> membersAbroad;
 
     /** Does this spot belong to this network — as cable, device or display? */
     public boolean contains(BlockPos pos) {
         return members().contains(pos);
     }
 
+    /**
+     * The same question for a spot in any world. The registry asks this way:
+     * a cable placed in the Nether may belong to a network whose controller
+     * stands in the overworld.
+     */
+    public boolean contains(Level level, BlockPos pos) {
+        if (home == null || level.dimension() == home) {
+            return contains(pos);
+        }
+        if (abroad.isEmpty()) {
+            return false;
+        }
+        members();
+        return membersAbroad.contains(GlobalPos.of(level.dimension(), pos.immutable()));
+    }
+
+    /** {@link #nearChunk(int, int)} in any world. */
+    public boolean nearChunk(ResourceKey<Level> dimension, int chunkX, int chunkZ) {
+        if (home == null || dimension == home) {
+            return nearChunk(chunkX, chunkZ);
+        }
+        if (abroad.isEmpty()) {
+            return false;
+        }
+        members();
+        for (GlobalPos pos : membersAbroad) {
+            if (pos.dimension() == dimension
+                    && Math.abs((pos.pos().getX() >> 4) - chunkX) <= 1
+                    && Math.abs((pos.pos().getZ() >> 4) - chunkZ) <= 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Does the network reach into other worlds at all? */
+    public boolean reachesAbroad() {
+        return !abroad.isEmpty();
+    }
+
     public int cableCount() {
-        return cables.size();
+        return cables.size() + abroad.size() - routersAbroad - bridgesAbroad;
     }
 
     /** Was the build aborted because the network is too large? */

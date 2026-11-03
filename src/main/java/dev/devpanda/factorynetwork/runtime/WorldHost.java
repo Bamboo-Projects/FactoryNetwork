@@ -88,7 +88,7 @@ public final class WorldHost implements Interpreter.Host {
     public boolean clickAt(String device) {
         var connector = connectorFor(device);
         if (connector == null
-                || !(level instanceof net.minecraft.server.level.ServerLevel server)) {
+                || !(connector.level() instanceof net.minecraft.server.level.ServerLevel server)) {
             throw new ScriptError("Nichts im Netz heißt „" + device + "“.",
                     "Ein Klick geht an ein Gerät, das im Netz hängt.");
         }
@@ -104,7 +104,7 @@ public final class WorldHost implements Interpreter.Host {
                 net.minecraft.world.phys.Vec3.atCenterOf(target)
                         .relative(facing.getOpposite(), 0.5),
                 facing.getOpposite(), target, false);
-        var result = player.gameMode.useItemOn(player, level,
+        var result = player.gameMode.useItemOn(player, server,
                 net.minecraft.world.item.ItemStack.EMPTY,
                 net.minecraft.world.InteractionHand.MAIN_HAND, hit);
         return result.consumesAction();
@@ -449,19 +449,19 @@ public final class WorldHost implements Interpreter.Host {
         }
         if (fromStorage) {
             var target = machineOf(to);
-            return machine.fill(store, level, target.pos(), target.side(), keys, limit);
+            return machine.fill(store, target.level(), target.pos(), target.side(), keys, limit);
         }
         if (toStorage) {
             var source = machineOf(from);
-            return machine.drain(level, source.pos(), source.side(), keys, store, limit);
+            return machine.drain(source.level(), source.pos(), source.side(), keys, store, limit);
         }
         var source = machineOf(from);
         var target = machineOf(to);
-        long pulled = machine.drain(level, source.pos(), source.side(), keys, store, limit);
+        long pulled = machine.drain(source.level(), source.pos(), source.side(), keys, store, limit);
         if (pulled <= 0) {
             return 0;
         }
-        return machine.fill(store, level, target.pos(), target.side(), keys, pulled);
+        return machine.fill(store, target.level(), target.pos(), target.side(), keys, pulled);
     }
 
     /**
@@ -475,8 +475,12 @@ public final class WorldHost implements Interpreter.Host {
                 && request.kind() == Value.Request.Kind.ALL;
     }
 
-    /** Where a machine stands and from which side the connector faces it. */
-    private record Machine(BlockPos pos, net.minecraft.core.Direction side) {
+    /**
+     * Where a machine stands and from which side the connector faces it —
+     * and in which world: behind a bridge or a hall port that is not the
+     * controller's.
+     */
+    private record Machine(Level level, BlockPos pos, net.minecraft.core.Direction side) {
     }
 
     private Machine machineOf(Value value) {
@@ -496,7 +500,7 @@ public final class WorldHost implements Interpreter.Host {
         // The facing comes from the part and no longer from the BlockState:
         // up to six sit on one cable block, and each points somewhere else.
         net.minecraft.core.Direction facing = connector.facing();
-        return new Machine(connector.pos().relative(facing), facing.getOpposite());
+        return new Machine(connector.level(), connector.pos().relative(facing), facing.getOpposite());
     }
 
     // ---- Fluids -----------------------------------------------------------
@@ -724,7 +728,7 @@ public final class WorldHost implements Interpreter.Host {
         ResourceKind kind = ResourceKind.of(what);
         if (kind != null && kind != ResourceKinds.ITEM && kind != ResourceKinds.FLUID) {
             net.minecraft.core.Direction facing = connector.facing();
-            return kind.machine().count(level,
+            return kind.machine().count(connector.level(),
                     connector.pos().relative(facing), facing.getOpposite(),
                     keysOf(kind, what));
         }
@@ -787,7 +791,7 @@ public final class WorldHost implements Interpreter.Host {
         if (connector == null) {
             return 0;
         }
-        return measure.at(level, connector.pos().relative(connector.facing()));
+        return measure.at(connector.level(), connector.pos().relative(connector.facing()));
     }
 
     /** Without a selection everything counts. */
@@ -829,13 +833,14 @@ public final class WorldHost implements Interpreter.Host {
         // connectorPosition speaks up itself if the name is unknown or
         // assigned twice. What remains here is the loaded chunk.
         var where = connectorPosition(device);
-        if (where.side() == null || !level.isLoaded(where.pos())) {
+        Level at = where.level(level);
+        if (where.side() == null || at == null || !at.isLoaded(where.pos())) {
             return null;
         }
         // By position and side: a connector either sits alone in a connector
         // block or on one face of a cable — either way it looks in exactly
         // one direction.
-        return dev.devpanda.factorynetwork.block.entity.Connectors.at(level, where.pos(), where.side());
+        return dev.devpanda.factorynetwork.block.entity.Connectors.at(at, where.pos(), where.side());
     }
 
     @Override
@@ -856,7 +861,9 @@ public final class WorldHost implements Interpreter.Host {
         // into is occupied by the machine. If six connectors sit on one
         // cable block, all six read the same: what reaches the block reaches
         // every one of them.
-        return level.getBestNeighborSignal(connectorPosition(device).pos());
+        var where = connectorPosition(device);
+        Level at = where.level(level);
+        return at == null || !at.isLoaded(where.pos()) ? 0 : at.getBestNeighborSignal(where.pos());
     }
 
     @Override

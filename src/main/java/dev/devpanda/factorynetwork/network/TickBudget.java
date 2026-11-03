@@ -35,7 +35,12 @@ public final class TickBudget {
     public int free(net.minecraft.world.level.Level level, List<Node> path) {
         int least = Bandwidth.UNLIMITED;
         for (Node node : path) {
-            int here = Bandwidth.at(level, node.pos()) - used.getOrDefault(node, 0);
+            // A cable behind a bridge is asked in its own world.
+            var at = Dimensions.levelOf(level, node.dimension());
+            if (at == null) {
+                continue;
+            }
+            int here = Bandwidth.at(at, node.pos()) - used.getOrDefault(node, 0);
             least = Math.min(least, Math.max(0, here));
         }
         return least;

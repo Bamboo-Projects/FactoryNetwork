@@ -7970,6 +7970,84 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * The bridge reaches into the Nether.
+     *
+     * <p>A controller in the overworld, its bridge's partner in the Nether,
+     * and behind it a cable with a connector on a chest. The worker fills the
+     * chest in the Nether from the store at home: the name resolves across
+     * worlds, and the move lands in the right one.
+     *
+     * <p>The cross-check: the same chest coordinates in the overworld stay
+     * empty — a lookup in the wrong world would fill those.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 300)
+    public static void theBridgeReachesIntoTheNether(GameTestHelper helper) {
+        var nether = helper.getLevel().getServer().getLevel(net.minecraft.world.level.Level.NETHER);
+        helper.assertTrue(nether != null, "kein Nether auf dem Testserver");
+        BlockPos controller = new BlockPos(1, 1, 1);
+        helper.setBlock(controller, FnBlocks.CONTROLLER.get());
+        rackWithServer(helper, controller.west());
+        driveWithCell(helper, controller.above(), dev.devpanda.factorynetwork.storage.CellTier.K1);
+        placeCable(helper, controller.east(), dev.devpanda.factorynetwork.block.CableColour.NONE);
+        ItemStack paar = dev.devpanda.factorynetwork.item.EntanglementItem.newPair();
+        BlockPos hier = helper.absolutePos(controller.east(2));
+        placeBridge(helper, hier, paar.split(1));
+
+        // Far out in the Nether, so no other test stands there.
+        BlockPos dort = new BlockPos(30_000, 70, 30_000);
+        nether.setChunkForced(dort.getX() >> 4, dort.getZ() >> 4, true);
+        nether.setBlockAndUpdate(dort, FnBlocks.BRIDGE.get().defaultBlockState());
+        if (nether.getBlockEntity(dort)
+                instanceof dev.devpanda.factorynetwork.block.entity.BridgeBlockEntity bridge) {
+            bridge.setItem(0, paar);
+        }
+        BlockPos kabel = dort.east();
+        nether.setBlockAndUpdate(kabel, FnBlocks.CABLE.get().defaultBlockState());
+        if (nether.getBlockEntity(kabel)
+                instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus) {
+            bus.addPart(Direction.UP);
+        }
+        nether.setBlockAndUpdate(kabel.above(), Blocks.CHEST.defaultBlockState());
+        var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(nether, kabel, Direction.UP);
+        helper.assertTrue(part != null, "am Kabel im Nether sitzt kein Connector");
+        part.setLabel("nether_kiste");
+
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var where = entity.graph().connector("nether_kiste");
+        helper.assertTrue(where.isPresent(), "der Connector im Nether gehört nicht zum Netz");
+        helper.assertTrue(where.get().dimension() == net.minecraft.world.level.Level.NETHER,
+                "der Connector steht im Graphen nicht im Nether: " + where.get());
+        helper.assertTrue(entity.graph().contains(nether, kabel),
+                "das Kabel im Nether gehört nicht zum Netz");
+
+        helper.assertTrue(entity.deploy("""
+                worker hinueber {
+                    from storage
+                    to nether_kiste
+                    filter item:cobblestone
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.storage().insert(Items.COBBLESTONE, 16);
+
+        helper.runAfterDelay(60, () -> {
+            int drueben = 0;
+            if (nether.getBlockEntity(kabel.above()) instanceof ChestBlockEntity chest) {
+                for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+                    drueben += chest.getItem(slot).getCount();
+                }
+            }
+            boolean hierKiste = helper.getLevel().getBlockEntity(kabel.above()) instanceof ChestBlockEntity;
+            nether.removeBlock(kabel.above(), false);
+            nether.removeBlock(kabel, false);
+            nether.removeBlock(dort, false);
+            nether.setChunkForced(dort.getX() >> 4, dort.getZ() >> 4, false);
+            helper.assertValueEqual(drueben, 16, "Pflastersteine in der Kiste im Nether");
+            helper.assertTrue(!hierKiste, "in der Oberwelt steht an derselben Stelle eine Kiste");
+            helper.succeed();
+        });
+    }
+
+    /**
      * Two bridges with the same number find each other — and only those.
      *
      * <p><b>No searching, registering.</b> A bridge that had to search the
@@ -8004,12 +8082,12 @@ public final class FactoryNetworkGameTests {
 
         placeBridge(helper, dort, paar);
         helper.assertTrue(
-                dort.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
-                        .partnerOf(level, hier)),
+                net.minecraft.core.GlobalPos.of(level.dimension(), dort).equals(
+                        dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, hier)),
                 "die beiden Brücken finden einander nicht");
         helper.assertTrue(
-                hier.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
-                        .partnerOf(level, dort)),
+                net.minecraft.core.GlobalPos.of(level.dimension(), hier).equals(
+                        dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, dort)),
                 "die Verbindung gilt nur in eine Richtung");
 
         // A third one with the same number: now nothing is unambiguous any more.
@@ -8024,8 +8102,8 @@ public final class FactoryNetworkGameTests {
         // The third one gone, and the two find each other again.
         level.removeBlock(dritte, false);
         helper.assertTrue(
-                dort.equals(dev.devpanda.factorynetwork.network.BridgeRegistry
-                        .partnerOf(level, hier)),
+                net.minecraft.core.GlobalPos.of(level.dimension(), dort).equals(
+                        dev.devpanda.factorynetwork.network.BridgeRegistry.partnerOf(level, hier)),
                 "nach dem Abbau der dritten bleibt die Verbindung tot");
 
         // And a foreign number connects nothing.

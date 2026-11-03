@@ -1,50 +1,53 @@
 package dev.devpanda.factorynetwork.network;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 
 /**
- * Which quantum bridges exist in a world, by their number.
+ * Which quantum bridges exist, by their number — across all worlds.
  *
  * <p><b>Nothing is searched for; things register.</b> A bridge that had to
  * search the world for its partner would scan millions of blocks on every
  * question — and the question comes up on every rebuild of the network. It
  * registers itself on load instead, the way the controller already does.
  *
- * <p>Weak references to the worlds, so an unloaded level does not linger — the
- * same caution as in {@link ControllerRegistry}.
+ * <p><b>One list for all worlds.</b> The two halves of a pair may stand in
+ * the overworld and in the Nether; a list per world would never bring them
+ * together. Entries leave when their block unloads, and the list is emptied
+ * when the server stops, so nothing outlives the world it came from.
  */
+@net.neoforged.fml.common.EventBusSubscriber(modid = dev.devpanda.factorynetwork.FactoryNetwork.MOD_ID)
 public final class BridgeRegistry {
 
-    private static final Map<LevelAccessor, Map<UUID, Set<BlockPos>>> BY_LEVEL =
-            new WeakHashMap<>();
+    private static final Map<UUID, Set<GlobalPos>> BY_PAIR = new HashMap<>();
 
     public static synchronized void add(Level level, UUID pair, BlockPos pos) {
-        BY_LEVEL.computeIfAbsent(level, key -> new java.util.HashMap<>())
-                .computeIfAbsent(pair, key -> new LinkedHashSet<>())
-                .add(pos.immutable());
+        BY_PAIR.computeIfAbsent(pair, key -> new LinkedHashSet<>())
+                .add(GlobalPos.of(level.dimension(), pos.immutable()));
     }
 
     public static synchronized void remove(Level level, UUID pair, BlockPos pos) {
-        Map<UUID, Set<BlockPos>> pairs = BY_LEVEL.get(level);
-        if (pairs == null) {
-            return;
-        }
-        Set<BlockPos> found = pairs.get(pair);
+        Set<GlobalPos> found = BY_PAIR.get(pair);
         if (found != null) {
-            found.remove(pos);
+            found.remove(GlobalPos.of(level.dimension(), pos.immutable()));
             if (found.isEmpty()) {
-                pairs.remove(pair);
+                BY_PAIR.remove(pair);
             }
         }
+    }
+
+    /** At server stop: a world opened next takes nothing over. */
+    @net.neoforged.bus.api.SubscribeEvent
+    public static synchronized void clear(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        BY_PAIR.clear();
     }
 
     /**
@@ -63,20 +66,17 @@ public final class BridgeRegistry {
      *       secretly wrong.</li>
      * </ol>
      */
-    public static synchronized @Nullable BlockPos partnerOf(Level level, BlockPos pos) {
-        Map<UUID, Set<BlockPos>> pairs = BY_LEVEL.get(level);
-        if (pairs == null) {
-            return null;
-        }
-        for (Set<BlockPos> places : pairs.values()) {
-            if (!places.contains(pos)) {
+    public static synchronized @Nullable GlobalPos partnerOf(Level level, BlockPos pos) {
+        GlobalPos self = GlobalPos.of(level.dimension(), pos.immutable());
+        for (Set<GlobalPos> places : BY_PAIR.values()) {
+            if (!places.contains(self)) {
                 continue;
             }
             if (places.size() != 2) {
                 return null;
             }
-            for (BlockPos other : places) {
-                if (!other.equals(pos)) {
+            for (GlobalPos other : places) {
+                if (!other.equals(self)) {
                     return other;
                 }
             }

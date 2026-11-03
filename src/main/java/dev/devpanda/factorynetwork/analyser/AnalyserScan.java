@@ -45,8 +45,11 @@ public final class AnalyserScan {
         // other, and neither of them would be legible. The point therefore
         // names every name that sits there.
         java.util.Map<BlockPos, List<String>> namesAt = new java.util.LinkedHashMap<>();
-        graph.connectors().forEach((name, where) ->
-                namesAt.computeIfAbsent(where.pos(), key -> new ArrayList<>()).add(name));
+        graph.connectors().forEach((name, where) -> {
+            if (where.dimension() == null) {
+                namesAt.computeIfAbsent(where.pos(), key -> new ArrayList<>()).add(name);
+            }
+        });
         for (Map.Entry<BlockPos, List<String>> entry : namesAt.entrySet()) {
             BlockPos pos = entry.getKey();
             AnalyserData.NodeState state = duplicates.contains(pos)
@@ -88,6 +91,9 @@ public final class AnalyserScan {
         int controllerCapacity = controller.bandwidth();
         int controllerLeft = controllerCapacity - controller.bandwidthUsed();
         for (FactoryGraph.Edge edge : graph.edges()) {
+            if (edge.from().dimension() != null || edge.to().dimension() != null) {
+                continue;
+            }
             // <b>What went over this spot in the last tick.</b> Not how many
             // devices hang behind it — since 29 Aug it is the throughput that
             // counts, and only the runtime knows that.
@@ -135,7 +141,13 @@ public final class AnalyserScan {
     private static Set<BlockPos> places(
             java.util.List<dev.devpanda.factorynetwork.network.DevicePos> devices) {
         Set<BlockPos> found = new HashSet<>();
-        devices.forEach(device -> found.add(device.pos()));
+        // The analyser draws in the controller's world; what stands behind a
+        // bridge in another one would land on the wrong spot here.
+        devices.forEach(device -> {
+            if (device.dimension() == null) {
+                found.add(device.pos());
+            }
+        });
         return found;
     }
 }
