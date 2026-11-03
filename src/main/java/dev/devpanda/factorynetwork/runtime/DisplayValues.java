@@ -90,6 +90,8 @@ public final class DisplayValues {
      * player to the wrong machine.
      */
     private final net.minecraft.world.level.Level level;
+    /** The stores of every kind, for counts that are not items; null in tests without them. */
+    private dev.devpanda.factorynetwork.network.NetworkStores stores;
 
     public DisplayValues(FactoryGraph graph, NetworkStorage storage, WorkerRuntime runtime) {
         this(graph, storage, runtime, java.util.Map.of(), null);
@@ -523,6 +525,12 @@ public final class DisplayValues {
         return measure.at(level, connector.pos().relative(connector.facing()));
     }
 
+    /** Gives the display the network's other stores, so fluids and essentia can be counted too. */
+    public DisplayValues withStores(dev.devpanda.factorynetwork.network.NetworkStores stores) {
+        this.stores = stores;
+        return this;
+    }
+
     private Long storageCount(Expr expr) {
         if (!(expr instanceof Expr.Call call)
                 || !(call.callee() instanceof Expr.Member member)
@@ -532,7 +540,16 @@ public final class DisplayValues {
                 || call.arguments().size() != 1) {
             return null;
         }
-        List<Item> items = ItemSelection.resolve(call.arguments().get(0).value());
+        Expr wanted = call.arguments().get(0).value();
+        Expr selector = wanted instanceof Expr.Amount amount ? amount.selection() : wanted;
+        if (selector instanceof Expr.Selector written && stores != null) {
+            ResourceKind kind = ResourceKinds.byPrefix(written.prefix());
+            if (kind != null && kind != ResourceKinds.ITEM) {
+                var store = stores.of(kind);
+                return kind.resolve(selector).stream().mapToLong(store::count).sum();
+            }
+        }
+        List<Item> items = ItemSelection.resolve(wanted);
         return items.stream().mapToLong(storage::count).sum();
     }
 

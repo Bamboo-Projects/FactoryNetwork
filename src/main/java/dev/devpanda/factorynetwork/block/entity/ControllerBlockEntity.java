@@ -589,6 +589,11 @@ public class ControllerBlockEntity extends BlockEntity {
         return stores.of(kind);
     }
 
+    /** Every store of the network, by kind. */
+    public dev.devpanda.factorynetwork.network.NetworkStores stores() {
+        return stores;
+    }
+
     public NetworkFluids fluids() {
         return fluidStorage;
     }
@@ -2291,7 +2296,7 @@ public class ControllerBlockEntity extends BlockEntity {
     /** The displays as finished lines — separate from sending, so it is testable. */
     public List<DisplayStatePacket.Panel> displayPanels() {
         List<DisplayStatePacket.Panel> panels = new ArrayList<>();
-        DisplayValues values = new DisplayValues(graph, storage, runtime, globals, level);
+        DisplayValues values = new DisplayValues(graph, storage, runtime, globals, level).withStores(stores);
         for (Decl declaration : program.declarations()) {
             if (!(declaration instanceof Decl.Display display)) {
                 continue;

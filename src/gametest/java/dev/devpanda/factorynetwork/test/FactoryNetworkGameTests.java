@@ -3475,6 +3475,29 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** A display counts fluids in the network, not only items. */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aDisplayCountsFluids(GameTestHelper helper) {
+        BlockPos controller = new BlockPos(1, 1, 1);
+        ControllerBlockEntity entity = twoCauldrons(helper, controller);
+        entity.rebuildNetwork();
+        fillCauldron(helper, controller, 0);
+        helper.assertTrue(entity.deploy("""
+                fn einlagern() {
+                    move 1000 fluid:water from bottich to storage
+                }
+
+                display tank {
+                    row "Wasser" storage.count(fluid:water)
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.startFlow("einlagern", java.util.List.of());
+
+        var shown = entity.displayPanels().get(0).shown();
+        helper.assertTrue(shown.get(0).text().contains("1,0k"),
+                "Das Wasser steht auf der Anzeige: " + shown.get(0).text());
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void fluidGoesIntoTheNetworkAndBack(GameTestHelper helper) {
         BlockPos controller = new BlockPos(1, 1, 1);

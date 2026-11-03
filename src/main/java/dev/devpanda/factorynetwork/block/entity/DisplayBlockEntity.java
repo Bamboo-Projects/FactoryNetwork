@@ -168,7 +168,7 @@ public class DisplayBlockEntity extends BlockEntity {
         }
 
         DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
-                controller.runtime(), controller.globals(), level);
+                controller.runtime(), controller.globals(), level).withStores(controller.stores());
         List<DisplayLine> rendered = new ArrayList<>();
         for (DisplayValues.Line line : values.evaluate(declaration)) {
             rendered.add(format(line));
