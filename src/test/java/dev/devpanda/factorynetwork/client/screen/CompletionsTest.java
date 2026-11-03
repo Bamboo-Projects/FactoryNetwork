@@ -544,4 +544,11 @@ class CompletionsTest {
                 "3.5 ist eine Zahl und kein Gerät"));
     }
 
+
+    @Test
+    @DisplayName("Inside the brackets of an on stand the groups")
+    void insideAnEventFilterStandTheGroups() {
+        List<String> shown = at("group pumpen {", "    members p1", "}", "", "on redstone_changed[");
+        assertTrue(shown.contains("pumpen"), () -> "die Gruppe fehlt: " + shown);
+    }
 }

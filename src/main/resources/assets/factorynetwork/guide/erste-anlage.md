@@ -155,7 +155,7 @@ Von hier führen drei Wege weiter, und keiner ist der richtige für alle:
 
 - **Mehr Maschinen an dieselbe Linie** — dafür gibt es Gruppen, damit nicht
   jeder Ofen eine eigene Zeile braucht. Siehe *Werte und Gruppen*.
-- **Reagieren statt dauernd nachsehen** — ein `on device_output(ofen_aus)`
+- **Reagieren statt dauernd nachsehen** — ein `on device_output[ofen_aus]()`
   läuft, wenn der Ofen etwas ausgegeben hat, statt jeden Tick zu fragen. Siehe
   *Ereignisse*.
 - **Etwas bestellen, statt es vorzuhalten** — der Fabricator baut auf Zuruf,

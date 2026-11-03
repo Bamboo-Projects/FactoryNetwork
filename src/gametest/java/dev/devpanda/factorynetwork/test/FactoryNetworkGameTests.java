@@ -4093,6 +4093,55 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * {@code on redstone_changed[depot](…)} hears depot only, and a group in
+     * the brackets hears its members; the block without the device gets the
+     * strength as its only value.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 400)
+    public static void aFilteredEventHearsOnlyItsConnectors(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                global quelle = 0
+                global ziel = 0
+                global gruppe = 0
+
+                group lager {
+                    members depot
+                }
+
+                on redstone_changed[quarry_output](strength) {
+                    quelle = quelle + 1
+                }
+
+                on redstone_changed[depot](gerät, strength) {
+                    ziel = strength
+                }
+
+                on redstone_changed[lager](strength) {
+                    gruppe = strength
+                }"""), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        BlockPos nebenDepot = controller.east().south().east();
+        helper.startSequence()
+                .thenIdle(25)
+                .thenExecute(() -> helper.setBlock(nebenDepot, Blocks.REDSTONE_BLOCK))
+                .thenIdle(25)
+                .thenExecute(() -> {
+                    var globals = entity.globals();
+                    helper.assertValueEqual(globals.get("ziel"),
+                            new dev.devpanda.factorynetwork.runtime.Value.Int(15), "depot hört sein Signal");
+                    helper.assertValueEqual(globals.get("gruppe"),
+                            new dev.devpanda.factorynetwork.runtime.Value.Int(15), "die Gruppe hört ihr Mitglied");
+                    helper.assertValueEqual(globals.get("quelle"),
+                            new dev.devpanda.factorynetwork.runtime.Value.Int(1),
+                            "quarry_output hört nur seinen ersten Blick, nicht das Signal am depot");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = EMPTY, timeoutTicks = 400)
     public static void aChangedInventoryWakesAWaitingFlow(GameTestHelper helper) {
         BlockPos controller = buildSetup(helper);

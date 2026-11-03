@@ -303,15 +303,17 @@ public final class FlowEngine {
     public List<Flow> fire(String event, List<Value> arguments) {
         List<Flow> started = new ArrayList<>();
         for (Decl.On handler : program.handlers()) {
-            if (!handler.name().equals(event)) {
+            if (!handler.name().equals(event)
+                    || !dev.devpanda.factorynetwork.runtime.EventFilter.matches(program, handler, arguments)) {
                 continue;
             }
+            List<Value> bound = dev.devpanda.factorynetwork.runtime.EventFilter.arguments(handler, arguments);
             Flow flow = new Flow(nextId++, "on " + event);
             flow.setStructureHash(blocks.structureHash());
             Frame frame = new Frame(handler.body(), false);
             for (int i = 0; i < handler.parameters().size(); i++) {
                 frame.locals().put(handler.parameters().get(i),
-                        i < arguments.size() ? arguments.get(i) : Value.Nothing.get());
+                        i < bound.size() ? bound.get(i) : Value.Nothing.get());
             }
             flow.push(frame);
             if (admit(flow)) {

@@ -52,8 +52,10 @@ public final class NetworkCheck {
                         checkTemplateName(template, view, problems);
                 case Decl.Fn function -> checkMoves(function.body(), view,
                         withParameters(local, function), problems);
-                case Decl.On handler -> checkMoves(handler.body(), view,
-                        with(local, handler.parameters()), problems);
+                case Decl.On handler -> {
+                    checkEventFilter(handler, view, local, problems);
+                    checkMoves(handler.body(), view, with(local, handler.parameters()), problems);
+                }
                 // In a template a device name means the device of the plant
                 // and not one in the network. That is why its roles count too.
                 case Decl.Multiblock template -> {
@@ -69,6 +71,29 @@ public final class NetworkCheck {
             }
         }
         return problems;
+    }
+
+    /**
+     * {@code on redstone_changed[sensor](…)} names connectors or groups that
+     * must exist: a mistyped name is a block that never fires, the quietest
+     * kind of fault. A warning, like everywhere else a name is missing — the
+     * connector may be set up tomorrow.
+     */
+    private static void checkEventFilter(Decl.On handler, NetworkView view,
+                                         Set<String> local, List<Diagnostic> problems) {
+        if (view.connectors().isEmpty()) {
+            return;
+        }
+        for (String device : handler.devices()) {
+            if (local.contains(device) || view.connectors().contains(device)) {
+                continue;
+            }
+            String hint = view.closestConnector(device)
+                    .map(near -> "Meintest du „" + near + "“?")
+                    .orElseGet(() -> "Im Netz gibt es: " + String.join(", ", view.connectors()));
+            problems.add(new Diagnostic(Diagnostic.Severity.WARNING, handler.span(),
+                    "Nichts im Netz heißt „" + device + "“ — dieser Block löst nie aus.", hint));
+        }
     }
 
     /**

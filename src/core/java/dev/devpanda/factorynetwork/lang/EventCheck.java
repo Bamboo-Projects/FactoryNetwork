@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -49,6 +50,11 @@ public final class EventCheck {
         return events;
     }
 
+    /** The events whose first value is a device, and so can be narrowed to devices. */
+    static final Set<String> DEVICE_EVENTS = Set.of(BuiltinEvents.REDSTONE_CHANGED,
+            BuiltinEvents.DEVICE_CHANGED, BuiltinEvents.DEVICE_OUTPUT,
+            BuiltinEvents.DEVICE_ONLINE, BuiltinEvents.DEVICE_OFFLINE);
+
     /**
      * Searches for {@code on} blocks that nobody calls.
      *
@@ -70,6 +76,11 @@ public final class EventCheck {
                         "Das Ereignis " + handler.name() + " löst niemand aus.",
                         unknownHint(handler.name(), declared)));
                 continue;
+            }
+            if (!handler.devices().isEmpty() && !DEVICE_EVENTS.contains(handler.name())) {
+                problems.add(new Diagnostic(Diagnostic.Severity.ERROR, handler.span(),
+                        "Nur Geräte-Ereignisse lassen sich auf Connectoren eingrenzen.",
+                        "Die eckigen Klammern passen zu " + String.join(", ", new TreeSet<>(DEVICE_EVENTS)) + "."));
             }
             if (handler.parameters().size() > arity) {
                 problems.add(new Diagnostic(Diagnostic.Severity.WARNING, handler.span(),

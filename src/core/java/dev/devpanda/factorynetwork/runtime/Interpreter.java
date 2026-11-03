@@ -404,8 +404,8 @@ public final class Interpreter {
     /** Fires all blocks that listen for this event. */
     public void fire(String event, List<Value> arguments) {
         for (Decl.On handler : program.handlers()) {
-            if (handler.name().equals(event)) {
-                invoke(handler.parameters(), arguments, handler.body());
+            if (handler.name().equals(event) && EventFilter.matches(program, handler, arguments)) {
+                invoke(handler.parameters(), EventFilter.arguments(handler, arguments), handler.body());
             }
         }
     }

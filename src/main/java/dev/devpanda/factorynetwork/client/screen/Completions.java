@@ -121,6 +121,13 @@ public final class Completions {
 
         List<Entry> entries = new ArrayList<>();
 
+        // Inside on event[…]: the connectors and groups a block can listen to.
+        if (indentOf(line) == 0 && upToCursor.matches("on\\s+\\w+\\[[^\\]]*")) {
+            addConnectors(entries, prefix);
+            addDeclaredNames(entries, prefix, lines, "group", "Gruppe");
+            return limit(entries);
+        }
+
         // "display halle " — the name is there, next comes the brace.
         if (afterDeclarationName(upToCursor, prefix)) {
             return List.of();
@@ -218,6 +225,7 @@ public final class Completions {
             addEvents(entries, prefix, lines);
             return limit(entries);
         }
+
 
         // <b>The core.</b> If the cursor is behind a keyword with a shape,
         // the completion follows the position that is currently in play — and

@@ -36,7 +36,7 @@ worker quarry_import {
 }
 
 group crushers {
-    members { crusher_1, crusher_2, crusher_3 }
+    members crusher_1, crusher_2, crusher_3
     strategy round_robin
 }
 ```
@@ -55,7 +55,7 @@ fn keepStock(item, amount) {
     }
 }
 
-on redstone_changed(tank_sensor, strength) {
+on redstone_changed[tank_sensor](strength) {
     if strength >= 12 {
         for pumpe in pumps.members() {
             pumpe.redstone(0)
@@ -759,7 +759,7 @@ alarm.redstone(15)
 ```
 
 ```
-on redstone_changed(sensor, strength) {
+on redstone_changed[sensor](strength) {
     if strength >= 12 {
         for pumpe in pumps.members() {
             pumpe.redstone(0)
@@ -1124,7 +1124,7 @@ keine Aufrufe an.
 Reaktive Logik läuft über Ereignisse, nicht über Abfragen in Schleifen.
 
 ```
-on redstone_changed(sensor, strength) {
+on redstone_changed[sensor](strength) {
     if strength >= 12 {
         for pumpe in pumps.members() {
             pumpe.redstone(0)
@@ -1164,6 +1164,33 @@ Bewusst nicht dabei ist ein Ereignis für jede Bestandsänderung. In einem Lager
 mit zwanzigtausend Arten feuert das im Sekundentakt, und niemand kann darauf
 sinnvoll reagieren. Wer auf Bestände reagieren will, nimmt einen Worker mit
 `when` — der wird vom System genau dann geweckt, wenn es nötig ist.
+
+### Nur bestimmte Connectoren
+
+```
+on redstone_changed[tank_sensor, pumpen](gerät, strength) {
+    …
+}
+```
+
+In eckigen Klammern hinter dem Ereignis stehen die Connectoren, auf die der
+Block hört — oder Gruppen, dann zählen ihre Mitglieder. **Ohne Klammern hört
+er auf jeden Connector im Netz**, und der erste Name in der runden Klammer ist
+dann das Gerät, an dem es passiert ist, nicht ein Filter. Ein
+`on redstone_changed(tank_sensor, strength)` lief deshalb bei jedem Hebel im
+Netz.
+
+Mit Klammern darf das Gerät wegfallen: `(strength)` bekommt nur die Stärke.
+Wer bei mehreren Connectoren wissen will, welcher es war, schreibt
+`(gerät, strength)`.
+
+Namen und nicht Texte: Ein Name, den es im Netz nicht gibt, meldet der Editor.
+Die Klammern gibt es für die Geräte-Ereignisse `redstone_changed`,
+`device_changed`, `device_output`, `device_online` und `device_offline`.
+
+**Und sie sparen Arbeit:** Das Netz fragt nur noch die genannten Connectoren
+nach Redstone und Inhalt, nicht mehr alle. Ein `await` auf das Ereignis und
+ein Block ohne Klammern hören weiter auf alle.
 
 ### Eigene Ereignisse
 

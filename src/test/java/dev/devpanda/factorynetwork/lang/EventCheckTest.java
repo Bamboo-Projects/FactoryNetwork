@@ -155,4 +155,43 @@ class EventCheckTest {
         assertTrue(problems.stream().noneMatch(Diagnostic::isError),
                 () -> "eine Datei, die morgen vollständig wird, muss heute laufen: " + problems);
     }
+
+    @Test
+    @DisplayName("A device filter parses and is accepted on a device event")
+    void aDeviceFilterOnADeviceEventIsFine() {
+        List<Diagnostic> problems = check("""
+                on redstone_changed[sensor, pumpen](strength) {
+                    log("ja")
+                }""");
+        assertTrue(problems.stream().noneMatch(problem -> problem.severity() == Diagnostic.Severity.ERROR),
+                () -> "kein Fehler erwartet: " + problems);
+        var program = new Project(java.util.Map.of("main.mf", """
+                on redstone_changed[sensor, pumpen](strength) {
+                }""")).parse().program();
+        var handler = program.handlers().get(0);
+        assertEquals(List.of("sensor", "pumpen"), handler.devices());
+        assertEquals(List.of("strength"), handler.parameters());
+    }
+
+    @Test
+    @DisplayName("A device filter on an event without a device is an error")
+    void aDeviceFilterNeedsADeviceEvent() {
+        List<Diagnostic> problems = check("""
+                on crafting_finished[sensor](job) {
+                    log("nie")
+                }""");
+        assertTrue(problems.stream().anyMatch(problem -> problem.severity() == Diagnostic.Severity.ERROR
+                        && problem.message().contains("Geräte-Ereignisse")),
+                () -> "die Meldung fehlt: " + problems);
+    }
+
+    @Test
+    @DisplayName("Empty brackets are an error")
+    void emptyBracketsAreAnError() {
+        List<Diagnostic> problems = check("""
+                on redstone_changed[](strength) {
+                }""");
+        assertTrue(problems.stream().anyMatch(problem -> problem.severity() == Diagnostic.Severity.ERROR),
+                () -> "Fehler erwartet: " + problems);
+    }
 }

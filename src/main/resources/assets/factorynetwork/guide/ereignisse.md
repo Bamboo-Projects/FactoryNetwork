@@ -17,14 +17,15 @@ losgeht. Genau diesen Zustand nimmt dir ein Ereignis ab.
 ## `on` — der Block, der zuhört
 
 ```
-on device_output(brecher) {
+on device_output[brecher]() {
     move all from brecher to storage
 }
 ```
 
-Das läuft, sobald im Brecher etwas mehr liegt als beim letzten Blick. Der Name
-in der Klammer ist deiner: Er steht für den Wert, den das Ereignis mitbringt —
-hier das Gerät, an dem etwas passiert ist.
+Das läuft, sobald im Brecher etwas mehr liegt als beim letzten Blick. In der
+**eckigen Klammer** steht, auf welchen Connector der Block hört. Die runde
+Klammer nimmt die Werte, die das Ereignis mitbringt — mehr dazu unter *Nur
+bestimmte Connectoren*.
 
 Ein `on`-Block ist **kein Worker**. Er hat kein `rate` und kein `when`; er
 läuft, wenn sein Ereignis eintritt, und sonst nie.
@@ -54,6 +55,30 @@ on device_offline(name) {
 }
 ```
 
+## Nur bestimmte Connectoren
+
+```
+on redstone_changed[schalter, pumpen](gerät, stärke) {
+    log(gerät.name + " steht auf " + stärke)
+}
+```
+
+Die **eckige Klammer** nennt die Connectoren, auf die der Block hört. Steht
+dort eine Gruppe, zählen alle ihre Mitglieder.
+
+**Ohne eckige Klammer hört der Block auf jeden Connector im Netz.** Dann ist
+der erste Name in der runden Klammer nicht ein Filter, sondern das Gerät, an
+dem es passiert ist. `on redstone_changed(schalter, stärke)` läuft also auch,
+wenn jemand ganz woanders einen Hebel umlegt — und `schalter` ist dann dieser
+andere Connector.
+
+In der runden Klammer darfst du das Gerät weglassen, wenn die eckige Klammer
+schon sagt, welches gemeint ist: `(stärke)` bekommt nur die Stärke.
+`(gerät, stärke)` bekommt beides, nützlich bei mehreren Connectoren.
+
+Ein Name, den es im Netz nicht gibt, meldet der Editor. Und das Netz spart
+Arbeit: Es schaut nur noch bei den genannten Connectoren nach.
+
 ## `device_output` gegen `device_changed`
 
 Der Unterschied entscheidet, ob deine Fabrik im Kreis läuft.
@@ -66,7 +91,7 @@ Der Unterschied entscheidet, ob deine Fabrik im Kreis läuft.
 Deshalb ist `device_output` das, was du fast immer willst:
 
 ```
-on device_output(ofen) {
+on device_output[ofen]() {
     move all from ofen to storage
 }
 ```
@@ -104,7 +129,7 @@ drei Wörter: `event` erklärt es, `emit` löst es aus, `await` wartet darauf.
 ```
 event Schicht(name: Text)
 
-on redstone_changed(schalter, stärke) {
+on redstone_changed[schalter](stärke) {
     if stärke > 0 {
         emit Schicht("nacht")
     } else {
@@ -139,7 +164,7 @@ Das ist der Unterschied zu einer Filterkarte in anderen Mods: Der Block ist
 nicht auf einen Augenblick beschränkt.
 
 ```
-on device_output(ofen) {
+on device_output[ofen]() {
     sleep 2s
     move all from ofen to storage
 }
@@ -153,8 +178,8 @@ Serverschrank, und was er gerade tut, steht im Reiter **Netz**.
 ## Der Tippfehler, der nichts sagt
 
 Ein `on`-Block braucht keine Deklaration — deshalb würde jeder Name
-durchgehen. Schreib einmal `on device_outpt(brecher)` statt
-`on device_output(brecher)`: Das übersetzt sauber, wird übernommen und läuft
+durchgehen. Schreib einmal `on device_outpt[brecher]()` statt
+`on device_output[brecher]()`: Das übersetzt sauber, wird übernommen und läuft
 **nie**. Es gibt keinen ersten Lauf, bei dem es auffallen könnte.
 
 Deshalb prüft der Editor die Namen gegen die Liste oben und gegen deine

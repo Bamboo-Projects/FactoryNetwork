@@ -2527,15 +2527,27 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!watchChanges && !watchOutput) {
             return;
         }
+        // Blocks with [connector] filters are asked about their devices only:
+        // a factory that listens to two machines should not look into all
+        // forty.
+        boolean allChanges = watchChanges && listensToAll(BuiltinEvents.DEVICE_CHANGED);
+        boolean allOutput = watchOutput && listensToAll(BuiltinEvents.DEVICE_OUTPUT);
         for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
                 : graph.connectors().entrySet()) {
+            boolean changes = watchChanges && (allChanges || dev.devpanda.factorynetwork.runtime.EventFilter
+                    .listensTo(program, BuiltinEvents.DEVICE_CHANGED, entry.getKey()));
+            boolean output = watchOutput && (allOutput || dev.devpanda.factorynetwork.runtime.EventFilter
+                    .listensTo(program, BuiltinEvents.DEVICE_OUTPUT, entry.getKey()));
+            if (!changes && !output) {
+                continue;
+            }
             var connector = connectorNamed(entry.getKey());
             if (connector == null) {
                 continue;
             }
             // On first sight nothing is reported: nothing has changed there,
             // it was only that nothing was known.
-            if (watchChanges) {
+            if (changes) {
                 int fingerprint = contentsFingerprint(connector);
                 Integer previous = lastContents.put(entry.getKey(), fingerprint);
                 if (previous != null && previous != fingerprint) {
@@ -2543,7 +2555,7 @@ public class ControllerBlockEntity extends BlockEntity {
                             List.of(new Value.Device(entry.getKey())));
                 }
             }
-            if (watchOutput) {
+            if (output) {
                 DeviceAmounts amounts = DeviceAmounts.of(connector);
                 DeviceAmounts previous = lastAmounts.put(entry.getKey(), amounts);
                 if (previous != null && amounts.hasMoreThan(previous)) {
@@ -2629,6 +2641,15 @@ public class ControllerBlockEntity extends BlockEntity {
      * The query is expensive enough to spare — but only when truly no one is
      * listening.
      */
+    /**
+     * Whether every device has to be watched for this event: a block without
+     * a filter hears all of them, and so does a flow that awaits the event.
+     */
+    private boolean listensToAll(String event) {
+        return dev.devpanda.factorynetwork.runtime.EventFilter.listensToAll(program, event)
+                || flows != null && flows.awaits(event);
+    }
+
     private boolean listensTo(String event) {
         if (program.handlers().stream().anyMatch(handler -> handler.name().equals(event))) {
             return true;
@@ -2643,8 +2664,14 @@ public class ControllerBlockEntity extends BlockEntity {
         if (!listensTo(BuiltinEvents.REDSTONE_CHANGED)) {
             return;
         }
+        boolean all = listensToAll(BuiltinEvents.REDSTONE_CHANGED);
         for (Map.Entry<String, dev.devpanda.factorynetwork.network.DevicePos> entry
                 : graph.connectors().entrySet()) {
+            // Only what some block names, unless one hears everything.
+            if (!all && !dev.devpanda.factorynetwork.runtime.EventFilter
+                    .listensTo(program, BuiltinEvents.REDSTONE_CHANGED, entry.getKey())) {
+                continue;
+            }
             if (!level.isLoaded(entry.getValue().pos())) {
                 continue;
             }

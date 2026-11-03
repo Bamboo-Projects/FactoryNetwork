@@ -124,11 +124,15 @@ public sealed interface Decl {
     record Fn(String name, List<Param> parameters, Block body, Span span) implements Decl {}
 
     /**
-     * {@code on redstone_changed(sensor, strength) { … }}
+     * {@code on redstone_changed(sensor, strength) { … }}, or with a filter
+     * {@code on redstone_changed[sensor, pumpen](strength) { … }}.
      *
      * <p>No types here: they are known from the event declaration.
+     *
+     * @param devices connectors or groups the block listens to; empty for all
      */
-    record On(String name, List<String> parameters, Block body, Span span) implements Decl {}
+    record On(String name, List<String> devices, List<String> parameters, Block body, Span span)
+            implements Decl {}
 
     // ---- Global value -----------------------------------------------------
 

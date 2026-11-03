@@ -173,13 +173,14 @@ keine Schleife, kein `await`.
 
 ```
 fnDecl      = 'fn' NAME '(' [ paramList ] ')' block
-onDecl      = 'on' NAME '(' [ nameList ] ')' block
+onDecl      = 'on' NAME [ '[' nameList ']' ] '(' [ nameList ] ')' block
 
 nameList    = NAME { ',' NAME }
 ```
 
 Bei `fn` und `event` stehen Typen, bei `on` nicht — dort sind sie durch die
-Ereignisdeklaration bekannt.
+Ereignisdeklaration bekannt. Die eckige Klammer bei `on` nennt Connectoren oder
+Gruppen, auf die der Block hört; nur bei Geräte-Ereignissen.
 
 ---
 

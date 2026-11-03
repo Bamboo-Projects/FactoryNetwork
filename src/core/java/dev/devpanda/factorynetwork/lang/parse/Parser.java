@@ -762,10 +762,40 @@ public final class Parser {
     private Decl parseOn() {
         Token keyword = advance();
         String name = expectName("des Ereignisses");
+        List<String> devices = parseDeviceFilter();
         List<Decl.Param> parameters = parseParamList(false);
         Block body = parseBlock();
         List<String> names = parameters.stream().map(Decl.Param::name).toList();
-        return new Decl.On(name, names, body, keyword.span().to(body.span()));
+        return new Decl.On(name, devices, names, body, keyword.span().to(body.span()));
+    }
+
+    /**
+     * {@code [sensor, pumpen]} after the event name: the connectors and
+     * groups the block listens to. Names, not texts, so a typo is a
+     * diagnostic and not a block that never fires.
+     */
+    private List<String> parseDeviceFilter() {
+        List<String> devices = new ArrayList<>();
+        if (!match(TokenType.LBRACKET)) {
+            return devices;
+        }
+        if (match(TokenType.RBRACKET)) {
+            error(previous().span(), "In den eckigen Klammern fehlt ein Connector.",
+                    "Zum Beispiel: on redstone_changed[sensor](strength)");
+            return devices;
+        }
+        do {
+            Token name = peek();
+            if (!name.is(TokenType.NAME) && !name.is(TokenType.ESCAPED_NAME)) {
+                error(name.span(), "Hier wird ein Connector oder eine Gruppe erwartet, gefunden wurde "
+                        + describe(name) + ".");
+                break;
+            }
+            advance();
+            devices.add(name.text());
+        } while (match(TokenType.COMMA));
+        expect(TokenType.RBRACKET, "Hier fehlt die schließende eckige Klammer.");
+        return List.copyOf(devices);
     }
 
     /**
