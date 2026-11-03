@@ -506,6 +506,7 @@ public class CodeEditor {
         // so every column is fixed.
         if (!code.isBlank()) {
             List<Token> tokens = Lexer.tokenize(code).tokens();
+            Token gridWord = displayGridWord(tokens);
             int consumed = 0;
             for (Token token : tokens) {
                 if (token.is(TokenType.EOF) || token.is(TokenType.NL)) {
@@ -522,7 +523,8 @@ public class CodeEditor {
                     continue;
                 }
                 graphics.text(font, mono(code.substring(consumed, end)),
-                        columnX(startX, consumed), lineY, colorFor(token), false);
+                        columnX(startX, consumed), lineY,
+                        token == gridWord ? EditorColours.KEYWORD : colorFor(token), false);
                 consumed = end;
             }
             if (consumed < code.length()) {
@@ -537,6 +539,26 @@ public class CodeEditor {
             graphics.text(font, mono(line.substring(comment)),
                     columnX(startX, comment), lineY, EditorColours.COMMENT, false);
         }
+    }
+
+    /**
+     * {@code items} at the start of a display line is a building block, not
+     * a name: the lexer cannot tell, because it is a keyword only there and
+     * may name a variable anywhere else. A line that starts with it and goes
+     * on with a value, not with {@code =}, {@code .} or {@code (}, is the
+     * building block.
+     */
+    static Token displayGridWord(List<Token> tokens) {
+        if (tokens.size() < 2 || !tokens.get(0).is(TokenType.NAME)
+                || !"items".equals(tokens.get(0).text())) {
+            return null;
+        }
+        Token next = tokens.get(1);
+        if (next.is(TokenType.EOF) || next.is(TokenType.NL)) {
+            return null;
+        }
+        return next.is(TokenType.EQ) || next.is(TokenType.DOT) || next.is(TokenType.LPAREN)
+                ? null : tokens.get(0);
     }
 
     private static int colorFor(Token token) {

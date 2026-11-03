@@ -320,8 +320,13 @@ public final class Completions {
             case NEW_NAME -> { }
             // For a text, a number or a duration there is nothing to suggest.
             // The hint line still says what goes here — that is what it is
-            // for.
-            default -> { }
+            // for. One exception: a display row takes a text or an item, and
+            // an item started with "item:" is worth completing.
+            default -> {
+                if (prefix.startsWith("item:")) {
+                    addItems(entries, prefix);
+                }
+            }
         }
         return entries;
     }
