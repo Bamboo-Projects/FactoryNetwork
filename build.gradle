@@ -141,9 +141,16 @@ neoForge {
     runs {
         acceptanceClient {
             client()
-            sourceSet = sourceSets.acceptanceClient
-            loadedMods = [mainMod]
+            // -Pfullpack: the same mods as the dev server, so a second player
+            // can join it; otherwise the minimal client as before.
+            sourceSet = project.hasProperty('fullpack') ? sourceSets.main : sourceSets.acceptanceClient
+            // With -Pacceptance the test companion comes along, and with it
+            // the remote control: a second player for multiplayer checks.
+            loadedMods = [mainMod] + companion
             systemProperty 'neoforge.enableGameTest', 'false'
+            if (project.hasProperty('hidden')) {
+                systemProperty 'fn.hidden', 'true'
+            }
             gameDirectory = layout.buildDirectory.dir('acceptance-client')
             systemProperty 'bamboocef.runtime.dir', ownRuntimeDir.absolutePath
             systemProperty 'bamboocef.devtools', 'true'
