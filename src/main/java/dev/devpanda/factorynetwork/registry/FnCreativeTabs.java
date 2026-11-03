@@ -39,6 +39,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.BRIDGE.get());
                         FnItems.HALLS.values().forEach(hall -> output.accept(hall.get()));
                         output.accept(FnItems.HALL_BLUEPRINT.get());
+                        output.accept(FnItems.HALL_PORT.get());
                         output.accept(FnItems.CONNECTOR.get());
                         output.accept(FnItems.TERMINAL.get());
                         output.accept(FnItems.WIRELESS_TERMINAL.get());

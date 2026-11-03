@@ -217,6 +217,39 @@ auf einmal. Jede Bahn trägt so viel wie ein dichtes Kabel, also 64 Kanäle.
 legt, hat sie verbunden — das ist kein Versehen, sondern der Unterschied zu
 zwei Kabeln, die sich bloß einen Block teilen.
 
+## Quantum-Brücke
+
+Ein Stück Kabel, das an zwei Stellen liegt. Zwei Brücken mit den beiden
+Hälften eines Verschränkungspaars sind verbunden, als liefe ein Kabel
+zwischen ihnen — **auch in eine andere Dimension**: eine Brücke in der
+Oberwelt, die andere im Nether, und das Netz geht dort mit Kabeln, Routern
+und Connectoren weiter. Ein Worker spricht einen Connector im Nether an wie
+jeden anderen.
+
+*Kostet: keinen Kanal, 6 FE/t je Ende.*
+
+**Beide Enden müssen geladen sein.** Ist der Chunk drüben nicht geladen,
+endet das Netz an der Brücke. Laufwerke, Serverschränke, Displays und
+Fabricatoren gehören in die Welt des Controllers; hinter einer Brücke in
+einer anderen Welt zählen sie nicht mit.
+
+## Fabrikhalle und Ports
+
+Ein Hallenblock ist die Tür zu einer eigenen Halle. Ein Kabel am
+Hallenblock reicht durch die Wand: Innen macht man mit dem **Hallen-Port**
+(Rechtsklick auf die Wand) ein Wandstück zum Port, und ein Kabel daran gehört
+zum Netz draußen. Ports gehen beliebig viele, und alle sind dieselbe Leitung.
+Drinnen setzt man ganz normale Connector an die Maschinen; das Programm
+draußen spricht sie mit ihrem Namen an.
+
+Schleichen mit leerer Hand macht einen Port wieder zur Wand und gibt ihn
+zurück.
+
+*Kostet: keinen Kanal, keinen Strom.*
+
+**Der Port bleibt eine Wand:** unzerstörbar, die Halle bleibt zu. Ein
+Rechtsklick mit leerer Hand auf eine Wand führt hinaus, auf einen Port nicht.
+
 ## Display
 
 Flach an der Wand, wie ein Bilderrahmen. Es zeigt den `display`-Block aus dem

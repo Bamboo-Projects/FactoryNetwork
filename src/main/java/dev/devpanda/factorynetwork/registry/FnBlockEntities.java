@@ -84,6 +84,12 @@ public final class FnBlockEntities {
                     FnBlocks.HALLS.values().stream().map(net.neoforged.neoforge.registries.DeferredBlock::get)
                             .toArray(net.minecraft.world.level.block.Block[]::new)));
 
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<dev.devpanda.factorynetwork.hall.HallPortBlockEntity>> HALL_PORT =
+            BLOCK_ENTITIES.register("hall_port", () -> new BlockEntityType<>(
+                    dev.devpanda.factorynetwork.hall.HallPortBlockEntity::new,
+                    FnBlocks.HALL_PORT.get()));
+
     private FnBlockEntities() {
     }
 }

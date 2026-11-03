@@ -304,7 +304,9 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
                 || neighbour.getBlock() instanceof MastBlock
                 || neighbour.getBlock() instanceof GatewayBlock
                 || neighbour.getBlock() instanceof ControllerExtensionBlock
-                || neighbour.getBlock() instanceof BridgeBlock;
+                || neighbour.getBlock() instanceof BridgeBlock
+                || neighbour.getBlock() instanceof dev.devpanda.factorynetwork.hall.HallBlock
+                || neighbour.getBlock() instanceof dev.devpanda.factorynetwork.hall.HallPortBlock;
     }
 
     /** Which directions this block connects. */

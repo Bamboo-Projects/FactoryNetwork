@@ -235,6 +235,17 @@ public final class FnBlocks {
                     .sound(SoundType.METAL)
                     .lightLevel(state -> 15));
 
+    /** A piece of hall wall that carries the cable through. */
+    public static final DeferredBlock<Block> HALL_PORT = BLOCKS.registerBlock("hall_port",
+            dev.devpanda.factorynetwork.hall.HallPortBlock::new,
+            () -> BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(-1.0F, 3_600_000.0F)
+                    .pushReaction(net.minecraft.world.level.material.PushReaction.BLOCK)
+                    .noLootTable()
+                    .sound(SoundType.METAL)
+                    .lightLevel(state -> 15));
+
     private static BlockBehaviour.Properties machineProperties() {
         return BlockBehaviour.Properties.of()
                 .mapColor(MapColor.METAL)

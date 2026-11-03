@@ -52,6 +52,10 @@ public final class FnItems {
     public static final DeferredItem<Item> HALL_BLUEPRINT = ITEMS.registerItem("hall_blueprint",
             dev.devpanda.factorynetwork.hall.BlueprintItem::new);
 
+    /** Turns a hall wall block into a port. */
+    public static final DeferredItem<Item> HALL_PORT = ITEMS.registerItem("hall_port",
+            dev.devpanda.factorynetwork.hall.HallPortItem::new);
+
     public static final DeferredItem<BlockItem> BRIDGE =
             ITEMS.registerSimpleBlockItem(FnBlocks.BRIDGE);
 

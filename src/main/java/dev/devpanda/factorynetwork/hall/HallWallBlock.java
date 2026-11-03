@@ -34,6 +34,21 @@ public class HallWallBlock extends Block {
         }
     }
 
+    /**
+     * With anything in hand the item decides: a block placed against the
+     * wall, a cable, a port. Only the empty hand leads out — otherwise
+     * building against a wall would throw the builder out of the hall.
+     */
+    @Override
+    protected InteractionResult useItemOn(net.minecraft.world.item.ItemStack held, BlockState state, Level level,
+                                          BlockPos pos, Player player, net.minecraft.world.InteractionHand hand,
+                                          BlockHitResult hit) {
+        if (!held.isEmpty()) {
+            return InteractionResult.PASS;
+        }
+        return super.useItemOn(held, state, level, pos, player, hand, hit);
+    }
+
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {

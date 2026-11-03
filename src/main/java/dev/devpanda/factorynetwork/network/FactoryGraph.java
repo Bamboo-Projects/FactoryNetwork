@@ -142,6 +142,12 @@ public final class FactoryGraph {
      * with the controller. Counted, so the controller can say so.
      */
     private final int skippedAbroad;
+    /**
+     * Hall blocks and hall ports in the controller's world: the places where
+     * the line goes through a hall wall. They belong to the network like a
+     * bridge, without drawing power of their own.
+     */
+    private final Set<BlockPos> portals;
 
     /** A connection between two nodes of the network. */
     public record Edge(Node from, Node to) {}
@@ -156,7 +162,8 @@ public final class FactoryGraph {
                          List<BlockPos> masts, Set<BlockPos> bridges,
                          boolean truncated, @Nullable ResourceKey<Level> home,
                          Set<GlobalPos> abroad, int routersAbroad, int bridgesAbroad,
-                         int skippedAbroad) {
+                         int skippedAbroad, Set<BlockPos> portals) {
+        this.portals = portals;
         this.home = home;
         this.abroad = abroad;
         this.routersAbroad = routersAbroad;
@@ -184,7 +191,7 @@ public final class FactoryGraph {
         return new FactoryGraph(Map.of(), List.of(), Map.of(), List.of(),
                 Set.of(), Set.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), Set.of(), List.of(), Set.of(), false,
-                null, Set.of(), 0, 0, 0);
+                null, Set.of(), 0, 0, 0, Set.of());
     }
 
     /** Routers in other worlds; they draw power like the ones at home. */
@@ -405,6 +412,10 @@ public final class FactoryGraph {
                 } else if (state.getBlock()
                         instanceof dev.devpanda.factorynetwork.block.BridgeBlock) {
                     visitBridge(level, here, next, current, parents, queue, bridges, abroad);
+                } else if (state.getBlock() instanceof dev.devpanda.factorynetwork.hall.HallBlock) {
+                    visitHall(level, here, next, current, parents, queue, abroad);
+                } else if (state.getBlock() instanceof dev.devpanda.factorynetwork.hall.HallPortBlock) {
+                    visitPort(level, here, next, current, parents, queue, abroad);
                 } else if (state.getBlock() instanceof RouterBlock) {
                     visitRouter(here, next, direction, current, parents, queue, routers, abroad);
                 } else {
@@ -455,12 +466,15 @@ public final class FactoryGraph {
                 List.copyOf(drives), List.copyOf(racks), List.copyOf(extensions),
                 List.copyOf(fabricators), Set.copyOf(regions.contested()),
                 List.copyOf(masts), Set.copyOf(bridges), truncated, level.dimension(),
-                Set.copyOf(abroad.members), abroad.routers, abroad.bridges, abroad.skipped);
+                Set.copyOf(abroad.members), abroad.routers, abroad.bridges, abroad.skipped,
+                Set.copyOf(abroad.portals));
     }
 
     /** What the search collects in other worlds. */
     private static final class Abroad {
         final Set<GlobalPos> members = new HashSet<>();
+        /** Hall blocks and ports at home; abroad they go into members. */
+        final Set<BlockPos> portals = new HashSet<>();
         int routers;
         int bridges;
         int skipped;
@@ -643,6 +657,104 @@ public final class FactoryGraph {
             bridges.add(node.pos());
         } else if (abroad.add(node.dimension(), node.pos())) {
             abroad.bridges++;
+        }
+    }
+
+    /**
+     * Steps onto a hall's block and through its wall to every port inside.
+     *
+     * <p>The hall's block works like one end of a bridge whose other end is
+     * every port of the hall at once: the cable runs on behind each of them.
+     * Only the block on the hall list conducts — a copy from creative
+     * pick-block stays a block.
+     */
+    private static void visitHall(Level home, Level level, BlockPos pos, Node from,
+                                  Map<Node, Node> parents, Deque<Node> queue, Abroad abroad) {
+        var server = level.getServer();
+        if (server == null || level.dimension() == dev.devpanda.factorynetwork.hall.Halls.DIMENSION
+                || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity block)) {
+            return;
+        }
+        int id = block.hall();
+        var entry = dev.devpanda.factorynetwork.hall.Halls.of(server).get(id);
+        if (entry == null || !entry.door().equals(Optional.of(GlobalPos.of(level.dimension(), pos.immutable())))) {
+            return;
+        }
+        Node door = new Node(pos.immutable(), from.colour(), from.dimension());
+        if (parents.containsKey(door)) {
+            return;
+        }
+        parents.put(door, from);
+        // On like a cable: a strand on another side of the block joins too.
+        queue.add(door);
+        portal(door, abroad);
+        throughWall(home, id, door, parents, queue, abroad);
+    }
+
+    /**
+     * Steps onto a port: on to the hall's block outside and to the other
+     * ports of the same hall. A cable on one port reaches the others too —
+     * all ports of a hall are one line.
+     */
+    private static void visitPort(Level home, Level level, BlockPos pos, Node from,
+                                  Map<Node, Node> parents, Deque<Node> queue, Abroad abroad) {
+        var server = level.getServer();
+        if (server == null || level.dimension() != dev.devpanda.factorynetwork.hall.Halls.DIMENSION) {
+            return;
+        }
+        int id = dev.devpanda.factorynetwork.hall.Halls.hallAt(pos);
+        Node port = new Node(pos.immutable(), from.colour(), from.dimension());
+        if (parents.containsKey(port)) {
+            return;
+        }
+        parents.put(port, from);
+        queue.add(port);
+        portal(port, abroad);
+        throughWall(home, id, port, parents, queue, abroad);
+        var entry = dev.devpanda.factorynetwork.hall.Halls.of(server).get(id);
+        GlobalPos outside = entry == null ? null : entry.door().orElse(null);
+        Level there = outside == null ? null : Dimensions.levelOf(home, outside.dimension());
+        if (there == null || !there.isLoaded(outside.pos())
+                || !(there.getBlockEntity(outside.pos())
+                        instanceof dev.devpanda.factorynetwork.hall.HallBlockEntity block)
+                || block.hall() != id) {
+            return;
+        }
+        Node door = new Node(outside.pos(), from.colour(), Dimensions.keyOf(home, there));
+        if (!parents.containsKey(door)) {
+            parents.put(door, port);
+            queue.add(door);
+            portal(door, abroad);
+        }
+    }
+
+    /** Every loaded port of this hall, reached from {@code from}. */
+    private static void throughWall(Level home, int id, Node from,
+                                    Map<Node, Node> parents, Deque<Node> queue, Abroad abroad) {
+        var server = home.getServer();
+        Level hall = server == null ? null : server.getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        if (hall == null) {
+            return;
+        }
+        var dim = Dimensions.keyOf(home, hall);
+        for (BlockPos pos : dev.devpanda.factorynetwork.hall.HallPorts.of(id)) {
+            if (!hall.isLoaded(pos)) {
+                continue;
+            }
+            Node port = new Node(pos, from.colour(), dim);
+            if (!parents.containsKey(port)) {
+                parents.put(port, from);
+                queue.add(port);
+                portal(port, abroad);
+            }
+        }
+    }
+
+    private static void portal(Node node, Abroad abroad) {
+        if (node.dimension() == null) {
+            abroad.portals.add(node.pos());
+        } else {
+            abroad.add(node.dimension(), node.pos());
         }
     }
 
@@ -1025,7 +1137,7 @@ public final class FactoryGraph {
         if (chunks == null) {
             java.util.Set<Long> found = new java.util.HashSet<>();
             java.util.List<java.util.Collection<BlockPos>> all = java.util.List.of(cables, drives,
-                    racks, routers, displays, masts, bridges, fabricators, extensions);
+                    racks, routers, displays, masts, bridges, fabricators, extensions, portals);
             for (java.util.Collection<BlockPos> positions : all) {
                 for (BlockPos pos : positions) {
                     found.add(chunkKey(pos.getX() >> 4, pos.getZ() >> 4));
@@ -1083,6 +1195,7 @@ public final class FactoryGraph {
         found.addAll(masts);
         found.addAll(fabricators);
         found.addAll(bridges);
+        found.addAll(portals);
         // For the connectors only the place counts: the question is whether
         // this block belongs to the network, not which of its faces.
         Set<GlobalPos> far = new HashSet<>(abroad);

@@ -8636,7 +8636,9 @@ public final class FactoryNetworkGameTests {
                 new Case("Sendemast", FnBlocks.MAST.get()),
                 new Case("Gateway", FnBlocks.GATEWAY.get()),
                 new Case("Anbau", FnBlocks.CONTROLLER_EXTENSION.get()),
-                new Case("Quantum-Brücke", FnBlocks.BRIDGE.get()));
+                new Case("Quantum-Brücke", FnBlocks.BRIDGE.get()),
+                new Case("Hallenblock", FnBlocks.HALLS.get(dev.devpanda.factorynetwork.hall.HallTier.SMALL).get()),
+                new Case("Hallen-Port", FnBlocks.HALL_PORT.get()));
 
         StringBuilder fehlend = new StringBuilder();
         for (Case one : cases) {

@@ -92,6 +92,14 @@ public final class AcceptanceMod {
                     ctx.getSource().sendSuccess(() -> Component.literal(text), false);
                     return 1;
                 })))
+                .then(Commands.literal("port").executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallPort(ctx.getSource().getLevel())), false);
+                    return 1;
+                }))
+                .then(Commands.literal("portcheck").executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(hallPortCheck(ctx.getSource().getLevel())), false);
+                    return 1;
+                }))
                 .then(Commands.literal("couple").executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.literal(hallCouple(ctx.getSource().getLevel())), false);
                     return 1;
@@ -309,6 +317,69 @@ public final class AcceptanceMod {
         Object dropped = drops.isEmpty() ? null : drops.getFirst().get(dev.devpanda.factorynetwork.registry.FnComponents.HALL.get());
         return "FN_HALL id=" + id + " inside=" + inside + " inRoom=" + inRoom + " wall=" + wall
                 + " after=" + after + " door=" + door + " dropNumber=" + dropped;
+    }
+
+    /** The controller outside the hall whose network runs through a port. */
+    private static final BlockPos PORT_CONTROLLER = HALL_DOOR.east(3);
+
+    /**
+     * Outside: controller, cable to the hall block, a chest with iron. Inside:
+     * a port in the wall, a cable on it with a connector on a chest. The
+     * worker moves the iron into the hall.
+     */
+    private static String hallPort(net.minecraft.server.level.ServerLevel level) {
+        var door = (dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(HALL_DOOR);
+        int id = door.hall();
+        var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        level.setChunkForced(PORT_CONTROLLER.getX() >> 4, PORT_CONTROLLER.getZ() >> 4, true);
+        level.setBlockAndUpdate(PORT_CONTROLLER, FnBlocks.CONTROLLER.get().defaultBlockState());
+        var rackPos = PORT_CONTROLLER.east();
+        level.setBlock(rackPos, FnBlocks.RACK.get().defaultBlockState(), 2);
+        level.setBlockAndUpdate(rackPos.above(), FnBlocks.RACK.get().defaultBlockState()
+                .setValue(RackBlock.HALF, DoubleBlockHalf.UPPER));
+        var rack = (RackBlockEntity) level.getBlockEntity(rackPos);
+        rack.setItem(RackBlockEntity.chassisSlot(0), new ItemStack(FnItems.SERVER_CHASSIS.get()));
+        for (var kind : ServerPart.values()) {
+            int value = switch (kind) { case CPU -> 32; case RAM -> 128; case DISK -> 4096; };
+            var item = FnItems.SERVER_PARTS.get(kind).stream()
+                    .filter(part -> ((ServerPartItem) part.get()).value() == value).findFirst().orElseThrow();
+            rack.setItem(RackBlockEntity.slotOf(0, kind), new ItemStack(item.get()));
+        }
+        level.setBlockAndUpdate(HALL_DOOR.east(), FnBlocks.CABLE.get().defaultBlockState());
+        connector(level, HALL_DOOR.east(2), Direction.NORTH, "draussen");
+        level.setBlockAndUpdate(HALL_DOOR.east(2).north(), Blocks.CHEST.defaultBlockState());
+        ((ChestBlockEntity) level.getBlockEntity(HALL_DOOR.east(2).north()))
+                .setItem(0, new ItemStack(Items.IRON_INGOT, 64));
+
+        BlockPos low = dev.devpanda.factorynetwork.hall.Halls.origin(id);
+        BlockPos port = low.offset(2, 2, 0);
+        hall.setBlockAndUpdate(port, FnBlocks.HALL_PORT.get().defaultBlockState());
+        connector(hall, port.south(), Direction.UP, "hallen_kiste");
+        hall.setBlockAndUpdate(port.south().above(), Blocks.CHEST.defaultBlockState());
+
+        var controller = (ControllerBlockEntity) level.getBlockEntity(PORT_CONTROLLER);
+        controller.rebuildNetwork();
+        controller.power().fill(Power.CAPACITY);
+        controller.power().setDraw(controller.powerDraw());
+        for (int tick = 0; tick <= Power.BOOT_TICKS; tick++) controller.power().tick();
+        boolean ok = controller.deploy(Project.of("worker rein {\n    from draussen\n    to hallen_kiste\n}\n"));
+        var where = controller.graph().connector("hallen_kiste");
+        return "FN_PORT hall=" + id + " ports=" + dev.devpanda.factorynetwork.hall.HallPorts.of(id)
+                + " connector=" + where.map(Object::toString).orElse("missing")
+                + " deploy=" + (ok ? "ok" : controller.diagnostics());
+    }
+
+    private static String hallPortCheck(net.minecraft.server.level.ServerLevel level) {
+        var door = (dev.devpanda.factorynetwork.hall.HallBlockEntity) level.getBlockEntity(HALL_DOOR);
+        int id = door == null ? 0 : door.hall();
+        var hall = level.getServer().getLevel(dev.devpanda.factorynetwork.hall.Halls.DIMENSION);
+        BlockPos chest = dev.devpanda.factorynetwork.hall.Halls.origin(id).offset(2, 3, 1);
+        var controller = level.getBlockEntity(PORT_CONTROLLER) instanceof ControllerBlockEntity found ? found : null;
+        return "FN_PORTCHECK hall=" + id + " inside=" + count(hall, chest)
+                + " outside=" + count(level, HALL_DOOR.east(2).north())
+                + " connector=" + (controller == null ? "no controller"
+                        : controller.graph().connector("hallen_kiste").map(Object::toString).orElse("missing"))
+                + " workers=" + (controller == null ? "-" : controller.runtime().states());
     }
 
     /** A storage link at the door of hall 1 fills the store of the network inside. */

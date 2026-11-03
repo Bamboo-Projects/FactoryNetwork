@@ -96,6 +96,19 @@ Die Vorgabe folgt aus 2.5: Die Kopier-Tabelle setzt Controller, Connector
 und Router in der Halle voraus. Grenze: `slots(n)` an einer Maschine in der
 Halle geht von draußen nicht; die Durchreiche kann später dazukommen.
 
+**Umgesetzt (03.11.2026), anders als oben vorgeschlagen:** Auf Wunsch des
+Users reicht das Kabel durch die Wand. Ein Hallen-Port (Item, Rechtsklick auf
+eine Innenwand) macht ein Wandstück zum Port; der Hallenblock draußen und alle
+Ports einer Halle sind dieselbe Leitung (`FactoryGraph.visitHall`,
+`visitPort`, `HallPorts`). Grundlage ist das Netz über Dimensionen:
+`DevicePos` und `FactoryGraph.Node` tragen eine Dimension (`null` = die des
+Controllers), `Dimensions.levelOf` löst sie auf. Dieselbe Grundlage trägt
+die Quantum-Bridge jetzt in den Nether. Geprüft: Spieltest Nether-Brücke;
+Dev-Server, Worker draußen füllt eine Kiste hinter einem Port, auch nach
+Neustart; im Client Port setzen, Kabel daran, Block an die Wand bauen.
+
+Offen ist Modus 2 aus dem Gespräch: die Halle draußen als *eine* Maschine.
+
 ### 2.5 Der Bauplan (Klonen)
 
 Ein Lauf über alle Blöcke der Halle. Je Block:

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " C ",
+    "CNC",
+    " C "
+  ],
+  "key": {
+    "C": "factorynetwork:cable",
+    "N": "factorynetwork:core_network"
+  },
+  "result": {
+    "id": "factorynetwork:hall_port",
+    "count": 4
+  }
+}
