@@ -58,6 +58,9 @@ public record DiskWritePacket(String title, Map<String, String> files) implement
                     return;
                 }
             }
+            // Someone else's program: an upload from this disk must not
+            // overwrite the share it held before.
+            ProgramDiskItem.setShare(disk, null);
             ProgramDiskItem.write(disk, new Project(Map.copyOf(packet.files())));
             if (!packet.title().isBlank()) {
                 disk.set(DataComponents.CUSTOM_NAME, Component.literal(packet.title()));

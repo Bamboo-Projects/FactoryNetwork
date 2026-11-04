@@ -2,6 +2,7 @@ package dev.devpanda.factorynetwork.client;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import dev.devpanda.factorynetwork.item.ProgramDiskItem;
+import dev.devpanda.factorynetwork.network.packet.DiskSharedPacket;
 import dev.devpanda.factorynetwork.network.packet.DiskWritePacket;
 import dev.devpanda.factorynetwork.platform.Chat;
 import net.minecraft.ChatFormatting;
@@ -33,11 +34,31 @@ public final class ShareCommands {
     public static void register(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("fnshare")
                 .then(Commands.literal("upload")
+                        .then(Commands.literal("new")
+                                .then(Commands.argument("title", StringArgumentType.greedyString())
+                                        .executes(context -> {
+                                            upload(StringArgumentType.getString(context, "title"), true, false);
+                                            return 1;
+                                        })))
+                        .then(Commands.literal("bind")
+                                .then(Commands.argument("title", StringArgumentType.greedyString())
+                                        .executes(context -> {
+                                            upload(StringArgumentType.getString(context, "title"), false, true);
+                                            return 1;
+                                        })))
                         .then(Commands.argument("title", StringArgumentType.greedyString())
                                 .executes(context -> {
-                                    upload(StringArgumentType.getString(context, "title"));
+                                    upload(StringArgumentType.getString(context, "title"), false, false);
                                     return 1;
                                 })))
+                .then(Commands.literal("update")
+                        .then(Commands.argument("code", StringArgumentType.word())
+                                .then(Commands.argument("title", StringArgumentType.greedyString())
+                                        .executes(context -> {
+                                            updateBound(StringArgumentType.getString(context, "code"),
+                                                    StringArgumentType.getString(context, "title"));
+                                            return 1;
+                                        }))))
                 .then(Commands.literal("get")
                         .then(Commands.argument("code", StringArgumentType.word())
                                 .executes(context -> {
@@ -77,7 +98,58 @@ public final class ShareCommands {
                                 }))));
     }
 
-    private static void upload(String title) {
+    /**
+     * Uploads the disk in hand. A disk that was shared before updates its
+     * code with the key it carries; {@code fresh} forces a new code;
+     * {@code bind} ties the code to the Minecraft account, proven with Mojang.
+     */
+    private static void upload(String title, boolean fresh, boolean bind) {
+        var player = Minecraft.getInstance().player;
+        if (player == null) {
+            return;
+        }
+        var disk = player.getMainHandItem();
+        var program = ProgramDiskItem.read(disk);
+        if (program == null) {
+            say(Component.translatable("message.factorynetwork.share.need_disk"));
+            return;
+        }
+        var share = fresh ? null : ProgramDiskItem.shareOf(disk);
+        boolean needProof = bind || (share != null && share.key().isEmpty());
+        say(Component.translatable("message.factorynetwork.share.uploading"));
+        java.util.concurrent.CompletableFuture
+                .supplyAsync(() -> {
+                    if (!needProof) {
+                        return null;
+                    }
+                    try {
+                        return ShareClient.prove();
+                    } catch (Exception error) {
+                        throw new IllegalStateException(Component.translatable(
+                                "message.factorynetwork.share.no_account").getString(), error);
+                    }
+                })
+                .thenCompose(proof -> share == null
+                        ? ShareClient.upload(title, program.files(), proof, bind)
+                        : ShareClient.update(share.code(), title, program.files(), share.key(), proof, bind))
+                .whenComplete((uploaded, error) -> later(() -> {
+                    if (error != null) {
+                        failed(error);
+                        return;
+                    }
+                    ClientPacketDistributor.sendToServer(new DiskSharedPacket(uploaded.code(), uploaded.key()));
+                    say(Component.translatable(share == null
+                                    ? "message.factorynetwork.share.uploaded"
+                                    : "message.factorynetwork.share.updated",
+                            codeLink(uploaded.code())));
+                    if (uploaded.bound()) {
+                        say(Component.translatable("message.factorynetwork.share.bound"));
+                    }
+                }));
+    }
+
+    /** From any disk: a new version under a code bound to this account. */
+    private static void updateBound(String code, String title) {
         var player = Minecraft.getInstance().player;
         if (player == null) {
             return;
@@ -88,18 +160,34 @@ public final class ShareCommands {
             return;
         }
         say(Component.translatable("message.factorynetwork.share.uploading"));
-        ShareClient.upload(title, program.files()).whenComplete((code, error) -> later(() -> {
-            if (error != null) {
-                failed(error);
-                return;
-            }
-            say(Component.translatable("message.factorynetwork.share.uploaded",
-                    Component.literal(code).withStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)
-                            .withUnderlined(true)
-                            .withClickEvent(new ClickEvent.CopyToClipboard(code))
-                            .withHoverEvent(new HoverEvent.ShowText(Component.translatable(
-                                    "message.factorynetwork.share.copy"))))));
-        }));
+        java.util.concurrent.CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return ShareClient.prove();
+                    } catch (Exception error) {
+                        throw new IllegalStateException(Component.translatable(
+                                "message.factorynetwork.share.no_account").getString(), error);
+                    }
+                })
+                .thenCompose(proof -> ShareClient.update(code.toUpperCase(java.util.Locale.ROOT), title,
+                        program.files(), "", proof, false))
+                .whenComplete((uploaded, error) -> later(() -> {
+                    if (error != null) {
+                        failed(error);
+                        return;
+                    }
+                    ClientPacketDistributor.sendToServer(new DiskSharedPacket(uploaded.code(), ""));
+                    say(Component.translatable("message.factorynetwork.share.updated",
+                            codeLink(uploaded.code())));
+                }));
+    }
+
+    private static Component codeLink(String code) {
+        return Component.literal(code).withStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)
+                .withUnderlined(true)
+                .withClickEvent(new ClickEvent.CopyToClipboard(code))
+                .withHoverEvent(new HoverEvent.ShowText(Component.translatable(
+                        "message.factorynetwork.share.copy"))));
     }
 
     private static void get(String code) {

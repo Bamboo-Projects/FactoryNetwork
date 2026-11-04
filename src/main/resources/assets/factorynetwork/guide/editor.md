@@ -183,6 +183,19 @@ FactoryNetwork spielen, ganz ohne Konto:
 - `/fnshare report FN-7K2Q9M` meldet ein Programm. Nach mehreren Meldungen
   verschwindet es aus der Liste.
 
+**Neue Fassungen unter demselben Code.** Beim ersten Hochladen merkt sich
+die Diskette einen geheimen Schlüssel. Lädst du dieselbe Diskette wieder hoch,
+ersetzt das die Fassung unter dem alten Code; auf der Diskette steht „Geteilt
+als …“. Wer das Programm nur geholt hat, hat den Schlüssel nicht und kann
+nichts ändern. `/fnshare upload new <Titel>` gibt bewusst einen neuen Code.
+
+Wer nicht an einer Diskette hängen will, knüpft den Code an sein
+Minecraft-Konto: `/fnshare upload bind <Titel>`. Der Dienst lässt sich das von
+Mojang bestätigen, so wie ein Server beim Einloggen; dein Passwort sieht er
+nie. Danach geht `/fnshare update <Code> <Titel>` von jeder Diskette und jedem
+Rechner aus. Gespeichert wird dann deine UUID, sonst nichts — und nur, wenn du
+`bind` schreibst.
+
 Gesendet werden nur Programm und Titel, nie dein Name oder der Server.
 
 ## Wenn jemand anders die Datei hält

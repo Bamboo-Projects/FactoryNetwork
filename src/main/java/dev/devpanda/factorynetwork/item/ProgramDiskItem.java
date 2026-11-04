@@ -28,6 +28,11 @@ import java.util.Map;
 public class ProgramDiskItem extends Item {
 
     private static final String KEY = "FactoryNetworkProgram";
+    private static final String KEY_SHARE = "FactoryNetworkShare";
+
+    /** Under which code this disk's program is shared, and the key that may change it. */
+    public record Share(String code, String key) {
+    }
 
     /** The lore shows at most this many file names; more would be a wall of text. */
     private static final int LORE_FILES = 6;
@@ -54,6 +59,34 @@ public class ProgramDiskItem extends Item {
         return read.isEmpty() ? null : new Project(read);
     }
 
+    /** The share this disk uploaded to, or {@code null}. The key may be empty. */
+    public static @Nullable Share shareOf(ItemStack stack) {
+        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
+        if (data == null || !data.copyTag().contains(KEY_SHARE)) {
+            return null;
+        }
+        CompoundTag share = Nbt.getCompound(data.copyTag(), KEY_SHARE);
+        return new Share(Nbt.getString(share, "Code"), Nbt.getString(share, "Key"));
+    }
+
+    /** Remembers the share, or forgets it with {@code null}. */
+    public static void setShare(ItemStack stack, @Nullable Share share) {
+        CompoundTag tag = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (share == null) {
+            tag.remove(KEY_SHARE);
+        } else {
+            CompoundTag saved = new CompoundTag();
+            saved.putString("Code", share.code());
+            saved.putString("Key", share.key());
+            tag.put(KEY_SHARE, saved);
+        }
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        Project program = read(stack);
+        if (program != null) {
+            write(stack, program);
+        }
+    }
+
     /** Writes the program onto the disk and lists its files on it. */
     public static void write(ItemStack stack, Project project) {
         CompoundTag files = new CompoundTag();
@@ -73,6 +106,10 @@ public class ProgramDiskItem extends Item {
                 .forEach(name -> lines.add(Component.literal("§7" + name)));
         if (project.files().size() > LORE_FILES) {
             lines.add(Component.literal("§8…"));
+        }
+        Share share = shareOf(stack);
+        if (share != null) {
+            lines.add(Component.translatable("item.factorynetwork.program_disk.shared", share.code()));
         }
         stack.set(DataComponents.LORE, new ItemLore(lines));
     }
