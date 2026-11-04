@@ -583,13 +583,14 @@ public final class Parser {
             // connector called "items" is far too likely, and a keyword
             // would take that name away everywhere for the sake of one line
             // in a display.
-            case NAME -> "items".equals(start.text()) ? Decl.Display.Entry.Kind.ITEMS : null;
+            case NAME -> "items".equals(start.text()) ? Decl.Display.Entry.Kind.ITEMS
+                    : "chart".equals(start.text()) ? Decl.Display.Entry.Kind.CHART : null;
             default -> null;
         };
         if (kind == null) {
             error(start.span(), describe(start) + " ist kein Baustein für ein Display.",
                     "Erlaubt sind title, row, text, progress, indicator, list, items, "
-                            + "button und scale.");
+                            + "chart, button und scale.");
             recoverToLineEnd();
             return null;
         }
@@ -642,6 +643,7 @@ public final class Parser {
                 case BUTTON -> " \"Nachschub\" nachschub_starten";
                 case PROGRESS -> " \"Kohle\" storage.count(item:coal) / 640.0";
                 case INDICATOR -> " \"Brecher am Netz\" brecher.online";
+                case CHART -> " \"Eisen\" storage.count(item:iron_ingot) per 1min";
                 default -> " \"Eisen\" storage.count(item:iron_ingot)";
             };
             error(label.span(),
@@ -652,6 +654,20 @@ public final class Parser {
         }
         advance();
         Expr value = parseExpression();
+        // chart takes a point every so often: per 10s, per 1min, per 1h.
+        if (kind == Decl.Display.Entry.Kind.CHART && at(TokenType.PER)) {
+            advance();
+            Token every = peek();
+            if (!every.is(TokenType.DURATION)) {
+                error(every.span(), "Nach per fehlt die Zeitangabe.",
+                        "Zum Beispiel: per 1min für einen Punkt pro Minute.");
+                recoverToLineEnd();
+                return null;
+            }
+            Expr interval = parseExpression();
+            return new Decl.Display.Entry(kind, label.text(), null, value, interval,
+                    start.span().to(interval.span()));
+        }
         return new Decl.Display.Entry(kind, label.text(), value, start.span().to(value.span()));
     }
 

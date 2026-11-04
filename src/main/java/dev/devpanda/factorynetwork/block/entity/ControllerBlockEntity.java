@@ -788,6 +788,7 @@ public class ControllerBlockEntity extends BlockEntity {
         tickFlows();
         mark = phase("flows", mark);
         tickCrafting();
+        tickCharts();
         mark = phase("crafting", mark);
         fireRedstoneEvents();
         fireInventoryEvents();
@@ -2439,7 +2440,7 @@ public class ControllerBlockEntity extends BlockEntity {
     /** The displays as finished lines — separate from sending, so it is testable. */
     public List<DisplayStatePacket.Panel> displayPanels() {
         List<DisplayStatePacket.Panel> panels = new ArrayList<>();
-        DisplayValues values = new DisplayValues(graph, storage, runtime, globals, level).withStores(stores);
+        DisplayValues values = displayValues();
         for (Decl declaration : program.declarations()) {
             if (!(declaration instanceof Decl.Display display)) {
                 continue;
@@ -2703,6 +2704,59 @@ public class ControllerBlockEntity extends BlockEntity {
         if (given > 0) {
             player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
                     "message.factorynetwork.order.arrived", given, Names.of(order.item())));
+        }
+    }
+
+    /** The values for displays, with everything this network knows: stores and chart points. */
+    public DisplayValues displayValues() {
+        return new DisplayValues(graph, storage, runtime, globals, level).withStores(stores)
+                .withCharts((name, index) -> {
+                    var points = chartPoints.get(name + "#" + index);
+                    return points == null ? List.of() : List.copyOf(points);
+                });
+    }
+
+    /**
+     * The points of every chart, by display and entry. Not saved: after a
+     * restart a chart starts empty and fills again.
+     */
+    private final Map<String, java.util.ArrayDeque<Double>> chartPoints = new HashMap<>();
+
+    /** Takes a point for every chart whose interval has come round. */
+    private void tickCharts() {
+        if (level == null || program == null) {
+            return;
+        }
+        long now = level.getGameTime();
+        DisplayValues values = null;
+        for (Decl declaration : program.declarations()) {
+            if (!(declaration instanceof Decl.Display display)) {
+                continue;
+            }
+            for (int i = 0; i < display.entries().size(); i++) {
+                Decl.Display.Entry entry = display.entries().get(i);
+                if (entry.kind() != Decl.Display.Entry.Kind.CHART) {
+                    continue;
+                }
+                long every = entry.every() instanceof Expr.DurationLit duration
+                        ? Math.max(1, duration.ticks()) : DisplayValues.CHART_DEFAULT_TICKS;
+                if (now % every != 0) {
+                    continue;
+                }
+                if (values == null) {
+                    values = displayValues();
+                }
+                Double point = values.sample(entry.value());
+                if (point == null) {
+                    continue;
+                }
+                var points = chartPoints.computeIfAbsent(display.name() + "#" + i,
+                        key -> new java.util.ArrayDeque<>());
+                points.addLast(point);
+                while (points.size() > DisplayValues.CHART_POINTS) {
+                    points.removeFirst();
+                }
+            }
         }
     }
 

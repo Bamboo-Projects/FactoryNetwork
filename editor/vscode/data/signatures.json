@@ -106,6 +106,33 @@
         ]
       },
       {
+        "keyword": "chart",
+        "shape": "chart string expr [per duration]",
+        "help": "Der Verlauf eines Werts als Balkenreihe. Mit per, wie oft ein Punkt dazukommt; ohne einmal pro Minute.",
+        "slots": [
+          {
+            "kind": "STRING",
+            "label": "string",
+            "optional": false
+          },
+          {
+            "kind": "EXPR",
+            "label": "expr",
+            "optional": false
+          },
+          {
+            "kind": "LITERAL",
+            "label": "per",
+            "optional": true
+          },
+          {
+            "kind": "DURATION",
+            "label": "duration",
+            "optional": false
+          }
+        ]
+      },
+      {
         "keyword": "button",
         "shape": "button string function",
         "help": "Ein Knopf, der eine Funktion aufruft.",

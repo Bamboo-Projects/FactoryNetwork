@@ -146,6 +146,10 @@ public final class Signatures {
                     Slot.of(Kind.STRING), Slot.of(Kind.EXPR)),
             of("items", "Ein Raster aus Symbolen mit Mengen, wie im Terminal.",
                     Slot.of(Kind.EXPR)),
+            of("chart", "Der Verlauf eines Werts als Balkenreihe. Mit per, wie oft ein "
+                            + "Punkt dazukommt; ohne einmal pro Minute.",
+                    Slot.of(Kind.STRING), Slot.of(Kind.EXPR), Slot.maybe("per"),
+                    Slot.of(Kind.DURATION)),
             of("button", "Ein Knopf, der eine Funktion aufruft.",
                     Slot.of(Kind.STRING), Slot.of(Kind.FUNCTION)),
             of("scale", "Wie groß die Schrift ist; 1 ist normal.",

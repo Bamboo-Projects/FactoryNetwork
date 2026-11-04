@@ -60,13 +60,17 @@ public sealed interface Decl {
          *             item: the language does not know the registry, the
          *             server resolves it when it evaluates.
          */
-        public record Entry(Kind kind, String label, Expr icon, Expr value, Span span) {
+        public record Entry(Kind kind, String label, Expr icon, Expr value, Expr every, Span span) {
 
-            public Entry(Kind kind, String label, Expr value, Span span) {
-                this(kind, label, null, value, span);
+            public Entry(Kind kind, String label, Expr icon, Expr value, Span span) {
+                this(kind, label, icon, value, null, span);
             }
 
-            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE, ITEMS }
+            public Entry(Kind kind, String label, Expr value, Span span) {
+                this(kind, label, null, value, null, span);
+            }
+
+            public enum Kind { TITLE, ROW, TEXT, PROGRESS, INDICATOR, LIST, BUTTON, SCALE, ITEMS, CHART }
         }
     }
 

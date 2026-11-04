@@ -234,8 +234,7 @@ public class DisplayBlockEntity extends BlockEntity {
             return Rendered.of("§ckein display " + name);
         }
 
-        DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
-                controller.runtime(), controller.globals(), controller.getLevel()).withStores(controller.stores());
+        DisplayValues values = controller.displayValues();
         List<DisplayLine> rendered = new ArrayList<>();
         for (DisplayValues.Line line : values.evaluate(declaration)) {
             rendered.add(format(line));
@@ -328,6 +327,7 @@ public class DisplayBlockEntity extends BlockEntity {
                     + " §f" + line.value();
             case INDICATOR -> (line.flag() ? "§a● " : "§8● ") + "§7" + line.label();
             case LIST -> "§7" + line.label() + " §f" + line.value();
+            case CHART -> "§7" + line.label() + " §a" + line.value();
             case BUTTON -> "§8[" + line.label() + "]";
             // What a grid says when it is not drawn as one: how many kinds,
             // or why there is nothing.

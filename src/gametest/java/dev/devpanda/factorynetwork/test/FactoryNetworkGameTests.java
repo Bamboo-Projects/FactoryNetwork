@@ -1667,6 +1667,30 @@ public final class FactoryNetworkGameTests {
         });
     }
 
+    /** A chart takes a point per interval and shows them as a row of bars. */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aChartCollectsPointsPerInterval(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                display wand {
+                    chart "Eisen" storage.count(item:iron_ingot) per 1t
+                }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        helper.startSequence()
+                .thenIdle(5)
+                .thenExecute(() -> entity.storage().insert(Items.IRON_INGOT, 100))
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    String line = entity.displayPanels().get(0).lines().get(0);
+                    helper.assertTrue(line.contains("▁") && line.contains("█"),
+                            "niedrig und hoch stehen als Balken da: " + line);
+                    helper.assertTrue(line.endsWith("100"), "und dahinter der Wert: " + line);
+                })
+                .thenSucceed();
+    }
+
     /** A display named like a device floats above its machine, for the analyser. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aDisplayNamedLikeAdeviceFloatsAboveIt(GameTestHelper helper) {

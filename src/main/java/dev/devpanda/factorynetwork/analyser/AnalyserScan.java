@@ -158,9 +158,7 @@ public final class AnalyserScan {
                 continue;
             }
             if (values == null) {
-                values = new dev.devpanda.factorynetwork.runtime.DisplayValues(graph,
-                        controller.storage(), controller.runtime(), controller.globals(),
-                        controller.getLevel()).withStores(controller.stores());
+                values = controller.displayValues();
             }
             List<String> lines = new ArrayList<>();
             for (var line : values.evaluate(display)) {

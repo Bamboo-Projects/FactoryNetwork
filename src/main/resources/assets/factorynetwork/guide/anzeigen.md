@@ -38,6 +38,7 @@ Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 | `indicator "…" bedingung` | Ein Lämpchen, hell oder dunkel |
 | `list "…" bestand` | Eine Aufzählung: Überschrift und je Posten eine Zeile, mit Symbol |
 | `items bestand` | Ein Raster aus Symbolen mit Mengen, wie im Terminal |
+| `chart "…" wert per 1min` | Der Verlauf eines Werts als Balkenreihe |
 | `button "…" funktion` | Ein Knopf, der eine Funktion startet |
 | `scale zahl` | Wie groß die Schrift ist; 1 ist normal |
 
@@ -64,6 +65,22 @@ lesen.
 
 Gefertigt wird nur, wenn die Auswahl genau einen Gegenstand nennt. Bei
 `request(64 tag:c/ingots)` gibt es, was da ist, und der Rest wird gemeldet.
+
+## Ein Verlauf statt eines Werts
+
+```
+display lager {
+    chart "Eisen" storage.count(item:iron_ingot) per 1min
+    chart "Strom" network.power per 10s
+}
+```
+
+`chart` merkt sich die letzten 24 Werte und zeigt sie als Balkenreihe,
+gestreckt zwischen dem kleinsten und dem größten, dahinter der Wert von
+jetzt. `per` sagt, wie oft ein Punkt dazukommt: `per 10s` ist eine knappe
+Viertelstunde auf einen Blick, `per 1h` ein ganzer Tag. Ohne `per` kommt
+einmal pro Minute einer dazu. Nach einem Serverneustart fängt der Verlauf
+leer an.
 
 ## Werte über der Maschine
 

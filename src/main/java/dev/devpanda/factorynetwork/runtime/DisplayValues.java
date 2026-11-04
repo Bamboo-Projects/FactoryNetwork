@@ -157,7 +157,9 @@ public final class DisplayValues {
             }
             // A listing is more than one line — that is its whole point and
             // the difference from row.
-            if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
+            if (entry.kind() == Decl.Display.Entry.Kind.CHART) {
+                out.add(new Evaluated(i, List.of(chart(display.name(), i, entry))));
+            } else if (entry.kind() == Decl.Display.Entry.Kind.LIST) {
                 out.add(new Evaluated(i, listing(entry)));
             } else if (entry.kind() == Decl.Display.Entry.Kind.ITEMS) {
                 out.add(new Evaluated(i, List.of(grid(entry))));
@@ -293,6 +295,8 @@ public final class DisplayValues {
             case LIST -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
             case BUTTON -> Line.text(entry.kind(), entry.label(), "");
             case ITEMS -> grid(entry);
+            // Drawn by evaluateEntries, which knows the display's name.
+            case CHART -> Line.text(entry.kind(), entry.label(), describe(entry.value()));
             // Never reached: evaluate(Decl.Display) skips it. The case is
             // there anyway so that the compiler complains again at the next
             // new building block.
@@ -553,6 +557,49 @@ public final class DisplayValues {
     }
 
     /** Gives the display the network's other stores, so fluids and essentia can be counted too. */
+    /** The points of a chart: display name and entry index to the samples, oldest first. */
+    private java.util.function.BiFunction<String, Integer, List<Double>> charts = (name, index) -> List.of();
+
+    public DisplayValues withCharts(java.util.function.BiFunction<String, Integer, List<Double>> source) {
+        this.charts = source;
+        return this;
+    }
+
+    /** One sample for a chart: the number the expression gives now, or {@code null}. */
+    public Double sample(Expr expr) {
+        return number(expr);
+    }
+
+    /** How many points a chart shows. */
+    public static final int CHART_POINTS = 24;
+
+    /** The default interval of a chart without per: a point a minute. */
+    public static final long CHART_DEFAULT_TICKS = 1200;
+
+    private static final String BARS = "▁▂▃▄▅▆▇█";
+
+    /**
+     * {@code chart "Eisen" storage.count(item:iron_ingot) per 1min} — the last
+     * points as a row of bars, scaled to their own low and high, and the
+     * current value behind them.
+     */
+    private Line chart(String display, int index, Decl.Display.Entry entry) {
+        List<Double> points = charts.apply(display, index);
+        StringBuilder bars = new StringBuilder();
+        if (points.isEmpty()) {
+            bars.append("…");
+        } else {
+            double low = points.stream().mapToDouble(Double::doubleValue).min().orElse(0);
+            double high = points.stream().mapToDouble(Double::doubleValue).max().orElse(0);
+            for (double point : points) {
+                int level = high <= low ? 0
+                        : (int) Math.round((point - low) / (high - low) * (BARS.length() - 1));
+                bars.append(BARS.charAt(level));
+            }
+        }
+        return Line.text(entry.kind(), entry.label(), bars + " §f" + describe(entry.value()));
+    }
+
     public DisplayValues withStores(dev.devpanda.factorynetwork.network.NetworkStores stores) {
         this.stores = stores;
         return this;
