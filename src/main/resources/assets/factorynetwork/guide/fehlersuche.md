@@ -203,6 +203,24 @@ Drei verschiedene Meldungen, und der Unterschied sagt dir, wo du suchen musst:
   daran. Der Connector muss an einer Seite hängen, die etwas herausgibt oder
   annimmt — steht dort „nichts", passiert nichts.
 
+## 7. Das Netz macht den Server langsam
+
+Hinter jeder `worker`-Zeile im Editor steht, was dieser Worker den Server
+kostet, in Millisekunden je Tick, gemittelt über die letzte Sekunde:
+
+- **grün** unter 0,05 ms: nicht der Rede wert,
+- **gelb** bis 0,3 ms: merkbar, wenn viele davon laufen,
+- **rot** darüber: hier lohnt sich ein Blick.
+
+Mit dem **Analysator** in der Hand glühen dazu die Geräte gelb oder rot, die
+ein teurer Worker erreicht. Ein Gerät, an dem zwei Worker hängen, nimmt die
+Farbe des teureren. Billige Geräte bleiben ohne Schein, sonst leuchtet alles.
+
+Teuer wird ein Worker meist durch eine Quelle mit sehr vielen Plätzen oder
+durch einen Filter, der viele Arten einzeln prüft. Ein langsamerer Takt in
+`rate` senkt die Kosten am schnellsten: Ein Worker mit `per 20t` läuft
+zwanzigmal seltener und kostet ein Zwanzigstel.
+
 ## Was der Editor sonst noch weiß
 
 - **Zeigen auf ein Wort** erklärt, was dort erwartet wird, und bei einem

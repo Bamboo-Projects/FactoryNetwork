@@ -24,7 +24,8 @@ import java.util.List;
  * would otherwise turn every touch of the tool into a transfer you can feel.
  */
 public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserData.Link> links,
-                                 AnalyserData.Summary summary) implements CustomPacketPayload {
+                                 AnalyserData.Summary summary, List<AnalyserData.Heat> heat)
+        implements CustomPacketPayload {
 
     public static final int MAX_NODES = 2048;
     public static final int MAX_LINKS = 8192;
@@ -70,11 +71,18 @@ public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserDat
                             buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
                             buffer.readVarInt()));
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, AnalyserData.Heat> HEAT =
+            StreamCodec.composite(
+                    BlockPos.STREAM_CODEC, AnalyserData.Heat::pos,
+                    ByteBufCodecs.VAR_INT, AnalyserData.Heat::micros,
+                    AnalyserData.Heat::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, AnalyserDataPacket> STREAM_CODEC =
             StreamCodec.composite(
                     NODE.apply(ByteBufCodecs.list(MAX_NODES)), AnalyserDataPacket::nodes,
                     LINK.apply(ByteBufCodecs.list(MAX_LINKS)), AnalyserDataPacket::links,
                     SUMMARY, AnalyserDataPacket::summary,
+                    HEAT.apply(ByteBufCodecs.list(MAX_NODES)), AnalyserDataPacket::heat,
                     AnalyserDataPacket::new);
 
     @Override

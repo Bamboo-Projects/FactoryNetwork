@@ -28,7 +28,7 @@ import java.util.List;
  *                  number the throughput in your head is a figure with no scale
  */
 public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long total,
-                            int capacity)
+                            int capacity, List<Cost> costs)
         implements CustomPacketPayload {
 
     /** A consumer with its amount. */
@@ -43,6 +43,19 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
                         Consumer::recent,
                         Consumer::new);
     }
+
+    /** What a worker cost the server, in microseconds per tick, for the profiler. */
+    public record Cost(String name, int micros) {
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, Cost> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.stringUtf8(256), Cost::name,
+                        ByteBufCodecs.VAR_INT, Cost::micros,
+                        Cost::new);
+    }
+
+    /** At most this many workers carry their cost along. */
+    public static final int COSTS = 256;
 
     /** This many consumers appear in the ranking — every worker of a large factory. */
     public static final int TOP = 32;
@@ -60,6 +73,7 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
                     TrafficPacket::top,
                     ByteBufCodecs.VAR_LONG, TrafficPacket::total,
                     ByteBufCodecs.VAR_INT, TrafficPacket::capacity,
+                    Cost.STREAM_CODEC.apply(ByteBufCodecs.list(COSTS)), TrafficPacket::costs,
                     TrafficPacket::new);
 
     @Override
@@ -75,10 +89,17 @@ public record TrafficPacket(List<Integer> perSecond, List<Consumer> top, long to
 
     /** Builds the packet from a controller's history. */
     public static TrafficPacket of(
-            dev.devpanda.factorynetwork.network.TrafficHistory history, int capacity) {
+            dev.devpanda.factorynetwork.network.TrafficHistory history, int capacity,
+            java.util.Map<String, Long> costs) {
         List<Consumer> top = history.top(TOP).stream()
                 .map(one -> new Consumer(one.name(), one.bytes(), one.recent()))
                 .toList();
-        return new TrafficPacket(history.perSecond(), top, history.total(), capacity);
+        List<Cost> priced = costs.entrySet().stream()
+                .sorted(java.util.Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(COSTS)
+                .map(entry -> new Cost(entry.getKey(), (int) Math.min(Integer.MAX_VALUE,
+                        entry.getValue() / 1000)))
+                .toList();
+        return new TrafficPacket(history.perSecond(), top, history.total(), capacity, priced);
     }
 }

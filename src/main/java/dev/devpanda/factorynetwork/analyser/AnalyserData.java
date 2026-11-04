@@ -11,7 +11,14 @@ import java.util.List;
  * client — the same split as the displays, and for the same reason: the graph
  * is server state, and mirroring it would mean maintaining it twice.
  */
-public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) {
+public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary,
+                           List<Heat> heat) {
+
+    /**
+     * What a device costs the server: the dearest worker that reaches it, in
+     * microseconds per tick. The device takes the worker's colour.
+     */
+    public record Heat(BlockPos pos, int micros) {}
 
     /**
      * How a node is doing.
@@ -83,6 +90,6 @@ public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary) 
 
     public static AnalyserData empty() {
         return new AnalyserData(List.of(), List.of(),
-                new Summary(0, 0, 0, 0, 0, 0, 0));
+                new Summary(0, 0, 0, 0, 0, 0, 0), List.of());
     }
 }

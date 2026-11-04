@@ -129,7 +129,40 @@ public final class AnalyserScan {
         AnalyserData.Summary summary = new AnalyserData.Summary(
                 graph.connectorNames().size(), graph.cableCount(),
                 0, unnamed.size(), duplicates.size(), tight, full);
-        return new AnalyserData(List.copyOf(nodes), List.copyOf(links), summary);
+        return new AnalyserData(List.copyOf(nodes), List.copyOf(links), summary,
+                heatOf(controller, graph));
+    }
+
+    /**
+     * The heat map: every device gets the cost of the dearest worker that
+     * reaches it. Split between devices it would be a guess — a worker spends
+     * its time on the whole move, not on one end of it.
+     */
+    private static List<AnalyserData.Heat> heatOf(ControllerBlockEntity controller,
+                                                  FactoryGraph graph) {
+        var program = controller.program();
+        var costs = controller.runtime().costs();
+        if (program == null || costs.isEmpty()) {
+            return List.of();
+        }
+        Map<BlockPos, Long> dearest = new java.util.LinkedHashMap<>();
+        for (var worker : program.workers()) {
+            Long nanos = costs.get(worker.name());
+            if (nanos == null || nanos <= 0) {
+                continue;
+            }
+            for (String device : controller.runtime().devicesOf(worker)) {
+                for (var where : graph.positionsOf(device)) {
+                    if (where.dimension() == null) {
+                        dearest.merge(where.pos(), nanos, Math::max);
+                    }
+                }
+            }
+        }
+        List<AnalyserData.Heat> heat = new ArrayList<>();
+        dearest.forEach((pos, nanos) -> heat.add(new AnalyserData.Heat(pos,
+                (int) Math.min(Integer.MAX_VALUE, nanos / 1000))));
+        return heat;
     }
 
     /**

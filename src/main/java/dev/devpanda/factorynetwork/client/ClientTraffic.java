@@ -18,12 +18,31 @@ public final class ClientTraffic {
     private static List<TrafficPacket.Consumer> top = new ArrayList<>();
     private static long total;
     private static int capacity;
+    private static java.util.Map<String, Integer> costs = java.util.Map.of();
 
     public static void accept(TrafficPacket packet) {
         perSecond = List.copyOf(packet.perSecond());
         top = List.copyOf(packet.top());
         total = packet.total();
         capacity = packet.capacity();
+        java.util.Map<String, Integer> next = new java.util.HashMap<>();
+        packet.costs().forEach(cost -> next.put(cost.name(), cost.micros()));
+        costs = java.util.Map.copyOf(next);
+    }
+
+    /** What a worker cost in the last second, in microseconds per tick, or -1. */
+    public static int costOf(String worker) {
+        return costs.getOrDefault(worker, -1);
+    }
+
+    /** {@code 0,08 ms} — the cost as the profiler writes it. */
+    public static String costText(int micros) {
+        return String.format(java.util.Locale.GERMANY, "%.2f ms", micros / 1000.0);
+    }
+
+    /** Green below 0.05 ms, amber below 0.3 ms, red above: the same three as everywhere. */
+    public static int costColour(int micros) {
+        return micros < 50 ? 0xFF78DC8C : micros < 300 ? 0xFFE8AC3E : 0xFFE88388;
     }
 
     /** The history, oldest point first, in bytes per second. */

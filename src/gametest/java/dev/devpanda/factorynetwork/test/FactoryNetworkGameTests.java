@@ -1497,6 +1497,41 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * The profiler: a worker that ran has a cost, and the heat map paints the
+     * devices it reaches — the source here.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void aworkerThatRanHasAcostAndHeatsItsDevices(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                worker holen {
+                    from quarry_output
+                    to storage
+                    filter item:cobblestone
+                }"""), "Das Programm wurde nicht übernommen");
+        entity.rebuildNetwork();
+
+        helper.startSequence()
+                .thenIdle(50)
+                .thenExecute(() -> {
+                    helper.assertTrue(entity.runtime().costs().containsKey("holen"),
+                            "der Worker hat Kosten: " + entity.runtime().costs());
+                    helper.assertValueEqual(entity.runtime().devicesOf(
+                            entity.program().workers().get(0)),
+                            java.util.List.of("quarry_output"),
+                            "seine Geräte — der Netzspeicher ist keins");
+                    var packet = dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
+                            entity.runtime().history(), entity.bandwidth(),
+                            java.util.Map.of("holen", 420_000L));
+                    helper.assertValueEqual(packet.costs().get(0).micros(), 420,
+                            "die Kosten gehen in Mikrosekunden zum Terminal");
+                })
+                .thenSucceed();
+    }
+
     /** And {@code network.capacity}, how much fits in. */
     @GameTest(template = EMPTY, timeoutTicks = 200)
     public static void networkCapacityReadsWhatFits(GameTestHelper helper) {
@@ -3991,11 +4026,14 @@ public final class FactoryNetworkGameTests {
                         BlockPos.ZERO, BlockPos.ZERO.above(),
                         dev.devpanda.factorynetwork.analyser.AnalyserData.LinkState.FULL, 8, 8)),
                 new dev.devpanda.factorynetwork.analyser.AnalyserData.Summary(
-                        3, 12, 1, 0, 0, 2, 1));
+                        3, 12, 1, 0, 0, 2, 1),
+                java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Heat(
+                        BlockPos.ZERO, 420)));
         var netzZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket.STREAM_CODEC, netz);
         helper.assertValueEqual(netzZurueck.summary().fullLinks(), 1,
                 "Die siebte Zahl der Übersicht — sie passt nicht mehr in composite");
+        helper.assertValueEqual(netzZurueck.heat().get(0).micros(), 420, "Das Wärmebild geht mit");
         helper.assertValueEqual(netzZurueck.nodes().get(0).label(), "brecher", "Gerätename");
         helper.assertValueEqual(netzZurueck.links().get(0).load(), 8, "Kanallast der Strecke");
 

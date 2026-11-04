@@ -338,6 +338,10 @@ public class CodeEditor {
      * every change to the clip flushes the draw buffer, and forty flushes per
      * frame are forty too many.
      */
+    /** A line that declares a worker; the name is the first group. */
+    private static final java.util.regex.Pattern WORKER_LINE =
+            java.util.regex.Pattern.compile("^\\s*worker\\s+([A-Za-z_][A-Za-z0-9_]*)");
+
     public void extractRenderState(GuiGraphicsExtractor graphics, List<Diagnostic> diagnostics) {
         int visible = visibleLines();
         int textX = x + GUTTER_WIDTH + TEXT_LEFT;
@@ -364,6 +368,20 @@ public class CodeEditor {
             // A breakpoint: a red dot left of the number.
             if (dev.devpanda.factorynetwork.client.ClientBreakpoints.has(openName, lineIndex + 1)) {
                 graphics.fill(x + 4, lineY + 1, x + 9, lineY + 6, 0xFFE0453B);
+            }
+            // The profiler: what a worker cost the server, at the right end
+            // of the line that declares it.
+            java.util.regex.Matcher declared = WORKER_LINE.matcher(lines.get(lineIndex));
+            if (declared.find()) {
+                int micros = dev.devpanda.factorynetwork.client.ClientTraffic.costOf(declared.group(1));
+                if (micros >= 0) {
+                    String cost = dev.devpanda.factorynetwork.client.ClientTraffic.costText(micros);
+                    int colour = dev.devpanda.factorynetwork.client.ClientTraffic.costColour(micros);
+                    int right = x + width - 6;
+                    graphics.text(font, cost, right - font.width(cost), lineY, colour, false);
+                    graphics.fill(right - font.width(cost) - 4, lineY, right - font.width(cost) - 2,
+                            lineY + LINE_HEIGHT - 3, colour);
+                }
             }
             Diagnostic problem = diagnosticIn(diagnostics, lineIndex + 1);
             if (problem != null) {

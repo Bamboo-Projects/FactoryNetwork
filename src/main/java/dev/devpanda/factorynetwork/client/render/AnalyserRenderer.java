@@ -61,6 +61,8 @@ public final class AnalyserRenderer {
                 dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH));
         drawFlow(data, pose, buffers.getBuffer(
                 dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH));
+        drawHeat(data, pose, buffers.getBuffer(
+                dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH));
         buffers.endBatch(dev.devpanda.factorynetwork.client.render.FnRenderTypes.LINES_SEE_THROUGH);
         buffers.endBatch(dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH);
         stack.popPose();
@@ -121,6 +123,25 @@ public final class AnalyserRenderer {
         }
         if (LAST_MOVED.size() > 4096) {
             LAST_MOVED.values().removeIf(at -> now - at > AFTERGLOW);
+        }
+    }
+
+    /**
+     * The heat map: a glowing shell around every device whose worker costs the
+     * server noticeable time. Cheap ones stay unmarked — a green glow on every
+     * device would be a picture without information.
+     */
+    private static void drawHeat(AnalyserData data,
+                                 com.mojang.blaze3d.vertex.PoseStack.Pose matrix,
+                                 com.mojang.blaze3d.vertex.VertexConsumer buffer) {
+        for (AnalyserData.Heat heat : data.heat()) {
+            if (heat.micros() < 50) {
+                continue;
+            }
+            float[] colour = heat.micros() < 300
+                    ? new float[] {0.95f, 0.70f, 0.20f, 0.35f}
+                    : new float[] {0.95f, 0.20f, 0.15f, 0.45f};
+            cube(buffer, matrix, centre(heat.pos()), 0.56f, colour);
         }
     }
 

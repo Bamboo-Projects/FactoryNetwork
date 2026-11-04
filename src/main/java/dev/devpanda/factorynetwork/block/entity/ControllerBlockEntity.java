@@ -1779,7 +1779,7 @@ public class ControllerBlockEntity extends BlockEntity {
     private void pushTrafficTo(ServerPlayer player) {
         net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                 dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
-                        runtime.history(), bandwidth()));
+                        runtime.history(), bandwidth(), runtime.costs()));
     }
 
     /**
@@ -1795,7 +1795,7 @@ public class ControllerBlockEntity extends BlockEntity {
             return;
         }
         var paket = dev.devpanda.factorynetwork.network.packet.TrafficPacket.of(
-                runtime.history(), bandwidth());
+                runtime.history(), bandwidth(), runtime.costs());
         terminalWatchers.forEach(watcher ->
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(watcher, paket));
     }

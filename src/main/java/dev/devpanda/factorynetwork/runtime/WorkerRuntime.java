@@ -183,6 +183,46 @@ public final class WorkerRuntime {
         HALTED
     }
 
+    /** How long the cost of a worker is summed before it counts: one second. */
+    public static final int COST_WINDOW = 20;
+
+    private final Map<String, Long> costWindow = new java.util.HashMap<>();
+    private Map<String, Long> costs = Map.of();
+
+    /**
+     * What each worker cost in the last full second, in nanoseconds per tick.
+     *
+     * <p>An average over the second and not the last run: a worker with
+     * {@code every 20t} costs once a second and nothing in between, and its
+     * fair share is that run divided by twenty.
+     */
+    public Map<String, Long> costs() {
+        return costs;
+    }
+
+    /**
+     * The devices a worker reaches: the names behind {@code from} and
+     * {@code to}, a group with its members. The heat map paints these.
+     */
+    public java.util.List<String> devicesOf(Decl.Worker worker) {
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (Decl.Worker.Entry entry : worker.entries()) {
+            if (entry.kind() != Decl.Worker.Entry.Kind.FROM
+                    && entry.kind() != Decl.Worker.Entry.Kind.TO) {
+                continue;
+            }
+            if (entry.value() instanceof dev.devpanda.factorynetwork.lang.ast.Expr.Name name) {
+                DeviceGroup group = groups.get(name.value());
+                if (group != null) {
+                    names.addAll(group.members());
+                } else {
+                    names.add(name.value());
+                }
+            }
+        }
+        return names;
+    }
+
     public Map<String, WorkerState> states() {
         return states;
     }
@@ -282,6 +322,12 @@ public final class WorkerRuntime {
         NetworkStorage storage = found.items();
         long now = level.getGameTime();
         currentStorage = storage;
+        if (now % COST_WINDOW == 0) {
+            Map<String, Long> next = new java.util.HashMap<>();
+            costWindow.forEach((name, nanos) -> next.put(name, nanos / COST_WINDOW));
+            costs = Map.copyOf(next);
+            costWindow.clear();
+        }
         lastGraph = graph;
         resolveGroups(program, graph);
         if (templateSource != program) {
@@ -307,7 +353,9 @@ public final class WorkerRuntime {
             state.lastRun = now;
             long start = System.nanoTime();
             runWorker(level, worker, state, graph, storage);
-            dev.devpanda.factorynetwork.network.TickCost.worker(worker.name(), System.nanoTime() - start);
+            long spent = System.nanoTime() - start;
+            dev.devpanda.factorynetwork.network.TickCost.worker(worker.name(), spent);
+            costWindow.merge(worker.name(), spent, Long::sum);
         }
     }
 
