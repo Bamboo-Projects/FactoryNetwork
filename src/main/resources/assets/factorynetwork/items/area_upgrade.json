@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "factorynetwork:item/area_upgrade"
+  }
+}

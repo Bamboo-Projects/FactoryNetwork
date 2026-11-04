@@ -179,6 +179,11 @@ public final class FnItems {
                     dev.devpanda.factorynetwork.item.ArmUpgradeItem.work(props),
                     dev.devpanda.factorynetwork.upgrade.Arm.WORK));
 
+    public static final DeferredItem<Item> AREA_UPGRADE = ITEMS.registerItem(
+            dev.devpanda.factorynetwork.upgrade.Arm.AREA.id(),
+            props -> new dev.devpanda.factorynetwork.item.ArmUpgradeItem(props.stacksTo(16),
+                    dev.devpanda.factorynetwork.upgrade.Arm.AREA));
+
     public static final DeferredItem<Item> INFINITY_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
             props -> new dev.devpanda.factorynetwork.item.UpgradeItem(

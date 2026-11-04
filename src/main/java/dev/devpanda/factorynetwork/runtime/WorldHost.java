@@ -118,6 +118,46 @@ public final class WorldHost implements Interpreter.Host {
                          dev.devpanda.factorynetwork.block.entity.ConnectorPart part,
                          String device) {
 
+        /** The same hand, aimed at another block of the area. */
+        Reach at(net.minecraft.core.BlockPos other) {
+            return new Reach(server, other, facing, player, part, device);
+        }
+
+        /**
+         * The blocks the work upgrade reaches: the one in front, or with
+         * area upgrades a square of 3×3 or 5×5 in the plane facing the
+         * connector.
+         */
+        java.util.List<net.minecraft.core.BlockPos> area() {
+            int radius = Math.min(2, part.arm(dev.devpanda.factorynetwork.upgrade.Arm.AREA).getCount());
+            if (radius == 0) {
+                return java.util.List.of(target);
+            }
+            net.minecraft.core.Direction first;
+            net.minecraft.core.Direction second;
+            switch (facing.getAxis()) {
+                case Y -> {
+                    first = net.minecraft.core.Direction.EAST;
+                    second = net.minecraft.core.Direction.SOUTH;
+                }
+                case X -> {
+                    first = net.minecraft.core.Direction.SOUTH;
+                    second = net.minecraft.core.Direction.UP;
+                }
+                default -> {
+                    first = net.minecraft.core.Direction.EAST;
+                    second = net.minecraft.core.Direction.UP;
+                }
+            }
+            java.util.List<net.minecraft.core.BlockPos> blocks = new java.util.ArrayList<>();
+            for (int a = -radius; a <= radius; a++) {
+                for (int b = -radius; b <= radius; b++) {
+                    blocks.add(target.relative(first, a).relative(second, b));
+                }
+            }
+            return blocks;
+        }
+
         /** The upgrade this verb needs; says so if it is missing. */
         ItemStack arm(dev.devpanda.factorynetwork.upgrade.Arm kind) {
             ItemStack found = part.arm(kind);
@@ -241,6 +281,14 @@ public final class WorldHost implements Interpreter.Host {
     public boolean mineAt(String device, Value tool) {
         Reach reach = reach(device);
         reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
+        boolean any = false;
+        for (var block : reach.area()) {
+            any |= mineOne(reach.at(block), tool);
+        }
+        return any;
+    }
+
+    private boolean mineOne(Reach reach, Value tool) {
         var server = reach.server();
         var state = server.getBlockState(reach.target());
         if (state.isAir() || state.getDestroySpeed(server, reach.target()) < 0) {
@@ -288,6 +336,14 @@ public final class WorldHost implements Interpreter.Host {
     public boolean placeAt(String device, Value block) {
         Reach reach = reach(device);
         reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
+        boolean any = false;
+        for (var spot : reach.area()) {
+            any |= placeOne(reach.at(spot), block);
+        }
+        return any;
+    }
+
+    private boolean placeOne(Reach reach, Value block) {
         if (!reach.server().getBlockState(reach.target()).canBeReplaced()) {
             return false;
         }
@@ -317,6 +373,14 @@ public final class WorldHost implements Interpreter.Host {
     public boolean useAt(String device, Value item) {
         Reach reach = reach(device);
         reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
+        boolean any = false;
+        for (var spot : reach.area()) {
+            any |= useOne(reach.at(spot), item);
+        }
+        return any;
+    }
+
+    private boolean useOne(Reach reach, Value item) {
         ItemStack held = takeOne(item);
         if (held == null) {
             return false;

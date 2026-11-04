@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PIP",
+    "ILI",
+    "PIP"
+  ],
+  "key": {
+    "I": "minecraft:iron_block",
+    "L": "factorynetwork:core_logic",
+    "P": "factorynetwork:plate"
+  },
+  "result": {
+    "id": "factorynetwork:area_upgrade",
+    "count": 1
+  }
+}

@@ -1803,6 +1803,40 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** With an area upgrade, mine() takes a 3x3 square in the plane facing the connector. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theAreaUpgradeMinesAsquare(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos vorne = controller.east().north().north();
+        for (int a = -1; a <= 1; a++) {
+            for (int b = -1; b <= 1; b++) {
+                helper.setBlock(vorne.east(a).above(b), Blocks.DIRT);
+            }
+        }
+        entity.rebuildNetwork();
+        var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(helper.getLevel(),
+                helper.absolutePos(controller.east().north()));
+        part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.WORK_UPGRADE.get()));
+        helper.assertTrue(part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.AREA_UPGRADE.get())),
+                "erstes Flächen-Upgrade");
+        helper.assertTrue(part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.AREA_UPGRADE.get())),
+                "zweites Flächen-Upgrade");
+        helper.assertTrue(!part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.AREA_UPGRADE.get())),
+                "ein drittes nicht");
+        part.takeArms().stream().filter(stack -> stack.is(dev.devpanda.factorynetwork.registry.FnItems.AREA_UPGRADE.get()))
+                .findFirst().ifPresent(stack -> helper.assertValueEqual(stack.getCount(), 2, "beide kommen zurück"));
+        part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.WORK_UPGRADE.get()));
+        part.install(new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.AREA_UPGRADE.get()));
+        helper.assertTrue(entity.deploy("""
+                fn abbauen() { return quarry_output.mine() }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        var flow = entity.startFlow("abbauen", java.util.List.of());
+        helper.assertValueEqual(flow.status().name(), "DONE", "abbauen läuft: " + flow.detail());
+        helper.assertValueEqual(entity.storage().count(Items.DIRT), 9L, "neun Blöcke Erde im Lager");
+        helper.succeed();
+    }
+
     /**
      * And on a block that a click does not interest, it reports that.
      *

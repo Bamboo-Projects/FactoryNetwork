@@ -14,12 +14,29 @@ public enum Arm {
     COMBAT("combat_upgrade"),
 
     /** mine(), place() and use(): works the block in front of the connector. */
-    WORK("work_upgrade");
+    WORK("work_upgrade"),
+
+    /**
+     * Widens what the work upgrade reaches: one makes it 3×3, a second 5×5,
+     * in the plane facing the connector.
+     */
+    AREA("area_upgrade", 2);
 
     private final String id;
+    private final int most;
 
     Arm(String id) {
+        this(id, 1);
+    }
+
+    Arm(String id, int most) {
         this.id = id;
+        this.most = most;
+    }
+
+    /** How many of this kind a connector holds. */
+    public int most() {
+        return most;
     }
 
     /** The item's registry path. */

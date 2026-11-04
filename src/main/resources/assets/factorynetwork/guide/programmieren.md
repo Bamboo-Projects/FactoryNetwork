@@ -232,6 +232,11 @@ braucht ein Upgrade im Connector**, sonst warnt schon der Editor:
 |---|---|---|
 | Arbeits-Upgrade | `mine`, `place`, `use` | Spitzhacke, Axt, Schaufel und Hacke aus Eisen |
 | Kampf-Upgrade | `attack` | ein Eisenschwert |
+| Flächen-Upgrade | dass `mine`, `place` und `use` 3×3 arbeiten, zwei davon 5×5 | — |
+
+Das Flächen-Upgrade wirkt nur zusammen mit dem Arbeits-Upgrade. Die Fläche
+liegt quer zum Connector: Zeigt er nach unten auf ein Feld, ist es ein Stück
+Acker; zeigt er auf eine Wand, ein Stück Wand. Jeder Block kostet seine 100 FE.
 
 Eingebaut wird mit Rechtsklick auf den Connector, Schleichen und Rechtsklick
 mit leerer Hand holt die Upgrades wieder heraus. Beide lassen sich

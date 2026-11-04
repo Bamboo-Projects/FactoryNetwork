@@ -22,6 +22,7 @@
   "message.factorynetwork.arm.installed": "%s installed in %s",
   "message.factorynetwork.arm.already": "This connector already has an upgrade of this kind.",
   "message.factorynetwork.arm.removed": "Upgrades taken out. Once more removes the connector.",
+  "item.factorynetwork.area_upgrade": "Area Upgrade",
   "message.factorynetwork.connector.unnamed": "This connector has no name yet.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s connectors (%s unnamed) · %s cables",

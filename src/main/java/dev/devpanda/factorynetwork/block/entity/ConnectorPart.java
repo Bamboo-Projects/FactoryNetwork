@@ -283,8 +283,18 @@ public final class ConnectorPart {
     /** Puts an upgrade in; {@code false} if one of its kind already sits here. */
     public boolean install(net.minecraft.world.item.ItemStack stack) {
         var kind = dev.devpanda.factorynetwork.item.ArmUpgradeItem.armOf(stack);
-        if (kind == null || arms.containsKey(kind)) {
+        if (kind == null) {
             return false;
+        }
+        var present = arms.get(kind);
+        if (present != null) {
+            // The area upgrade adds up: a second one widens further.
+            if (present.getCount() >= kind.most()) {
+                return false;
+            }
+            present.grow(1);
+            host.partChanged();
+            return true;
         }
         arms.put(kind, stack.copyWithCount(1));
         host.partChanged();
