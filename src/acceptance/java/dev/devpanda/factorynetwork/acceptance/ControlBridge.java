@@ -93,6 +93,12 @@ final class ControlBridge {
             // The manual page for a word of the language, as Ctrl+click in the editor opens it.
             route(server, "/manual", q -> String.valueOf(
                     dev.devpanda.factorynetwork.client.ManualTopics.open(q.getOrDefault("word", ""))));
+            // What the network analyser last received.
+            route(server, "/analyser", q -> "fresh=" + dev.devpanda.factorynetwork.client.ClientAnalyserState.isFresh()
+                    + " nodes=" + dev.devpanda.factorynetwork.client.ClientAnalyserState.data().nodes().size()
+                    + " links=" + dev.devpanda.factorynetwork.client.ClientAnalyserState.data().links().size()
+                    + " loaded=" + dev.devpanda.factorynetwork.client.ClientAnalyserState.data().links().stream()
+                            .filter(link -> link.load() > 0).count());
             // Holds the sneak key down (on=1) or lets go (on=0).
             route(server, "/sneak", q -> {
                 Minecraft.getInstance().options.keyShift.setDown(num(q, "on", 1) != 0);

@@ -57,6 +57,13 @@ der Kanal weiter hinten, nicht dort, wo du gerade stehst.
 Die drei fett gedruckten sind die, wegen denen du das Werkzeug in die Hand
 genommen hast.
 
+## Was gerade fließt
+
+Über jede Verbindung, über die in den letzten zwei Sekunden Ware gegangen ist,
+wandern kleine **türkise Päckchen**. Je voller die Leitung, desto mehr sind es.
+So siehst du, was dein Programm gerade tut: Ein Worker, der steht, hat keine
+Päckchen auf seinem Weg.
+
 ## Rechtsklick auf einen Connector sagt mehr
 
 Nicht am Würfel, sondern an der Maschine: Klick den Connector an, und über

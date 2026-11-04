@@ -49,11 +49,13 @@ public class NetworkAnalyserItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
+        // The controller itself is no member of its own graph; clicked on, it
+        // means itself.
+        Optional<ControllerBlockEntity> controller = level.getBlockEntity(pos) instanceof ControllerBlockEntity here
+                ? Optional.of(here) : ControllerRegistry.owning(level, pos);
         if (level.isClientSide()) {
-            return ControllerRegistry.owning(level, pos).isPresent()
-                    ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            return controller.isPresent() ? InteractionResult.SUCCESS : InteractionResult.PASS;
         }
-        Optional<ControllerBlockEntity> controller = ControllerRegistry.owning(level, pos);
         if (controller.isEmpty()) {
             if (context.getPlayer() != null) {
                 Chat.tell(context.getPlayer(), Component.translatable(

@@ -59,6 +59,8 @@ public final class AnalyserRenderer {
                 dev.devpanda.factorynetwork.client.render.FnRenderTypes.LINES_SEE_THROUGH));
         drawNodes(data, pose, buffers.getBuffer(
                 dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH));
+        drawFlow(data, pose, buffers.getBuffer(
+                dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH));
         buffers.endBatch(dev.devpanda.factorynetwork.client.render.FnRenderTypes.LINES_SEE_THROUGH);
         buffers.endBatch(dev.devpanda.factorynetwork.client.render.FnRenderTypes.BOXES_SEE_THROUGH);
         stack.popPose();
@@ -79,6 +81,46 @@ public final class AnalyserRenderer {
         for (AnalyserData.Node node : data.nodes()) {
             float[] colour = colourOf(node.state());
             cube(buffer, matrix, centre(node.pos()), NODE, colour);
+        }
+    }
+
+    /** When goods last went over a link, by its two ends; see drawFlow. */
+    private static final java.util.Map<Long, Long> LAST_MOVED = new java.util.HashMap<>();
+
+    /** How long a link keeps flowing after the last goods went over it. */
+    private static final long AFTERGLOW = 2_000;
+
+    /**
+     * The flow: small bright packets travelling along every link goods went
+     * over in the last two seconds — the program made visible. More load,
+     * more packets. A worker that moves one item every few ticks would
+     * otherwise flicker in and out; the afterglow keeps it steady.
+     */
+    private static void drawFlow(AnalyserData data,
+                                 com.mojang.blaze3d.vertex.PoseStack.Pose matrix,
+                                 com.mojang.blaze3d.vertex.VertexConsumer buffer) {
+        long now = System.currentTimeMillis();
+        float[] colour = {0.45f, 0.95f, 1.00f, 0.95f};
+        for (AnalyserData.Link link : data.links()) {
+            long key = link.from().asLong() * 31 + link.to().asLong();
+            if (link.load() > 0) {
+                LAST_MOVED.put(key, now);
+            }
+            Long last = LAST_MOVED.get(key);
+            if (last == null || now - last > AFTERGLOW) {
+                continue;
+            }
+            Vec3 from = centre(link.from());
+            Vec3 to = centre(link.to());
+            int packets = link.capacity() <= 0 ? 1
+                    : 1 + Math.min(2, link.load() * 3 / Math.max(1, link.capacity()));
+            for (int i = 0; i < packets; i++) {
+                double phase = ((now % 1000) / 1000.0 + (double) i / packets) % 1.0;
+                cube(buffer, matrix, from.lerp(to, phase), 0.07f, colour);
+            }
+        }
+        if (LAST_MOVED.size() > 4096) {
+            LAST_MOVED.values().removeIf(at -> now - at > AFTERGLOW);
         }
     }
 
