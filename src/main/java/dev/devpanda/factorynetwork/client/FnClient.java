@@ -148,6 +148,7 @@ public final class FnClient {
         if (WebSupport.installed()) {
             WebBridge.registerCommands(event);
         }
+        ShareCommands.register(event);
     }
 
     private FnClient() {

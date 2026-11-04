@@ -168,6 +168,23 @@ Eine **Programmdiskette** trägt alle Dateien eines Netzes:
 Auf der Diskette steht, wie viele Dateien und Zeilen sie trägt, und die ersten
 Dateinamen. Einen Namen gibst du ihr am Amboss.
 
+## Programme teilen
+
+Mit der Diskette in der Hand teilst du ein Programm mit allen, die
+FactoryNetwork spielen, ganz ohne Konto:
+
+- `/fnshare upload Erzsortierer` — lädt die Diskette hoch und gibt einen Code
+  wie `FN-7K2Q9M` zurück. Ein Klick darauf kopiert ihn.
+- `/fnshare get FN-7K2Q9M` — schreibt das Programm auf die Diskette in deiner
+  Hand. In ein Netz kommt es wie immer erst über den Entwurf.
+- `/fnshare list` zeigt die neuesten, `/fnshare list popular` die
+  beliebtesten, `/fnshare list new erz` sucht im Titel. Ein Klick auf einen
+  Eintrag holt ihn.
+- `/fnshare report FN-7K2Q9M` meldet ein Programm. Nach mehreren Meldungen
+  verschwindet es aus der Liste.
+
+Gesendet werden nur Programm und Titel, nie dein Name oder der Server.
+
 ## Wenn jemand anders die Datei hält
 
 Im Mehrspielerbetrieb gehört eine Datei dem, der sie geöffnet hat — sonst

@@ -14,6 +14,8 @@ public final class FnClientConfig {
     private static final ModConfigSpec.BooleanValue REMEMBER_SEARCH;
     private static final ModConfigSpec.BooleanValue SHOW_SLOT_NUMBERS;
 
+    private static final ModConfigSpec.ConfigValue<String> SHARE_URL;
+
     public static final ModConfigSpec SPEC;
 
     static {
@@ -34,6 +36,12 @@ public final class FnClientConfig {
                         "Wird über den Knopf # über der GUI oder mit Strg+I umgeschaltet.")
                 .define("showSlotNumbers", false);
         builder.pop();
+        builder.push("share");
+        SHARE_URL = builder
+                .comment("Wo der Programm-Share für /fnshare liegt. Gesendet werden nur",
+                        "Programm und Titel, nie dein Name oder der Server.")
+                .define("url", "https://fnshare.bamboo-srv.de");
+        builder.pop();
         SPEC = builder.build();
     }
 
@@ -49,6 +57,10 @@ public final class FnClientConfig {
             SEARCH_MODE.set(mode);
             SPEC.save();
         }
+    }
+
+    public static String shareUrl() {
+        return SHARE_URL.get();
     }
 
     public static boolean showSlotNumbers() {
