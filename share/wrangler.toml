@@ -2,8 +2,12 @@ name = "factorynetwork-share"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 
+routes = [
+  { pattern = "fnshare.bamboo-srv.de", custom_domain = true }
+]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "factorynetwork-share"
-# Filled in once the database exists: wrangler d1 create factorynetwork-share
-database_id = "00000000-0000-0000-0000-000000000000"
+# Created on 2026-11-04 with: wrangler d1 create factorynetwork-share
+database_id = "1112df97-7841-4659-ba07-1d611a2ec1dc"
