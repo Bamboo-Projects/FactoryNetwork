@@ -11,6 +11,8 @@
   "item.factorynetwork.connector": "Connector",
   "block.factorynetwork.terminal": "Terminal",
   "message.factorynetwork.connector.no_room": "There is no room for a connector there.",
+  "message.factorynetwork.wrench.copied": "Settings of %s remembered. Right-click a connector to apply them.",
+  "message.factorynetwork.wrench.pasted": "Applied: %s",
   "message.factorynetwork.connector.unnamed": "This connector has no name yet.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s connectors (%s unnamed) · %s cables",

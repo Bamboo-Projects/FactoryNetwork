@@ -69,6 +69,63 @@ public final class FnEvents {
         event.setCancellationResult(InteractionResult.SUCCESS);
     }
 
+    /**
+     * The wrench's right-click without sneaking: if it carries settings, the
+     * connector under the cursor gets them. Without, the click goes on as
+     * usual and opens the name window.
+     */
+    @SubscribeEvent
+    public static void onWrenchPaste(PlayerInteractEvent.RightClickBlock event) {
+        if (event.isCanceled() || event.getHand() != InteractionHand.MAIN_HAND
+                || event.getEntity().isShiftKeyDown()) {
+            return;
+        }
+        ItemStack tool = event.getItemStack();
+        if (!dev.devpanda.factorynetwork.item.SettingsCopy.canCarry(tool)
+                || !dev.devpanda.factorynetwork.item.SettingsCopy.carries(tool)) {
+            return;
+        }
+        var part = dev.devpanda.factorynetwork.item.SettingsCopy.partAt(
+                event.getLevel(), event.getPos(), event.getHitVec());
+        if (part == null) {
+            return;
+        }
+        if (!event.getLevel().isClientSide()) {
+            dev.devpanda.factorynetwork.item.SettingsCopy.paste(event.getEntity(), tool, part);
+        }
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+    }
+
+    /**
+     * The wrench's left-click on a connector reads its settings — instead
+     * of breaking the block, which a wrench in creative would do at once.
+     */
+    @SubscribeEvent
+    public static void onWrenchCopy(PlayerInteractEvent.LeftClickBlock event) {
+        if (event.isCanceled()
+                || event.getAction() != PlayerInteractEvent.LeftClickBlock.Action.START) {
+            return;
+        }
+        ItemStack tool = event.getEntity().getMainHandItem();
+        if (!dev.devpanda.factorynetwork.item.SettingsCopy.canCarry(tool)) {
+            return;
+        }
+        var level = event.getLevel();
+        var hit = event.getEntity().pick(
+                event.getEntity().blockInteractionRange(), 0.0F, false);
+        var part = dev.devpanda.factorynetwork.item.SettingsCopy.partAt(level, event.getPos(),
+                hit instanceof net.minecraft.world.phys.BlockHitResult block
+                        && block.getBlockPos().equals(event.getPos()) ? block : null);
+        if (part == null) {
+            return;
+        }
+        if (!level.isClientSide()) {
+            dev.devpanda.factorynetwork.item.SettingsCopy.copy(event.getEntity(), tool, part);
+        }
+        event.setCanceled(true);
+    }
+
     private FnEvents() {
     }
 }

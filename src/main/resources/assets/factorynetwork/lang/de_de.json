@@ -11,6 +11,8 @@
   "item.factorynetwork.connector": "Connector",
   "block.factorynetwork.terminal": "Terminal",
   "message.factorynetwork.connector.no_room": "Dort ist kein Platz für einen Anschluss.",
+  "message.factorynetwork.wrench.copied": "Einstellungen von %s gemerkt. Rechtsklick auf einen Connector überträgt sie.",
+  "message.factorynetwork.wrench.pasted": "Übernommen: %s",
   "message.factorynetwork.connector.unnamed": "Dieser Connector hat noch keinen Namen.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s Connectoren (%s ohne Namen) · %s Kabel",

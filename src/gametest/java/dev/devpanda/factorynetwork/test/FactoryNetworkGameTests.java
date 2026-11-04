@@ -1633,6 +1633,40 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /**
+     * The wrench copies a connector's settings and hands them on: the cost
+     * comes along, the name counts on instead of doubling.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void theWrenchCopiesConnectorSettings(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        var level = helper.getLevel();
+        var from = dev.devpanda.factorynetwork.block.entity.Connectors.at(level,
+                helper.absolutePos(controller.east().north()));
+        var to = dev.devpanda.factorynetwork.block.entity.Connectors.at(level,
+                helper.absolutePos(controller.east().south()));
+        from.setLabel("ofen_1");
+        from.setChannelCost(3);
+        entity.rebuildNetwork();
+        // The controller registers itself on its first tick; the wrench finds
+        // the network through that registry.
+        helper.runAfterDelay(5, () -> {
+            var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            ItemStack wrench = new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.WRENCH.get());
+
+            dev.devpanda.factorynetwork.item.SettingsCopy.copy(player, wrench, from);
+            helper.assertTrue(dev.devpanda.factorynetwork.item.SettingsCopy.carries(wrench),
+                    "der Schlüssel hat sich die Einstellungen gemerkt");
+            String named = dev.devpanda.factorynetwork.item.SettingsCopy.paste(player, wrench, to);
+
+            helper.assertValueEqual(named, "ofen_2", "der Name zählt weiter");
+            helper.assertValueEqual(to.channelCost(), 3, "die Kanalkosten kommen mit");
+            helper.assertValueEqual(from.label(), "ofen_1", "die Vorlage bleibt, wie sie war");
+            helper.succeed();
+        });
+    }
+
     /** A display named like a device floats above its machine, for the analyser. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void aDisplayNamedLikeAdeviceFloatsAboveIt(GameTestHelper helper) {

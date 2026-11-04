@@ -157,6 +157,12 @@ die sitzt ja auf der Fläche.
 nicht ansprechbar.** Erst der Name macht ihn zu etwas, worüber sich reden
 lässt.
 
+**Zehn gleiche Connectoren?** Mit dem Schraubenschlüssel: **Linksklick** auf
+einen fertig eingestellten merkt sich Name und Kanalkosten, **Rechtsklick**
+auf den nächsten überträgt sie. Der Name zählt dabei weiter, aus `ofen_1`
+wird `ofen_2`, dann `ofen_3`. Schleichen und Rechtsklick nimmt den Connector
+wie immer ab.
+
 ## Laufwerk
 
 Der Lagerraum des Netzes: zehn Plätze für Zellen. Rechtsklick öffnet das
