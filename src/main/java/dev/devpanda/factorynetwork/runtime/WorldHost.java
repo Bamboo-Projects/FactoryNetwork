@@ -114,7 +114,21 @@ public final class WorldHost implements Interpreter.Host {
     private record Reach(net.minecraft.server.level.ServerLevel server,
                          net.minecraft.core.BlockPos target,
                          net.minecraft.core.Direction facing,
-                         net.neoforged.neoforge.common.util.FakePlayer player) {
+                         net.neoforged.neoforge.common.util.FakePlayer player,
+                         dev.devpanda.factorynetwork.block.entity.ConnectorPart part,
+                         String device) {
+
+        /** The upgrade this verb needs; says so if it is missing. */
+        ItemStack arm(dev.devpanda.factorynetwork.upgrade.Arm kind) {
+            ItemStack found = part.arm(kind);
+            if (found.isEmpty()) {
+                throw new ScriptError("„" + device + "“ hat kein "
+                        + (kind == dev.devpanda.factorynetwork.upgrade.Arm.COMBAT
+                                ? "Kampf-Upgrade." : "Arbeits-Upgrade."),
+                        "Rechtsklick mit dem Upgrade auf den Connector baut es ein.");
+            }
+            return found;
+        }
 
         net.minecraft.world.phys.BlockHitResult hit() {
             return new net.minecraft.world.phys.BlockHitResult(
@@ -139,7 +153,45 @@ public final class WorldHost implements Interpreter.Host {
         var position = connector.pos();
         var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(server, CLICKER);
         player.setPos(position.getX() + 0.5, position.getY(), position.getZ() + 0.5);
-        return new Reach(server, position.relative(connector.facing()), connector.facing(), player);
+        return new Reach(server, position.relative(connector.facing()), connector.facing(), player,
+                connector, device);
+    }
+
+    /** What one act of an arm costs the network, in FE. */
+    public static final int ARM_COST = 100;
+
+    /** Pays for one act; {@code false} if the network cannot. Without a network it is free. */
+    private boolean pay(int amount) {
+        if (power == null) {
+            return true;
+        }
+        int taken = power.take(amount);
+        if (taken < amount) {
+            power.fill(taken);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * The tool for a verb: the one the program names from the store, or
+     * else the upgrade itself with its enchantments. {@code null} if the
+     * store lacks what was named.
+     */
+    private ItemStack toolFor(Reach reach, dev.devpanda.factorynetwork.upgrade.Arm kind, Value named) {
+        ItemStack upgrade = reach.arm(kind);
+        if (named == null || named instanceof Value.Nothing) {
+            return upgrade.copy();
+        }
+        return takeOne(named);
+    }
+
+    /** Empties the hand, giving back to the store only what came from it. */
+    private void putAway(Reach reach, boolean fromUpgrade) {
+        if (fromUpgrade) {
+            reach.player().setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        }
+        emptyHands(reach);
     }
 
     /**
@@ -188,13 +240,19 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public boolean mineAt(String device, Value tool) {
         Reach reach = reach(device);
+        reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
         var server = reach.server();
         var state = server.getBlockState(reach.target());
         if (state.isAir() || state.getDestroySpeed(server, reach.target()) < 0) {
             return false;
         }
-        ItemStack held = takeOne(tool);
+        boolean fromUpgrade = tool == null || tool instanceof Value.Nothing;
+        ItemStack held = toolFor(reach, dev.devpanda.factorynetwork.upgrade.Arm.WORK, tool);
         if (held == null) {
+            return false;
+        }
+        if (!pay(ARM_COST)) {
+            store(reach, fromUpgrade ? ItemStack.EMPTY : held);
             return false;
         }
         var player = reach.player();
@@ -217,7 +275,7 @@ public final class WorldHost implements Interpreter.Host {
             drops.forEach(drop -> store(reach, drop));
             return true;
         } finally {
-            emptyHands(reach);
+            putAway(reach, fromUpgrade);
         }
     }
 
@@ -229,11 +287,16 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public boolean placeAt(String device, Value block) {
         Reach reach = reach(device);
+        reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
         if (!reach.server().getBlockState(reach.target()).canBeReplaced()) {
             return false;
         }
         ItemStack held = takeOne(block);
         if (held == null || held.isEmpty()) {
+            return false;
+        }
+        if (!pay(ARM_COST)) {
+            store(reach, held);
             return false;
         }
         var player = reach.player();
@@ -253,8 +316,13 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public boolean useAt(String device, Value item) {
         Reach reach = reach(device);
+        reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK);
         ItemStack held = takeOne(item);
         if (held == null) {
+            return false;
+        }
+        if (!pay(ARM_COST)) {
+            store(reach, held);
             return false;
         }
         var player = reach.player();
@@ -281,8 +349,14 @@ public final class WorldHost implements Interpreter.Host {
     @Override
     public long attackAt(String device, Value tool) {
         Reach reach = reach(device);
-        ItemStack held = takeOne(tool);
+        reach.arm(dev.devpanda.factorynetwork.upgrade.Arm.COMBAT);
+        boolean fromUpgrade = tool == null || tool instanceof Value.Nothing;
+        ItemStack held = toolFor(reach, dev.devpanda.factorynetwork.upgrade.Arm.COMBAT, tool);
         if (held == null) {
+            return 0;
+        }
+        if (!pay(ARM_COST)) {
+            store(reach, fromUpgrade ? ItemStack.EMPTY : held);
             return 0;
         }
         var player = reach.player();
@@ -303,8 +377,15 @@ public final class WorldHost implements Interpreter.Host {
                     net.minecraft.world.entity.LivingEntity.class, box,
                     entity -> entity.isAlive()
                             && !(entity instanceof net.minecraft.world.entity.player.Player))) {
-                if (creature.hurtServer(server, server.damageSources().playerAttack(player), damage)) {
+                var source = server.damageSources().playerAttack(player);
+                // Sharpness, smite and the like, as on a sword in a hand.
+                float dealt = net.minecraft.world.item.enchantment.EnchantmentHelper
+                        .modifyDamage(server, held, creature, source, damage);
+                if (creature.hurtServer(server, source, dealt)) {
                     hit++;
+                    // Fire aspect, knockback.
+                    net.minecraft.world.item.enchantment.EnchantmentHelper
+                            .doPostAttackEffects(server, creature, source);
                     if (!held.isEmpty()) {
                         held.hurtEnemy(creature, player);
                     }
@@ -318,7 +399,7 @@ public final class WorldHost implements Interpreter.Host {
             }
             return hit;
         } finally {
-            emptyHands(reach);
+            putAway(reach, fromUpgrade);
         }
     }
 

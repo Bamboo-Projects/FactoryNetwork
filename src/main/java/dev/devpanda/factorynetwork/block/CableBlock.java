@@ -428,6 +428,29 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
             }
             return net.minecraft.world.InteractionResult.SUCCESS;
         }
+        // An arm upgrade goes into the connector under the cursor.
+        if (dev.devpanda.factorynetwork.item.ArmUpgradeItem.armOf(stack) != null
+                && level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity holder) {
+            Direction partSide = partSideAt(level, pos, hit);
+            var part = partSide == null ? null : holder.partAt(partSide);
+            if (part == null) {
+                return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
+            }
+            if (!level.isClientSide()) {
+                if (part.install(stack)) {
+                    if (!player.getAbilities().instabuild) {
+                        stack.shrink(1);
+                    }
+                    Chat.tell(player, net.minecraft.network.chat.Component.translatable(
+                            "message.factorynetwork.arm.installed", stack.getHoverName(),
+                            part.label().isBlank() ? "?" : part.label()), true);
+                } else {
+                    Chat.tell(player, net.minecraft.network.chat.Component.translatable(
+                            "message.factorynetwork.arm.already"), true);
+                }
+            }
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        }
         if (!stack.is(dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get())
                 || !(level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.CableBusBlockEntity bus)) {
             return net.minecraft.world.InteractionResult.TRY_WITH_EMPTY_HAND;
@@ -517,7 +540,17 @@ public class CableBlock extends Block implements net.minecraft.world.level.block
         // distinction rests exactly on that.
         if (player.isSecondaryUseActive()) {
             if (!level.isClientSide()) {
-                removePart(level, pos, side, player);
+                // Upgrades first: the first click takes them into the hand,
+                // the next one the connector.
+                var part = level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity
+                        .CableBusBlockEntity holder ? holder.partAt(side) : null;
+                if (part != null && part.hasArms()) {
+                    part.takeArms().forEach(stack -> player.getInventory().placeItemBackInInventory(stack));
+                    Chat.tell(player, net.minecraft.network.chat.Component.translatable(
+                            "message.factorynetwork.arm.removed"), true);
+                } else {
+                    removePart(level, pos, side, player);
+                }
             }
             return net.minecraft.world.InteractionResult.SUCCESS;
         }

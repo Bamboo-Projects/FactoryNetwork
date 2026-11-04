@@ -33,6 +33,12 @@ public final class ConnectorPart {
     private static final String KEY_STATE = "State";
     private static final String KEY_COST = "ChannelCost";
     private static final String KEY_REDSTONE = "Redstone";
+    private static final String KEY_ARMS = "Arms";
+
+    /** The arm upgrades sitting in this connector, at most one of each kind. */
+    private final java.util.EnumMap<dev.devpanda.factorynetwork.upgrade.Arm,
+            net.minecraft.world.item.ItemStack> arms =
+            new java.util.EnumMap<>(dev.devpanda.factorynetwork.upgrade.Arm.class);
 
     /**
      * Who holds this part.
@@ -263,7 +269,63 @@ public final class ConnectorPart {
         return level.isLoaded(target) ? target : null;
     }
 
+    // ---- Arm upgrades -------------------------------------------------------
+
+    /** The upgrade of this kind, or an empty stack. */
+    public net.minecraft.world.item.ItemStack arm(dev.devpanda.factorynetwork.upgrade.Arm kind) {
+        return arms.getOrDefault(kind, net.minecraft.world.item.ItemStack.EMPTY);
+    }
+
+    public boolean hasArms() {
+        return !arms.isEmpty();
+    }
+
+    /** Puts an upgrade in; {@code false} if one of its kind already sits here. */
+    public boolean install(net.minecraft.world.item.ItemStack stack) {
+        var kind = dev.devpanda.factorynetwork.item.ArmUpgradeItem.armOf(stack);
+        if (kind == null || arms.containsKey(kind)) {
+            return false;
+        }
+        arms.put(kind, stack.copyWithCount(1));
+        host.partChanged();
+        return true;
+    }
+
+    /** Takes every upgrade out, for the hand or the ground. */
+    public java.util.List<net.minecraft.world.item.ItemStack> takeArms() {
+        java.util.List<net.minecraft.world.item.ItemStack> taken = new java.util.ArrayList<>(arms.values());
+        if (!taken.isEmpty()) {
+            arms.clear();
+            host.partChanged();
+        }
+        return taken;
+    }
+
     // ---- Saving -------------------------------------------------------------
+
+    /** With the arm upgrades, which as enchanted stacks need the registries. */
+    public void save(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        save(tag);
+        if (!arms.isEmpty()) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            arms.values().forEach(stack -> list.add(Nbt.saveStack(stack, registries)));
+            tag.put(KEY_ARMS, list);
+        }
+    }
+
+    public void load(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        load(tag);
+        arms.clear();
+        net.minecraft.nbt.ListTag list = Nbt.getList(tag, KEY_ARMS, net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            Nbt.parseStack(registries, list.get(i)).ifPresent(stack -> {
+                var kind = dev.devpanda.factorynetwork.item.ArmUpgradeItem.armOf(stack);
+                if (kind != null) {
+                    arms.put(kind, stack);
+                }
+            });
+        }
+    }
 
     public void save(CompoundTag tag) {
         tag.putString(KEY_LABEL, label);

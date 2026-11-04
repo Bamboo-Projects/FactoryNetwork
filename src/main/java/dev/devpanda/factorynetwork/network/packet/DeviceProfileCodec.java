@@ -35,7 +35,13 @@ public final class DeviceProfileCodec {
 
     /** A whole profile, flat. */
     public record Flat(String name, String descriptionId, String namespace,
-                       int connectedSide, List<FlatAccess> access) {
+                       int connectedSide, List<FlatAccess> access, List<String> arms) {
+
+        /** Without arm upgrades. */
+        public Flat(String name, String descriptionId, String namespace,
+                    int connectedSide, List<FlatAccess> access) {
+            this(name, descriptionId, namespace, connectedSide, access, List.of());
+        }
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Flat> STREAM_CODEC =
                 StreamCodec.composite(
@@ -44,6 +50,7 @@ public final class DeviceProfileCodec {
                         ByteBufCodecs.stringUtf8(128), Flat::namespace,
                         ByteBufCodecs.VAR_INT, Flat::connectedSide,
                         FlatAccess.STREAM_CODEC.apply(ByteBufCodecs.list(7)), Flat::access,
+                        ByteBufCodecs.stringUtf8(16).apply(ByteBufCodecs.list(4)), Flat::arms,
                         Flat::new);
     }
 
@@ -62,7 +69,8 @@ public final class DeviceProfileCodec {
                     entry.getValue().tanks(), entry.getValue().energy()));
         }
         return new Flat(name, profile.descriptionId(), profile.namespace(),
-                profile.connectedSide().ordinal(), flat);
+                profile.connectedSide().ordinal(), flat,
+                profile.arms().stream().sorted().toList());
     }
 
     public static DeviceProfile fromFlat(Flat flat) {
@@ -72,6 +80,6 @@ public final class DeviceProfileCodec {
                     new DeviceProfile.Access(entry.slots(), entry.tanks(), entry.energy()));
         }
         return new DeviceProfile(flat.descriptionId(), flat.namespace(),
-                Side.values()[flat.connectedSide()], access);
+                Side.values()[flat.connectedSide()], access, java.util.Set.copyOf(flat.arms()));
     }
 }

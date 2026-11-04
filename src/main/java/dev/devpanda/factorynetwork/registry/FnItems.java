@@ -163,6 +163,22 @@ public final class FnItems {
                     props,
                     dev.devpanda.factorynetwork.upgrade.Card.BATCH));
 
+    /**
+     * The arm upgrades for connectors: what lets a connector act on the
+     * world. Each is a tool of its own and takes enchantments.
+     */
+    public static final DeferredItem<Item> COMBAT_UPGRADE = ITEMS.registerItem(
+            dev.devpanda.factorynetwork.upgrade.Arm.COMBAT.id(),
+            props -> new dev.devpanda.factorynetwork.item.ArmUpgradeItem(
+                    dev.devpanda.factorynetwork.item.ArmUpgradeItem.combat(props),
+                    dev.devpanda.factorynetwork.upgrade.Arm.COMBAT));
+
+    public static final DeferredItem<Item> WORK_UPGRADE = ITEMS.registerItem(
+            dev.devpanda.factorynetwork.upgrade.Arm.WORK.id(),
+            props -> new dev.devpanda.factorynetwork.item.ArmUpgradeItem(
+                    dev.devpanda.factorynetwork.item.ArmUpgradeItem.work(props),
+                    dev.devpanda.factorynetwork.upgrade.Arm.WORK));
+
     public static final DeferredItem<Item> INFINITY_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
             props -> new dev.devpanda.factorynetwork.item.UpgradeItem(

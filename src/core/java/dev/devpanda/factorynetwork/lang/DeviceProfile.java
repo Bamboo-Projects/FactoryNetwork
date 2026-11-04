@@ -25,7 +25,22 @@ import java.util.Map;
  *                      nothing
  */
 public record DeviceProfile(String descriptionId, String namespace,
-                            Side connectedSide, Map<Side, Access> access) {
+                            Side connectedSide, Map<Side, Access> access,
+                            java.util.Set<String> arms) {
+
+    /** The arm upgrades a connector can carry, as the profile names them. */
+    public static final String ARM_COMBAT = "combat";
+    public static final String ARM_WORK = "work";
+
+    public DeviceProfile {
+        arms = arms == null ? java.util.Set.of() : java.util.Set.copyOf(arms);
+    }
+
+    /** Without arm upgrades — what every connector has until one is put in. */
+    public DeviceProfile(String descriptionId, String namespace, Side connectedSide,
+                         Map<Side, Access> access) {
+        this(descriptionId, namespace, connectedSide, access, java.util.Set.of());
+    }
 
     /**
      * What works on a side.

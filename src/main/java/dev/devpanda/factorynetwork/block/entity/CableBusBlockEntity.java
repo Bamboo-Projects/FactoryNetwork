@@ -81,6 +81,12 @@ public class CableBusBlockEntity extends BlockEntity {
     public @Nullable ConnectorPart removePart(Direction side) {
         ConnectorPart gone = parts.remove(side);
         if (gone != null) {
+            // Its upgrades come out with it — enchanted, they are worth more
+            // than the connector.
+            if (level != null && !level.isClientSide()) {
+                gone.takeArms().forEach(stack ->
+                        net.minecraft.world.level.block.Block.popResource(level, worldPosition, stack));
+            }
             changed();
         }
         return gone;
@@ -157,7 +163,7 @@ public class CableBusBlockEntity extends BlockEntity {
             CompoundTag entry = Nbt.compoundAt(saved, i);
             Direction side = Direction.from3DDataValue(Nbt.getInt(entry, KEY_SIDE));
             ConnectorPart part = new ConnectorPart(new SideHost(side));
-            part.load(entry);
+            part.load(entry, registries);
             parts.put(side, part);
         }
     }
@@ -176,7 +182,7 @@ public class CableBusBlockEntity extends BlockEntity {
         parts.forEach((side, part) -> {
             CompoundTag entry = new CompoundTag();
             entry.putInt(KEY_SIDE, side.get3DDataValue());
-            part.save(entry);
+            part.save(entry, registries);
             saved.add(entry);
         });
         tag.put(KEY_PARTS, saved);
@@ -214,10 +220,12 @@ public class CableBusBlockEntity extends BlockEntity {
         if (level == null) {
             return;
         }
-        for (int i = 0; i < parts().size(); i++) {
+        for (ConnectorPart part : parts().values()) {
             net.minecraft.world.level.block.Block.popResource(level, pos,
                     new net.minecraft.world.item.ItemStack(
                             dev.devpanda.factorynetwork.registry.FnItems.CONNECTOR.get()));
+            part.takeArms().forEach(stack ->
+                    net.minecraft.world.level.block.Block.popResource(level, pos, stack));
         }
     }
 }

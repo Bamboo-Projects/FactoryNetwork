@@ -210,16 +210,29 @@ Hinter dem Punkt eines Connectornamens steht:
   angekommen ist; ein Fenster geht dabei nicht auf.
 
 Vier Verben greifen in die Welt vor dem Connector. Was sie brauchen, nehmen
-sie aus dem Netzspeicher, was dabei herauskommt, legen sie hinein:
+sie aus dem Netzspeicher, was dabei herauskommt, legen sie hinein. **Jedes
+braucht ein Upgrade im Connector**, sonst warnt schon der Editor:
 
-- `mine()` — baut den Block ab, die Drops kommen ins Lager. `mine(item:diamond_pickaxe)`
-  nimmt dafür eine Spitzhacke aus dem Lager und legt sie danach zurück; ohne
-  Werkzeug gibt Stein nichts her, wie bei einem Spieler.
+| Upgrade | erlaubt | ist zugleich |
+|---|---|---|
+| Arbeits-Upgrade | `mine`, `place`, `use` | Spitzhacke, Axt, Schaufel und Hacke aus Eisen |
+| Kampf-Upgrade | `attack` | ein Eisenschwert |
+
+Eingebaut wird mit Rechtsklick auf den Connector, Schleichen und Rechtsklick
+mit leerer Hand holt die Upgrades wieder heraus. Beide lassen sich
+verzaubern, am Tisch und am Amboss: Glück und Behutsamkeit wirken beim
+Abbauen, Schärfe, Plünderung und Verbrennung beim Angreifen. Sie gehen nie
+kaputt. Jede Handlung kostet das Netz 100 FE.
+
+- `mine()` — baut den Block ab, die Drops kommen ins Lager. Ohne Angabe ist
+  das Upgrade das Werkzeug; `mine(item:diamond_pickaxe)` nimmt stattdessen
+  eine Spitzhacke aus dem Lager und legt sie danach zurück.
 - `place(item:wheat_seeds)` — setzt einen Block oder Saatgut. Steht dort schon
   etwas Festes, kommt `false` zurück.
 - `use(item:bone_meal)` — ein Rechtsklick mit dem Gegenstand in der Hand. Was
   danach in der Hand liegt, geht zurück ins Lager.
-- `attack(item:iron_sword)` — schlägt jedes Tier und Monster im Block davor
+- `attack()` — schlägt jedes Tier und Monster im Block davor mit dem
+  Kampf-Upgrade, `attack(item:diamond_sword)` mit einer Waffe aus dem Lager,
   und sammelt die Beute ein. **Spieler bleiben verschont.** Zurück kommt, wie
   viele getroffen wurden.
 

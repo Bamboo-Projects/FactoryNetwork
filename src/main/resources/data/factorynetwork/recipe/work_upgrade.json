@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AXS",
+    "PLP",
+    "PPP"
+  ],
+  "key": {
+    "A": "minecraft:iron_pickaxe",
+    "X": "minecraft:iron_axe",
+    "S": "minecraft:iron_shovel",
+    "L": "factorynetwork:core_logic",
+    "P": "factorynetwork:plate"
+  },
+  "result": {
+    "id": "factorynetwork:work_upgrade",
+    "count": 1
+  }
+}

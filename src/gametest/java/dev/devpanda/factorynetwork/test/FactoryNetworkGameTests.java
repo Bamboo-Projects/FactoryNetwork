@@ -1704,7 +1704,26 @@ public final class FactoryNetworkGameTests {
                 fn setzen() { return quarry_output.place(item:stone) }
                 fn duengen() { return quarry_output.use(item:bone_meal) }
                 fn schlagen() { return quarry_output.attack(item:diamond_sword) }
+                fn zuschlagen() { return quarry_output.attack() }
                 """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        // Without an arm upgrade the connector only reaches into inventories.
+        var ohne = entity.startFlow("abbauen", java.util.List.of());
+        helper.assertValueEqual(ohne.status().name(), "FAILED", "ohne Upgrade kein Abbau");
+        helper.assertTrue(ohne.detail().contains("Arbeits-Upgrade"), "und es sagt, warum: " + ohne.detail());
+        helper.assertTrue(helper.getBlockState(vorne).is(Blocks.DIRT), "die Erde steht noch");
+
+        var part = dev.devpanda.factorynetwork.block.entity.Connectors.at(helper.getLevel(),
+                helper.absolutePos(controller.east().north()));
+        helper.assertTrue(part.install(new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WORK_UPGRADE.get())), "Arbeits-Upgrade eingebaut");
+        helper.assertTrue(!part.install(new ItemStack(
+                dev.devpanda.factorynetwork.registry.FnItems.WORK_UPGRADE.get())), "ein zweites gleicher Art nicht");
+        ItemStack kampf = new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.COMBAT_UPGRADE.get());
+        kampf.enchant(helper.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.SHARPNESS), 5);
+        helper.assertTrue(part.install(kampf), "Kampf-Upgrade eingebaut");
 
         var abbau = entity.startFlow("abbauen", java.util.List.of());
         helper.assertValueEqual(abbau.status().name(), "DONE", "abbauen läuft: " + abbau.detail());
@@ -1716,6 +1735,14 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(setzen.status().name(), "DONE", "setzen läuft: " + setzen.detail());
         helper.assertTrue(helper.getBlockState(vorne).is(Blocks.STONE), "der Stein steht");
         helper.assertValueEqual(entity.storage().count(Items.STONE), 0L, "und kam aus dem Lager");
+
+        // The work upgrade is a pickaxe too: stone gives cobblestone.
+        var stein = entity.startFlow("abbauen", java.util.List.of());
+        helper.assertValueEqual(stein.status().name(), "DONE", "Stein abbauen läuft: " + stein.detail());
+        helper.assertValueEqual(entity.storage().count(Items.COBBLESTONE), 1L,
+                "das Upgrade baut Stein ab wie eine Spitzhacke");
+        helper.assertValueEqual(entity.storage().count(dev.devpanda.factorynetwork.registry.FnItems
+                .WORK_UPGRADE.get()), 0L, "und landet dabei nicht im Lager");
 
         helper.setBlock(vorne.below(), Blocks.FARMLAND);
         helper.setBlock(vorne, Blocks.WHEAT);
@@ -1738,6 +1765,17 @@ public final class FactoryNetworkGameTests {
                 .value(), 1L, "ein Zombie getroffen");
         helper.assertValueEqual(entity.storage().count(Items.DIAMOND_SWORD), 1L,
                 "das Schwert ist zurück im Lager");
+
+        // Without a weapon the combat upgrade is the sword, sharpness included:
+        // 6 for an iron sword, 3 more for sharpness V, less the zombie's armour.
+        // Without sharpness it would keep about 14.5.
+        helper.killAllEntitiesOfClass(net.minecraft.world.entity.monster.zombie.Zombie.class);
+        var zombie = helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityType.ZOMBIE,
+                net.minecraft.world.phys.Vec3.atBottomCenterOf(vorne));
+        var zuschlagen = entity.startFlow("zuschlagen", java.util.List.of());
+        helper.assertValueEqual(zuschlagen.status().name(), "DONE", "zuschlagen läuft: " + zuschlagen.detail());
+        helper.assertTrue(zombie.getHealth() < 13F,
+                "Schärfe wirkt: " + zombie.getHealth() + " Leben übrig");
         helper.succeed();
     }
 

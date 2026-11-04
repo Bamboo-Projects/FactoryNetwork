@@ -402,6 +402,7 @@ public final class NetworkCheck {
             }
             case Expr.Unary unary -> checkExprMoves(unary.operand(), view, known, problems);
             case Expr.Call call -> {
+                checkArm(call, view, known, problems);
                 checkExprMoves(call.callee(), view, known, problems);
                 call.arguments().forEach(argument ->
                         checkExprMoves(argument.value(), view, known, problems));
@@ -414,6 +415,37 @@ public final class NetworkCheck {
                     checkExprMoves(entry, view, known, problems));
             case null, default -> { }
         }
+    }
+
+    /**
+     * {@code feld.mine()} on a connector without the work upgrade fails at
+     * run time; the editor says so while it is written. Only for a device
+     * whose profile is known — an unloaded one may well carry the upgrade.
+     */
+    private static void checkArm(Expr.Call call, NetworkView view, Set<String> known,
+                                 List<Diagnostic> problems) {
+        if (!(call.callee() instanceof Expr.Member member)
+                || !(member.target() instanceof Expr.Name device)
+                || known.contains(device.value())) {
+            return;
+        }
+        String needed = switch (member.name()) {
+            case "mine", "place", "use" -> DeviceProfile.ARM_WORK;
+            case "attack" -> DeviceProfile.ARM_COMBAT;
+            default -> null;
+        };
+        if (needed == null) {
+            return;
+        }
+        DeviceProfile profile = view.profile(device.value());
+        if (!profile.reachable() || profile.arms().contains(needed)) {
+            return;
+        }
+        problems.add(new Diagnostic(Diagnostic.Severity.WARNING, call.span(),
+                "„" + device.value() + "“ hat kein "
+                        + (needed.equals(DeviceProfile.ARM_WORK) ? "Arbeits-Upgrade" : "Kampf-Upgrade")
+                        + " — " + member.name() + "() wird scheitern.",
+                "Rechtsklick mit dem Upgrade auf den Connector baut es ein."));
     }
 
     /**

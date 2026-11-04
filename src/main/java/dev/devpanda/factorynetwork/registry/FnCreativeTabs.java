@@ -56,6 +56,8 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.INFINITY_CARD.get());
                         output.accept(FnItems.ACCELERATION_CARD.get());
                         output.accept(FnItems.BATCH_CARD.get());
+                        output.accept(FnItems.COMBAT_UPGRADE.get());
+                        output.accept(FnItems.WORK_UPGRADE.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
                         output.accept(FnItems.SERVER_CHASSIS.get());

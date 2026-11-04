@@ -285,6 +285,27 @@ class NetworkCheckTest {
     }
 
     @Test
+    @DisplayName("mine() on a connector without the work upgrade is reported, with it not")
+    void aWorldVerbWithoutItsUpgradeIsReported() {
+        String program = """
+                fn ernten() {
+                    feld.mine()
+                }""";
+        DeviceProfile bare = new DeviceProfile("block.minecraft.wheat", "minecraft",
+                Side.UP, Map.of());
+        List<Diagnostic> without = check(program, netWith("feld", bare));
+        assertTrue(without.stream().anyMatch(problem ->
+                        problem.message().contains("Arbeits-Upgrade") && !problem.isError()),
+                () -> "die Warnung fehlt: " + without);
+
+        DeviceProfile armed = new DeviceProfile("block.minecraft.wheat", "minecraft",
+                Side.UP, Map.of(), java.util.Set.of(DeviceProfile.ARM_WORK));
+        List<Diagnostic> with = check(program, netWith("feld", armed));
+        assertTrue(with.stream().noneMatch(problem -> problem.message().contains("Upgrade")),
+                () -> "mit Upgrade keine Warnung: " + with);
+    }
+
+    @Test
     @DisplayName("A target without an item slot on the connected side is reported")
     void aTargetWithoutItemsOnTheConnectedSideIsReported() {
         DeviceProfile tank = new DeviceProfile("block.mekanism.tank", "mekanism",

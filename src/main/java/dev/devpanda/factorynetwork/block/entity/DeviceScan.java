@@ -62,9 +62,16 @@ public final class DeviceScan {
             access.put(Side.ANY, anySide);
         }
 
+        java.util.Set<String> arms = new java.util.HashSet<>();
+        if (!connector.arm(dev.devpanda.factorynetwork.upgrade.Arm.COMBAT).isEmpty()) {
+            arms.add(DeviceProfile.ARM_COMBAT);
+        }
+        if (!connector.arm(dev.devpanda.factorynetwork.upgrade.Arm.WORK).isEmpty()) {
+            arms.add(DeviceProfile.ARM_WORK);
+        }
         return new DeviceProfile(machine.getBlock().getDescriptionId(),
                 BuiltInRegistries.BLOCK.getKey(machine.getBlock()).getNamespace(),
-                side(facing), access);
+                side(facing), access, arms);
     }
 
     /**
