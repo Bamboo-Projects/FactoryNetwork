@@ -41,11 +41,12 @@ läuft, wenn sein Ereignis eintritt, und sonst nie.
 | `redstone_changed` | das Signal an einem Connector ist ein anderes | das Gerät **und** die Stärke |
 | `crafting_finished` | ein Fertigungsauftrag ist durch | die Nummer des Auftrags |
 | `crafting_failed` | ein Auftrag kommt nicht weiter | die Nummer **und** den Grund als Text |
+| `craft_stuck` | ein Auftrag wartet seit 30 Sekunden auf denselben Grund | die Nummer **und** den Grund als Text |
 | `hall_entered` | jemand ist in eine Fabrikhalle gekommen | die Halle **und** den Spielernamen |
 | `hall_left` | jemand hat die Halle verlassen, egal wie | die Halle **und** den Spielernamen |
 | `hall_empty` | der Letzte ist aus der Halle | die Halle |
 
-Vier bringen zwei Werte mit, die anderen sechs einen. Schreibst du mehr Namen
+Fünf bringen zwei Werte mit, die anderen sechs einen. Schreibst du mehr Namen
 in die Klammer, als es Werte gibt, sagt es der Editor — die überzähligen
 blieben sonst für immer leer.
 

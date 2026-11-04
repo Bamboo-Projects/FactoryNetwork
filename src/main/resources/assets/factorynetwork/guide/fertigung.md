@@ -234,6 +234,25 @@ werden kann — wenn also sein Rezept verschwunden ist. Fehlende Zutaten sind
 kein Fehlschlag: Wer darauf wartet, wartet, und morgen liegen sie vielleicht
 da.
 
+Wer trotzdem wissen will, wenn einer hängt, nimmt `craft_stuck`. Es meldet
+sich, wenn ein Auftrag **30 Sekunden auf denselben Grund** wartet, und zwar
+einmal je Grund — fehlen erst Bretter und dann Eisen, kommt es zweimal:
+
+```fn
+on craft_stuck(auftrag, grund) {
+    log("Auftrag " + auftrag + " hängt: " + grund)
+}
+```
+
+## Der Plan im Tab
+
+Unter jedem Auftrag steht im Fertigungs-Tab sein Plan: jede Stufe mit Menge
+und Ort, von unten nach oben. Die oberste mit `»` ist die, die als Nächstes
+läuft. Darunter in Rot, was niemand herstellen kann und jemand hinlegen muss.
+Den Plan gibt es schon, solange der Auftrag noch wartet — wer 64 Truhen
+bestellt, sieht vor dem ersten Schritt, dass ihm 512 Bretter fehlen, oder eben
+nur die Stämme dafür.
+
 ## Was ein Auftrag übersteht
 
 Einen Serverneustart. Er lebt am Controller und nicht am Fabricator: Einer,

@@ -925,6 +925,16 @@ public class ControllerBlockEntity extends BlockEntity {
         if (jobs.isEmpty() || level.getGameTime() % CRAFT_INTERVAL != 0) {
             return;
         }
+        // Waiting is normal; waiting on the same thing for half a minute is
+        // worth a word. Once per reason, so a stuck job does not talk all day.
+        for (var job : jobs) {
+            if (job.stuckLongerThan(level.getGameTime(), CRAFT_STUCK_TICKS)) {
+                fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFT_STUCK,
+                        List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id()),
+                                new dev.devpanda.factorynetwork.runtime.Value.Text(
+                                        job.detail())));
+            }
+        }
         int steps = graph.fabricators().size() + graph.elsewhere().fabricators().size();
         if (steps == 0) {
             jobs.forEach(job -> job.note(
@@ -992,6 +1002,33 @@ public class ControllerBlockEntity extends BlockEntity {
                 handCache, machineCache, declaredCache);
     }
 
+    /** After this long on the same reason, {@code craft_stuck} fires: 30 seconds. */
+    private static final long CRAFT_STUCK_TICKS = 600;
+
+    /**
+     * The plan as the tab shows it: one line per step from the bottom up —
+     * the first is the one that runs next — then what nobody can make.
+     */
+    static List<String> planLines(
+            dev.devpanda.factorynetwork.crafting.CraftingPlanner.Plan<
+                    net.minecraft.world.item.Item> plan) {
+        List<String> lines = new ArrayList<>();
+        for (var step : plan.steps()) {
+            String where = step.station().isEmpty() ? "Fabricator" : stationName(step.station());
+            lines.add(step.yield() + " " + Names.of(step.result()) + " ·" + where);
+        }
+        for (var entry : plan.missing().entrySet()) {
+            lines.add("fehlt: " + entry.getValue() + " " + Names.of(entry.getKey()));
+        }
+        return lines;
+    }
+
+    /** {@code minecraft:smelting} -> {@code smelting}: the type is enough to know the machine. */
+    private static String stationName(String station) {
+        int colon = station.indexOf(':');
+        return colon < 0 ? station : station.substring(colon + 1);
+    }
+
     /** Whether there is any recipe for this item at all — in one of the sources. */
     private boolean recipeKnown(net.minecraft.world.item.Item target) {
         return recipes().find(target, item -> 0L) != null;
@@ -1038,6 +1075,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 recipes, storage::count, job.target(), want,
                 dev.devpanda.factorynetwork.FnConfig.craftingDepth(),
                 dev.devpanda.factorynetwork.FnConfig.craftingBudget());
+        job.setPlan(planLines(plan));
         if (!plan.complete()) {
             job.note(dev.devpanda.factorynetwork.crafting.CraftingJob.Status.WAITING,
                     dev.devpanda.factorynetwork.crafting.RecipeLookup.missing(plan.missing()));
@@ -2298,7 +2336,12 @@ public class ControllerBlockEntity extends BlockEntity {
             lines.add(new dev.devpanda.factorynetwork.network.packet
                     .CraftingStatePacket.Line(job.id(),
                     Names.of(job.target()), job.wanted(), job.done(),
-                    job.status().name(), job.detail()));
+                    job.status().name(), job.detail(),
+                    job.plan().size() <= dev.devpanda.factorynetwork.network.packet
+                            .CraftingStatePacket.Line.PLAN_LINES
+                            ? job.plan()
+                            : job.plan().subList(0, dev.devpanda.factorynetwork.network
+                                    .packet.CraftingStatePacket.Line.PLAN_LINES)));
         }
         return lines;
     }

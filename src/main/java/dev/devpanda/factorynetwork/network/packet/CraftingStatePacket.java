@@ -22,7 +22,10 @@ public record CraftingStatePacket(List<Line> jobs) implements CustomPacketPayloa
 
     /** A job, exactly as it appears in the tab. */
     public record Line(long id, String target, int wanted, int done, String status,
-                       String detail) {
+                       String detail, List<String> plan) {
+
+        /** At most this many plan lines go across: the tab has no room for more. */
+        public static final int PLAN_LINES = 12;
 
         public static final StreamCodec<RegistryFriendlyByteBuf, Line> STREAM_CODEC =
                 StreamCodec.composite(
@@ -32,6 +35,8 @@ public record CraftingStatePacket(List<Line> jobs) implements CustomPacketPayloa
                         ByteBufCodecs.VAR_INT, Line::done,
                         ByteBufCodecs.stringUtf8(32), Line::status,
                         ByteBufCodecs.stringUtf8(256), Line::detail,
+                        ByteBufCodecs.stringUtf8(128).apply(ByteBufCodecs.list(PLAN_LINES)),
+                        Line::plan,
                         Line::new);
     }
 

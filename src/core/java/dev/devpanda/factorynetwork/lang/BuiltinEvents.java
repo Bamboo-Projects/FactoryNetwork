@@ -51,6 +51,12 @@ public final class BuiltinEvents {
     /** And one that can no longer proceed — with the reason as text. */
     public static final String CRAFTING_FAILED = "crafting_failed";
 
+    /**
+     * A job that has waited on the same reason for half a minute — with the
+     * reason as text. Once per reason; a new reason may report again.
+     */
+    public static final String CRAFT_STUCK = "craft_stuck";
+
     /** Somebody walked into a factory hall: the hall and the player's name. */
     public static final String HALL_ENTERED = "hall_entered";
 
@@ -75,6 +81,7 @@ public final class BuiltinEvents {
             Map.entry(REDSTONE_CHANGED, 2),
             Map.entry(CRAFTING_FINISHED, 1),
             Map.entry(CRAFTING_FAILED, 2),
+            Map.entry(CRAFT_STUCK, 2),
             Map.entry(HALL_ENTERED, 2),
             Map.entry(HALL_LEFT, 2),
             Map.entry(HALL_EMPTY, 1));

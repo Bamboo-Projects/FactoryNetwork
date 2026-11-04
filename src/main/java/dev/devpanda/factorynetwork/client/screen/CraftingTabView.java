@@ -96,6 +96,24 @@ public class CraftingTabView {
                         x + 9, line, TerminalScreen.TEXT_DIM, false);
                 line += LINE;
             }
+            // The plan below the reason: what runs next on top, then the rest,
+            // then in red what nobody can make.
+            boolean first = true;
+            for (String step : job.plan()) {
+                if (line > y + height - LINE) {
+                    break;
+                }
+                boolean missing = step.startsWith("fehlt:");
+                String text = missing ? step : (first ? "» " : "  ") + step;
+                int colour = missing ? TerminalScreen.BAD
+                        : first ? TerminalScreen.TEXT : TerminalScreen.TEXT_FAINT;
+                graphics.text(font, font.plainSubstrByWidth(text, width - 22),
+                        x + 15, line, colour, false);
+                if (!missing) {
+                    first = false;
+                }
+                line += LINE;
+            }
             line += 2;
         }
     }

@@ -716,6 +716,7 @@
     }
   ],
   "builtinEvents": [
+    "craft_stuck",
     "crafting_failed",
     "crafting_finished",
     "device_changed",

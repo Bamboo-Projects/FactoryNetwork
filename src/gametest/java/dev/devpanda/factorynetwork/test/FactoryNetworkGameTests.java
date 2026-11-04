@@ -3964,7 +3964,9 @@ public final class FactoryNetworkGameTests {
         var auftraege = new dev.devpanda.factorynetwork.network.packet.CraftingStatePacket(
                 java.util.List.of(new dev.devpanda.factorynetwork.network.packet
                         .CraftingStatePacket.Line(3, "Truhe", 64, 8, "WAITING",
-                        "es fehlt: 8 Eichenholzbretter")));
+                        "es fehlt: 8 Eichenholzbretter",
+                        java.util.List.of("8 Eichenholzbretter · Fabricator",
+                                "fehlt: 2 Eichenstamm"))));
         var auftraegeZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.CraftingStatePacket.STREAM_CODEC,
                 auftraege);
@@ -3972,6 +3974,8 @@ public final class FactoryNetworkGameTests {
         helper.assertValueEqual(auftraegeZurueck.jobs().get(0).done(), 8, "Wie viele fertig");
         helper.assertValueEqual(auftraegeZurueck.jobs().get(0).detail(),
                 "es fehlt: 8 Eichenholzbretter", "Der Grund");
+        helper.assertValueEqual(auftraegeZurueck.jobs().get(0).plan().get(1),
+                "fehlt: 2 Eichenstamm", "Der Plan geht mit");
 
         var abbruch = new dev.devpanda.factorynetwork.network.packet.CraftingActionPacket(3);
         helper.assertValueEqual(roundTrip(helper,
@@ -11752,6 +11756,21 @@ public final class FactoryNetworkGameTests {
                             "er wartet, statt zu scheitern");
                     helper.assertTrue(!jobs.get(0).detail().isEmpty(),
                             "und sagt, was fehlt");
+                    // The plan stands before the first step: the planks to
+                    // build, and below them the logs nobody has.
+                    var plan = jobs.get(0).plan();
+                    helper.assertTrue(!plan.isEmpty(), "der Plan steht schon da: " + plan);
+                    helper.assertTrue(plan.get(plan.size() - 1).startsWith("fehlt:"),
+                            "zuletzt, was fehlt: " + plan);
+                    // Half a minute on the same reason is reported once, not twice.
+                    var job = jobs.get(0);
+                    long now = helper.getLevel().getGameTime();
+                    helper.assertTrue(!job.stuckLongerThan(now, 600),
+                            "nach drei Sekunden noch nicht");
+                    helper.assertTrue(job.stuckLongerThan(now + 700, 600),
+                            "nach 30 Sekunden meldet er sich");
+                    helper.assertTrue(!job.stuckLongerThan(now + 1400, 600),
+                            "und nur einmal je Grund");
                 })
                 .thenSucceed();
     }

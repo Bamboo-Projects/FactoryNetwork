@@ -105,6 +105,17 @@ public final class CraftingJob {
     /** What currently lies in a machine, or {@code null}. */
     private Running running;
 
+    /**
+     * The last plan, line by line, for the tab: the steps from the bottom up,
+     * then what is missing. Not saved — the next cycle computes it again.
+     */
+    private java.util.List<String> plan = java.util.List.of();
+
+    /** The reason the job waits on, since when, and whether it was reported. */
+    private String stuckOn = "";
+    private long stuckSince;
+    private boolean stuckReported;
+
     public CraftingJob(long id, Item target, int wanted) {
         this.id = id;
         this.target = target;
@@ -143,6 +154,38 @@ public final class CraftingJob {
 
     public void setRunning(Running step) {
         this.running = step;
+    }
+
+    public java.util.List<String> plan() {
+        return plan;
+    }
+
+    public void setPlan(java.util.List<String> lines) {
+        this.plan = java.util.List.copyOf(lines);
+    }
+
+    /**
+     * Whether the job has waited on the same reason long enough to say so —
+     * {@code true} exactly once per reason. A new reason starts the clock
+     * anew; running again forgets it.
+     */
+    public boolean stuckLongerThan(long now, long ticks) {
+        if (status != Status.WAITING) {
+            stuckOn = "";
+            stuckReported = false;
+            return false;
+        }
+        if (!detail.equals(stuckOn)) {
+            stuckOn = detail;
+            stuckSince = now;
+            stuckReported = false;
+            return false;
+        }
+        if (!stuckReported && now - stuckSince >= ticks) {
+            stuckReported = true;
+            return true;
+        }
+        return false;
     }
 
     /** How many are still missing. */
