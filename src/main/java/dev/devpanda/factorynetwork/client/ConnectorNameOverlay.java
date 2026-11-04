@@ -131,7 +131,7 @@ public final class ConnectorNameOverlay {
                         pos.getY() + 1.1 + i * LINE_HEIGHT - cameraPosition.y,
                         pos.getZ() + 0.5 - cameraPosition.z);
                 poses.mulPose(camera.orientation);
-                poses.scale(-0.025F, -0.025F, 0.025F);
+                poses.scale(0.025F, -0.025F, 0.025F);
 
                 Matrix4f matrix = poses.last().pose();
                 float half = -font.width(shown) / 2.0F;

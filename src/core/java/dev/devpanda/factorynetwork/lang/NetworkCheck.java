@@ -196,7 +196,9 @@ public final class NetworkCheck {
 
     private static void checkDisplay(Decl.Display display, NetworkView view,
                                      List<Diagnostic> problems) {
-        if (view.displays().contains(display.name())) {
+        // Named like a device, it floats above that device's machine and
+        // needs no wall.
+        if (view.displays().contains(display.name()) || view.connectors().contains(display.name())) {
             return;
         }
         String hint = view.closestDisplay(display.name())

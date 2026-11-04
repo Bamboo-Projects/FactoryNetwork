@@ -114,6 +114,32 @@ final class ControlBridge {
                 }
                 return "no text field";
             });
+            // A left-click on a block, as the attack key does it.
+            route(server, "/attack", q -> {
+                Minecraft client = Minecraft.getInstance();
+                BlockPos pos = new BlockPos(num(q, "x", 0), num(q, "y", 0), num(q, "z", 0));
+                return String.valueOf(client.gameMode.startDestroyBlock(pos,
+                        Direction.byName(q.getOrDefault("face", "up"))));
+            });
+            // Types characters as the keyboard would, into whatever has focus.
+            route(server, "/chars", q -> {
+                Minecraft client = Minecraft.getInstance();
+                q.getOrDefault("text", "").codePoints().forEach(cp -> invoke(client.keyboardHandler, "charTyped",
+                        new Class<?>[]{long.class, net.minecraft.client.input.CharacterEvent.class},
+                        client.getWindow().handle(), new net.minecraft.client.input.CharacterEvent(cp)));
+                return "ok";
+            });
+            // What the analyser carries beyond nodes: heat and floating values.
+            route(server, "/analyser2", q -> {
+                var data = dev.devpanda.factorynetwork.client.ClientAnalyserState.data();
+                return "heat=" + data.heat() + " floating=" + data.floating();
+            });
+            // The terminal search as the storage view holds it.
+            route(server, "/search", q -> "query=" + dev.devpanda.factorynetwork.client.ClientStorageView.query()
+                    + " invalid=" + dev.devpanda.factorynetwork.client.ClientStorageView.queryInvalid()
+                    + " rows=" + dev.devpanda.factorynetwork.client.ClientStorageView.rows().size()
+                    + " first=" + dev.devpanda.factorynetwork.client.ClientStorageView.rows().stream().limit(5)
+                            .map(row -> row.stack().getItem().toString()).toList());
             route(server, "/close", q -> {
                 if (Minecraft.getInstance().screen != null) {
                     Minecraft.getInstance().screen.onClose();
@@ -219,7 +245,11 @@ final class ControlBridge {
         BlockPos pos = new BlockPos(num(q, "x", 0), num(q, "y", 0), num(q, "z", 0));
         Direction face = Direction.byName(q.getOrDefault("face", "up"));
         dev.devpanda.factorynetwork.client.SlotOverlay.remember(pos);
-        var hit = new BlockHitResult(pos.getCenter().relative(face, 0.5), face, pos, false);
+        // hx/hy/hz: an exact spot on the face, for blocks where the spot matters (a display line).
+        var at = q.containsKey("hy")
+                ? new net.minecraft.world.phys.Vec3(dbl(q, "hx"), dbl(q, "hy"), dbl(q, "hz"))
+                : pos.getCenter().relative(face, 0.5);
+        var hit = new BlockHitResult(at, face, pos, false);
         return client.gameMode.useItemOn(client.player, InteractionHand.MAIN_HAND, hit).toString();
     }
 

@@ -62,7 +62,7 @@ public final class FloatingValuesOverlay {
                 poses.pushPose();
                 poses.translate(top.x - eye.x, top.y - i * LINE - eye.y, top.z - eye.z);
                 poses.mulPose(camera.orientation);
-                poses.scale(-0.025F, -0.025F, 0.025F);
+                poses.scale(0.025F, -0.025F, 0.025F);
                 Matrix4f matrix = poses.last().pose();
                 font.drawInBatch(text, -font.width(text) / 2.0F, 0, 0xFFFFFFFF, false, matrix,
                         buffers, Font.DisplayMode.SEE_THROUGH, BACKGROUND, 0xF000F0);

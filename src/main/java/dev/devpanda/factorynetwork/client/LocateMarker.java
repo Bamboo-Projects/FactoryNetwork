@@ -124,7 +124,7 @@ public final class LocateMarker {
                 target.getY() + 1.4 - eye.y,
                 target.getZ() + 0.5 - eye.z);
         poses.mulPose(camera.orientation);
-        poses.scale(-0.025F, -0.025F, 0.025F);
+        poses.scale(0.025F, -0.025F, 0.025F);
         Matrix4f matrix = poses.last().pose();
         font.drawInBatch(label, -font.width(label) / 2.0F, 0, COLOUR, false, matrix, buffers,
                 Font.DisplayMode.SEE_THROUGH, BACKGROUND, 0xF000F0);
