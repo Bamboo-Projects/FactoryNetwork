@@ -51,9 +51,11 @@ Welt, und dafür gibt es Schutzmods — die kennen Claims, Regionen und
 Grundstücke, und diese Mod sollte das nicht ein zweites Mal und schlechter
 tun.
 
-Dasselbe gilt für `click()`: Ein Programm, das eine Maschine anfasst, tut das
-auf demselben Weg wie ein Spieler. In einer fremden Claim passiert also
-nichts, wenn deine Schutzmod es nicht erlaubt.
+Dasselbe gilt für `click()`, `mine()`, `place()`, `use()` und `attack()`:
+Ein Programm, das in die Welt greift, tut das auf demselben Weg wie ein
+Spieler und löst dieselben Ereignisse aus. In einer fremden Claim passiert
+also nichts, wenn deine Schutzmod es nicht erlaubt. Angreifen trifft nie
+einen Spieler.
 
 ## Was ein Programm kosten darf
 

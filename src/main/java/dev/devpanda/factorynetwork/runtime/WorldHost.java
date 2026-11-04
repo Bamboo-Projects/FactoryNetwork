@@ -110,6 +110,218 @@ public final class WorldHost implements Interpreter.Host {
         return result.consumesAction();
     }
 
+    /** Where a world verb acts: the block in front of a connector, and the hand that does it. */
+    private record Reach(net.minecraft.server.level.ServerLevel server,
+                         net.minecraft.core.BlockPos target,
+                         net.minecraft.core.Direction facing,
+                         net.neoforged.neoforge.common.util.FakePlayer player) {
+
+        net.minecraft.world.phys.BlockHitResult hit() {
+            return new net.minecraft.world.phys.BlockHitResult(
+                    net.minecraft.world.phys.Vec3.atCenterOf(target)
+                            .relative(facing.getOpposite(), 0.5),
+                    facing.getOpposite(), target, false);
+        }
+    }
+
+    /**
+     * The same hand as {@link #clickAt}: the network's fake player, standing
+     * on the connector, so that protection mods see every verb as theirs.
+     */
+    private Reach reach(String device) {
+        var connector = connectorFor(device);
+        if (connector == null
+                || !(connector.level() instanceof net.minecraft.server.level.ServerLevel server)) {
+            throw new ScriptError("Nichts im Netz heißt „" + device + "“.",
+                    "Abbauen, setzen, benutzen und angreifen gehen von einem Gerät aus, "
+                            + "das im Netz hängt.");
+        }
+        var position = connector.pos();
+        var player = net.neoforged.neoforge.common.util.FakePlayerFactory.get(server, CLICKER);
+        player.setPos(position.getX() + 0.5, position.getY(), position.getZ() + 0.5);
+        return new Reach(server, position.relative(connector.facing()), connector.facing(), player);
+    }
+
+    /**
+     * One of the selection out of the storage, or an empty hand for nothing.
+     * {@code null} if the selection names something the storage lacks.
+     */
+    private ItemStack takeOne(Value selection) {
+        if (selection == null || selection instanceof Value.Nothing) {
+            return ItemStack.EMPTY;
+        }
+        var key = storage.firstPresent(itemsOf(selection), conditionOf(selection));
+        if (key == null || storage.extract(key, 1) < 1) {
+            return null;
+        }
+        return key.toStack(1);
+    }
+
+    /** Into the storage; what does not fit falls in front of the device. */
+    private void store(Reach reach, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        long left = storage.insert(stack);
+        if (left > 0) {
+            net.minecraft.world.level.block.Block.popResource(reach.server(), reach.target(),
+                    stack.copyWithCount((int) left));
+        }
+    }
+
+    /** Empties the hand and the pockets into the storage — the fake player keeps nothing. */
+    private void emptyHands(Reach reach) {
+        var inventory = reach.player().getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            store(reach, inventory.removeItemNoUpdate(slot));
+        }
+    }
+
+    /**
+     * {@code feld.mine()} — breaks the block in front of the connector.
+     *
+     * <p><b>The break event goes out first</b>, as for a player: a claim
+     * that forbids it gets its say. The drops are those a player with this
+     * tool would get — stone without a pickaxe yields nothing — and they go
+     * into the storage instead of onto the ground.
+     */
+    @Override
+    public boolean mineAt(String device, Value tool) {
+        Reach reach = reach(device);
+        var server = reach.server();
+        var state = server.getBlockState(reach.target());
+        if (state.isAir() || state.getDestroySpeed(server, reach.target()) < 0) {
+            return false;
+        }
+        ItemStack held = takeOne(tool);
+        if (held == null) {
+            return false;
+        }
+        var player = reach.player();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+        try {
+            if (net.neoforged.neoforge.common.CommonHooks.fireBlockBreak(server,
+                    net.minecraft.world.level.GameType.SURVIVAL, player, reach.target(), state)
+                    .isCanceled()) {
+                return false;
+            }
+            var entity = server.getBlockEntity(reach.target());
+            var drops = net.minecraft.world.level.block.Block.getDrops(state, server,
+                    reach.target(), entity, player, held);
+            if (!server.destroyBlock(reach.target(), false, player)) {
+                return false;
+            }
+            if (!held.isEmpty()) {
+                held.mineBlock(server, state, reach.target(), player);
+            }
+            drops.forEach(drop -> store(reach, drop));
+            return true;
+        } finally {
+            emptyHands(reach);
+        }
+    }
+
+    /**
+     * {@code feld.place(item:wheat_seeds)} — sets a block in front of the
+     * connector, through the item's own placement: seeds want farmland, a
+     * torch a wall, and the place event goes out for protection mods.
+     */
+    @Override
+    public boolean placeAt(String device, Value block) {
+        Reach reach = reach(device);
+        if (!reach.server().getBlockState(reach.target()).canBeReplaced()) {
+            return false;
+        }
+        ItemStack held = takeOne(block);
+        if (held == null || held.isEmpty()) {
+            return false;
+        }
+        var player = reach.player();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+        try {
+            return held.useOn(new net.minecraft.world.item.context.UseOnContext(player,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, reach.hit())).consumesAction();
+        } finally {
+            emptyHands(reach);
+        }
+    }
+
+    /**
+     * {@code feld.use(item:bone_meal)} — a right-click with something in
+     * hand. What the hand holds after, a filled bucket for one, goes back.
+     */
+    @Override
+    public boolean useAt(String device, Value item) {
+        Reach reach = reach(device);
+        ItemStack held = takeOne(item);
+        if (held == null) {
+            return false;
+        }
+        var player = reach.player();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+        try {
+            return player.gameMode.useItemOn(player, reach.server(), held,
+                    net.minecraft.world.InteractionHand.MAIN_HAND, reach.hit()).consumesAction();
+        } finally {
+            emptyHands(reach);
+        }
+    }
+
+    /**
+     * {@code falle.attack(item:diamond_sword)} — hits every creature in the
+     * block in front of the connector.
+     *
+     * <p><b>Never a player.</b> A program that hits whoever walks past
+     * would be a trap against people, and that is not what this is for.
+     *
+     * <p>The damage is the weapon's, without the cooldown: a fake player
+     * never ticks, and its swing would otherwise stay at the weakest. What
+     * the creatures drop is collected into the storage.
+     */
+    @Override
+    public long attackAt(String device, Value tool) {
+        Reach reach = reach(device);
+        ItemStack held = takeOne(tool);
+        if (held == null) {
+            return 0;
+        }
+        var player = reach.player();
+        var server = reach.server();
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, held);
+        var box = new net.minecraft.world.phys.AABB(reach.target());
+        long hit = 0;
+        // Only what the hits bring forth: items already lying there belong
+        // to someone else's farm.
+        var lying = new java.util.HashSet<java.util.UUID>();
+        server.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                box.inflate(1.0)).forEach(drop -> lying.add(drop.getUUID()));
+        try {
+            float damage = (float) held.getAttributeModifiers().compute(
+                    net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, 1.0,
+                    net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+            for (var creature : server.getEntitiesOfClass(
+                    net.minecraft.world.entity.LivingEntity.class, box,
+                    entity -> entity.isAlive()
+                            && !(entity instanceof net.minecraft.world.entity.player.Player))) {
+                if (creature.hurtServer(server, server.damageSources().playerAttack(player), damage)) {
+                    hit++;
+                    if (!held.isEmpty()) {
+                        held.hurtEnemy(creature, player);
+                    }
+                }
+            }
+            for (var drop : server.getEntitiesOfClass(
+                    net.minecraft.world.entity.item.ItemEntity.class, box.inflate(1.0),
+                    drop -> !lying.contains(drop.getUUID()))) {
+                store(reach, drop.getItem().copy());
+                drop.discard();
+            }
+            return hit;
+        } finally {
+            emptyHands(reach);
+        }
+    }
+
     @Override
     public long networkPower() {
         if (power == null) {

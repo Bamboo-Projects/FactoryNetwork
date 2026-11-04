@@ -1634,6 +1634,60 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * The world verbs: mine puts the drops into the storage, place takes the
+     * block from it, use spends bone meal on a crop, attack hits a creature
+     * with a sword from the storage and puts the sword back.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 200)
+    public static void worldVerbsMinePlaceUseAttack(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        BlockPos vorne = controller.east().north().north();
+        helper.setBlock(vorne, Blocks.DIRT);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                fn abbauen() { return quarry_output.mine() }
+                fn setzen() { return quarry_output.place(item:stone) }
+                fn duengen() { return quarry_output.use(item:bone_meal) }
+                fn schlagen() { return quarry_output.attack(item:diamond_sword) }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        var abbau = entity.startFlow("abbauen", java.util.List.of());
+        helper.assertValueEqual(abbau.status().name(), "DONE", "abbauen läuft: " + abbau.detail());
+        helper.assertTrue(helper.getBlockState(vorne).isAir(), "die Erde ist weg");
+        helper.assertValueEqual(entity.storage().count(Items.DIRT), 1L, "und liegt im Lager");
+
+        entity.storage().insert(Items.STONE, 1);
+        var setzen = entity.startFlow("setzen", java.util.List.of());
+        helper.assertValueEqual(setzen.status().name(), "DONE", "setzen läuft: " + setzen.detail());
+        helper.assertTrue(helper.getBlockState(vorne).is(Blocks.STONE), "der Stein steht");
+        helper.assertValueEqual(entity.storage().count(Items.STONE), 0L, "und kam aus dem Lager");
+
+        helper.setBlock(vorne.below(), Blocks.FARMLAND);
+        helper.setBlock(vorne, Blocks.WHEAT);
+        entity.storage().insert(Items.BONE_MEAL, 4);
+        var duengen = entity.startFlow("duengen", java.util.List.of());
+        helper.assertValueEqual(duengen.status().name(), "DONE", "duengen läuft: " + duengen.detail());
+        helper.assertTrue(helper.getBlockState(vorne)
+                        .getValue(net.minecraft.world.level.block.CropBlock.AGE) > 0,
+                "der Weizen ist gewachsen");
+        helper.assertValueEqual(entity.storage().count(Items.BONE_MEAL), 3L,
+                "ein Knochenmehl verbraucht, der Rest zurück");
+
+        helper.setBlock(vorne, Blocks.AIR);
+        helper.spawnWithNoFreeWill(net.minecraft.world.entity.EntityType.ZOMBIE,
+                net.minecraft.world.phys.Vec3.atBottomCenterOf(vorne));
+        entity.storage().insert(Items.DIAMOND_SWORD, 1);
+        var schlagen = entity.startFlow("schlagen", java.util.List.of());
+        helper.assertValueEqual(schlagen.status().name(), "DONE", "schlagen läuft: " + schlagen.detail());
+        helper.assertValueEqual(((dev.devpanda.factorynetwork.runtime.Value.Int) schlagen.result())
+                .value(), 1L, "ein Zombie getroffen");
+        helper.assertValueEqual(entity.storage().count(Items.DIAMOND_SWORD), 1L,
+                "das Schwert ist zurück im Lager");
+        helper.succeed();
+    }
+
+    /**
      * And on a block that a click does not interest, it reports that.
      *
      * <p>Not an error: a stone that does not react to a right-click is not a

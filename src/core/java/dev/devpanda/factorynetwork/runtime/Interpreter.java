@@ -173,6 +173,30 @@ public final class Interpreter {
         }
 
         /**
+         * Mines the block in front of the device; the drops go into the
+         * network storage. {@code tool} is a selection taken from the
+         * storage for the work and put back after, or nothing.
+         */
+        default boolean mineAt(String device, Value tool) {
+            throw new ScriptError("Ohne Welt lässt sich nichts abbauen.");
+        }
+
+        /** Places one of the selection from the storage in front of the device. */
+        default boolean placeAt(String device, Value block) {
+            throw new ScriptError("Ohne Welt lässt sich nichts setzen.");
+        }
+
+        /** A right-click in front of the device with one of the selection in hand. */
+        default boolean useAt(String device, Value item) {
+            throw new ScriptError("Ohne Welt lässt sich nichts benutzen.");
+        }
+
+        /** Hits every creature in front of the device; returns how many were hit. */
+        default long attackAt(String device, Value tool) {
+            throw new ScriptError("Ohne Welt lässt sich nichts angreifen.");
+        }
+
+        /**
          * How much energy the network holds, in FE.
          *
          * <p><b>Its own reserve, not a query into the world.</b> It lives in
@@ -1343,6 +1367,22 @@ public final class Interpreter {
                 // operation as a player's right-click, with everything that
                 // entails.
                 case "click" -> new Value.Bool(host.clickAt(device.name()));
+                // The world verbs: the same reach as click, but with hands.
+                // What they bring forth goes into the storage, what they need
+                // comes out of it.
+                case "mine" -> new Value.Bool(host.mineAt(device.name(),
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
+                case "place" -> {
+                    if (arguments.isEmpty()) {
+                        throw new ScriptError("place braucht, was gesetzt werden soll.",
+                                "Zum Beispiel: " + device.name() + ".place(item:wheat_seeds)");
+                    }
+                    yield new Value.Bool(host.placeAt(device.name(), arguments.get(0)));
+                }
+                case "use" -> new Value.Bool(host.useAt(device.name(),
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
+                case "attack" -> new Value.Int(host.attackAt(device.name(),
+                        arguments.isEmpty() ? Value.Nothing.get() : arguments.get(0)));
                 // A value from another mod at the device's place: what can be
                 // measured there is the mods' business, not the language's.
                 case "measure" -> {
@@ -1355,7 +1395,7 @@ public final class Interpreter {
                 default -> throw new ScriptError(
                         "Ein Gerät kann kein " + name + ".",
                         "Bekannt sind redstone, count, insert, items, slots, energy, "
-                                + "measure und click.");
+                                + "measure, click, mine, place, use und attack.");
             };
         }
         throw new ScriptError("Auf " + target.describe() + " gibt es kein " + name + ".");

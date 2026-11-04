@@ -209,6 +209,28 @@ Hinter dem Punkt eines Connectornamens steht:
   die Maschinen, die von sich aus nichts tun. Zurück kommt, ob der Klick
   angekommen ist; ein Fenster geht dabei nicht auf.
 
+Vier Verben greifen in die Welt vor dem Connector. Was sie brauchen, nehmen
+sie aus dem Netzspeicher, was dabei herauskommt, legen sie hinein:
+
+- `mine()` — baut den Block ab, die Drops kommen ins Lager. `mine(item:diamond_pickaxe)`
+  nimmt dafür eine Spitzhacke aus dem Lager und legt sie danach zurück; ohne
+  Werkzeug gibt Stein nichts her, wie bei einem Spieler.
+- `place(item:wheat_seeds)` — setzt einen Block oder Saatgut. Steht dort schon
+  etwas Festes, kommt `false` zurück.
+- `use(item:bone_meal)` — ein Rechtsklick mit dem Gegenstand in der Hand. Was
+  danach in der Hand liegt, geht zurück ins Lager.
+- `attack(item:iron_sword)` — schlägt jedes Tier und Monster im Block davor
+  und sammelt die Beute ein. **Spieler bleiben verschont.** Zurück kommt, wie
+  viele getroffen wurden.
+
+```
+fn feld_bestellen() {
+    if feld.mine() {
+        feld.place(item:wheat_seeds)
+    }
+}
+```
+
 Der Editor bietet das nach dem Punkt an, und zeigt hinter jedem Connector
 gleich mit, welche Maschine dahintersteht.
 

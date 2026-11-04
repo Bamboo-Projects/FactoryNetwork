@@ -124,6 +124,10 @@ Hinter dem Namen eines Connectors: `brecher_1.count(item:iron_ore)`.
 | `energy() int` | Wie viel Strom in der Maschine steht, in FE. Ohne Speicher null. |
 | `measure(name) decimal` | Ein Wert, den eine andere Mod an der Stelle des Geräts misst, zum Beispiel measure("vis") mit Thaumaturge. |
 | `click() bool` | Fasst die Maschine an, wie ein Rechtsklick. Gibt zurück, ob er angekommen ist. Ein Fenster geht dabei nicht auf. |
+| `mine(), mine(selection) bool` | Baut den Block vor dem Connector ab. Was er fallen lässt, kommt ins Netzlager. Mit Auswahl nimmt es das Werkzeug dafür aus dem Lager und legt es danach zurück. |
+| `place(selection) bool` | Setzt einen Block aus dem Lager vor den Connector, auch Saatgut aufs Feld. Gibt zurück, ob er steht. |
+| `use(), use(selection) bool` | Ein Rechtsklick vor den Connector mit einem Gegenstand aus dem Lager in der Hand, etwa Knochenmehl. Was danach in der Hand liegt, geht zurück ins Lager. |
+| `attack(), attack(selection) int` | Schlägt jedes Tier und jedes Monster vor dem Connector, mit Waffe aus dem Lager, wenn eine Auswahl dasteht. Die Beute kommt ins Lager. Spieler bleiben verschont. Gibt zurück, wie viele getroffen wurden. |
 
 ## Was an einer Liste steht
 

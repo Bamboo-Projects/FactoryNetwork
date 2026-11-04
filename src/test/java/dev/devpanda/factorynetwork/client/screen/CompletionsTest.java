@@ -431,7 +431,7 @@ class CompletionsTest {
     void afterTheDotTheDeviceMembersAreOffered() {
         withNetwork("crusher_1", () -> assertEquals(
                 List.of("online", "name", "redstone", "count", "insert", "items", "slots",
-                        "energy", "measure", "click"),
+                        "energy", "measure", "click", "mine", "place", "use", "attack"),
                 at("fn test() {", "    if crusher_1.")));
     }
 
