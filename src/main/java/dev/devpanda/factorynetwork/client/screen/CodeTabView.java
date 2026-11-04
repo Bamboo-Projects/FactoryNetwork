@@ -57,6 +57,8 @@ public class CodeTabView {
 
     private Project project;
     private String open;
+    /** Text from outside the editor, at its cursor; see EditorInsert. */
+    private final java.util.function.Consumer<String> inserter;
 
     /** All the project's messages, and among them those of the open file. */
     private List<Diagnostic> problems = List.of();
@@ -91,6 +93,8 @@ public class CodeTabView {
                 height - FILE_ROW - FOOTER - 2, project.source(open));
         this.editor.setChangeListener(this::onChanged);
         this.editor.nameFile(open);
+        this.inserter = this.editor::insertAtCursor;
+        dev.devpanda.factorynetwork.client.EditorInsert.setTarget(inserter);
         recheck();
     }
 
@@ -274,6 +278,8 @@ public class CodeTabView {
     }
 
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        // The editor on screen is where a recipe from JEI lands.
+        dev.devpanda.factorynetwork.client.EditorInsert.setTarget(inserter);
         drawFiles(graphics, mouseX, mouseY);
         editor.extractRenderState(graphics, openProblems);
 

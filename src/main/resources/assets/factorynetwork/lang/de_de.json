@@ -266,6 +266,8 @@
   "message.factorynetwork.hall.named": "Halle heißt jetzt %s: drinnen gilt alles als diese Anlage",
   "message.factorynetwork.hall.unnamed": "Halle hat keinen Anlagennamen mehr",
   "message.factorynetwork.hall.grown": "Die Halle ist jetzt %s × %s × %s groß. Ports an den äußeren Wänden sind mitgewandert.",
+  "message.factorynetwork.jei.recipe_inserted": "Rezept im Editor eingefügt — trag bei at die Maschine ein",
+  "message.factorynetwork.jei.recipe_copied": "Rezept kopiert — im Editor einfügen und bei at die Maschine eintragen",
   "message.factorynetwork.display.unnamed": "Dieses Display hat noch keinen Namen.",
   "block.factorynetwork.router": "Router",
   "side.factorynetwork.down": "Unten",

@@ -146,6 +146,11 @@ Drei Dinge dazu:
 - **Die Menge steht immer da**, auch die Eins.
 - **Keine Fachnummern.** Wo etwas hingehört, entscheidet die Maschine selbst.
 
+**Abschreiben lässt sich das aus JEI:** Terminal offen, im Code an die
+Stelle klicken, wo das Rezept hin soll, dann in JEI beim Rezept auf **+**.
+Die Zeilen stehen danach im Editor, mit allen Zutaten und Mengen — nur hinter
+`at` steht `maschine`, denn welcher Connector die Maschine ist, weißt nur du.
+
 Schreibst du ein Gerät hin, das es nicht gibt, sagt es das Terminal beim
 Übernehmen — das ist der Vorteil davon, dass ein Rezept im Programm steht und
 nicht auf einem Zettel.

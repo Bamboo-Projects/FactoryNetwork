@@ -1667,6 +1667,11 @@ public class CodeEditor {
      * <p>This is the reason the clipboard is needed at all: typing out a
      * program from the documentation is the sort of work no one does twice.
      */
+    /** Text from outside — a recipe from JEI — at the cursor. */
+    public void insertAtCursor(String text) {
+        insertMultiline(text);
+    }
+
     private void insertMultiline(String text) {
         if (hasSelection()) {
             deleteSelection();

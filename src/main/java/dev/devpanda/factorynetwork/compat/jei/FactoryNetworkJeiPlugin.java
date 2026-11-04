@@ -66,6 +66,12 @@ public class FactoryNetworkJeiPlugin implements IModPlugin {
                 new ItemStack(FnBlocks.PRESS.get()), PressCategory.TYPE);
     }
 
+    /** JEI's "+" with the terminal open writes the recipe into the editor. */
+    @Override
+    public void registerRecipeTransferHandlers(mezz.jei.api.registration.IRecipeTransferRegistration registration) {
+        registration.addUniversalRecipeTransferHandler(new RecipeToCode());
+    }
+
     @Override
     public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
         dev.devpanda.factorynetwork.client.ExternalSearch.install(new JeiSearch(runtime));

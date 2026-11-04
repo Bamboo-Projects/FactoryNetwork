@@ -132,6 +132,8 @@ public class CodeScreen extends Screen {
 
     private Project project;
     private String open;
+    /** Text from outside the editor, at its cursor; see EditorInsert. */
+    private final java.util.function.Consumer<String> inserter = text -> editor.insertAtCursor(text);
     private List<Diagnostic> problems = List.of();
     private List<Diagnostic> openProblems = List.of();
     private String status = "";
@@ -160,6 +162,7 @@ public class CodeScreen extends Screen {
                 contentHeight, project.source(open));
         editor.setChangeListener(this::onTextChanged);
         editor.nameFile(open);
+        dev.devpanda.factorynetwork.client.EditorInsert.setTarget(inserter);
         recheck();
     }
 
@@ -302,6 +305,8 @@ public class CodeScreen extends Screen {
      */
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        // The editor on screen is where a recipe from JEI lands.
+        dev.devpanda.factorynetwork.client.EditorInsert.setTarget(inserter);
         graphics.fill(0, 0, width, height, CASE);
         graphics.fill(MARGIN - 4, MARGIN - 4, width - MARGIN + 4, height - MARGIN + 4, GLASS);
         // The bright edge around the pane: without it the content floats in

@@ -533,6 +533,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         dev.devpanda.factorynetwork.client.ClientDeviceState.clear();
         dev.devpanda.factorynetwork.client.LiveValues.clear();
         dev.devpanda.factorynetwork.client.ClientBreakpoints.clear();
+        dev.devpanda.factorynetwork.client.EditorInsert.setTarget(null);
         super.onClose();
     }
 
