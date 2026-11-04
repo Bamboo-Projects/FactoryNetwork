@@ -44,6 +44,27 @@ Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 Ein Knopf darf etwas anstoßen, das wartet: Die Funktion dahinter wird ein
 Ablauf wie jeder andere und übersteht auch einen Serverneustart.
 
+Gedrückt wird ein Knopf im Terminal unter Anzeigen oder direkt an der Tafel:
+**Rechtsklick auf die Zeile** drückt ihn, Schleichen und Rechtsklick öffnet
+wie immer das Namensfenster.
+
+## Ein Knopf, der bestellt
+
+```
+display ausgabe {
+    button "64 Eisen" request(64 item:iron_ingot)
+}
+```
+
+Wer drückt, bekommt die Ware ins Inventar; was nicht hineinpasst, fällt vor
+die Füße. Fehlt etwas im Lager, wird der Rest gefertigt und geliefert, sobald
+der Auftrag fertig ist. Ist der Spieler dann nicht mehr da, bleibt die Ware
+im Netzspeicher. So holen sich Mitspieler ihr Eisen, ohne eine Zeile Code zu
+lesen.
+
+Gefertigt wird nur, wenn die Auswahl genau einen Gegenstand nennt. Bei
+`request(64 tag:c/ingots)` gibt es, was da ist, und der Rest wird gemeldet.
+
 ## Werte über der Maschine
 
 Heißt ein `display` so wie ein Gerät, braucht es keine Tafel: Seine Zeilen

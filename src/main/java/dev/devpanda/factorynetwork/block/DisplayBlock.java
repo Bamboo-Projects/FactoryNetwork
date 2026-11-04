@@ -195,8 +195,14 @@ public class DisplayBlock extends HorizontalDirectionalBlock implements EntityBl
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
-        if (!(level.getBlockEntity(pos) instanceof DisplayBlockEntity)) {
+        if (!(level.getBlockEntity(pos) instanceof DisplayBlockEntity display)) {
             return InteractionResult.PASS;
+        }
+        // A button under the cursor is pressed; sneaking always names.
+        if (!player.isShiftKeyDown()
+                && player instanceof net.minecraft.server.level.ServerPlayer server
+                && display.pressAt(server, hit.getLocation())) {
+            return InteractionResult.CONSUME;
         }
         player.openMenu(new net.minecraft.world.SimpleMenuProvider(
                         (id, inventory, owner) -> new dev.devpanda.factorynetwork.client.menu

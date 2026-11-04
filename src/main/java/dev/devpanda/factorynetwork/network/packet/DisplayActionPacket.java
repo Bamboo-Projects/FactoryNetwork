@@ -40,7 +40,7 @@ public record DisplayActionPacket(String display, int entry) implements CustomPa
                 return;
             }
             menu.controller(player).ifPresent(controller ->
-                    controller.pressDisplayButton(packet.display(), packet.entry()));
+                    controller.pressDisplayButton(packet.display(), packet.entry(), player));
         });
     }
 }

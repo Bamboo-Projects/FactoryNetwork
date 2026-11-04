@@ -911,6 +911,7 @@ public class ControllerBlockEntity extends BlockEntity {
             if (job.status() == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.DONE) {
                 fireEvent(dev.devpanda.factorynetwork.lang.BuiltinEvents.CRAFTING_FINISHED,
                         List.of(new dev.devpanda.factorynetwork.runtime.Value.Int(job.id())));
+                deliverOrder(job);
                 return true;
             }
             if (job.status() == dev.devpanda.factorynetwork.crafting.CraftingJob.Status.FAILED) {
@@ -2518,6 +2519,15 @@ public class ControllerBlockEntity extends BlockEntity {
      * something going that waits, and no one needs a return value.
      */
     public void pressDisplayButton(String displayName, int entryIndex) {
+        pressDisplayButton(displayName, entryIndex, null);
+    }
+
+    /**
+     * A button pressed by someone: {@code request(64 item:iron_ingot)}
+     * needs to know who, because the goods go to them.
+     */
+    public void pressDisplayButton(String displayName, int entryIndex,
+                                   @org.jetbrains.annotations.Nullable net.minecraft.world.entity.player.Player player) {
         Decl.Display display = program.declarations().stream()
                 .filter(Decl.Display.class::isInstance).map(Decl.Display.class::cast)
                 .filter(candidate -> candidate.name().equals(displayName))
@@ -2530,6 +2540,18 @@ public class ControllerBlockEntity extends BlockEntity {
             // The client pointed at a line that is not a button.
             return;
         }
+        if (entry.value() instanceof Expr.Call call
+                && call.callee() instanceof Expr.Name callee
+                && ORDER.equals(callee.value()) && !declaresFunction(ORDER)) {
+            if (player == null) {
+                note(dev.devpanda.factorynetwork.runtime.LogLevel.WARN, display.name(),
+                        "Der Knopf " + entry.label() + " liefert an den, der ihn drückt — "
+                                + "hier hat ihn niemand gedrückt.");
+                return;
+            }
+            order(player, call, entry.label());
+            return;
+        }
         String function = functionNameOf(entry.value());
         if (function == null) {
             note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, display.name(),
@@ -2540,6 +2562,109 @@ public class ControllerBlockEntity extends BlockEntity {
             startFlow(function, List.of());
         } catch (ScriptError error) {
             note(entry.label() + ": " + error);
+        }
+    }
+
+    /** The button that orders: {@code button "64 Eisen" request(64 item:iron_ingot)}. */
+    public static final String ORDER = "request";
+
+    /** An order waiting for its crafting job: whom it is for, and how much of what. */
+    private record Order(java.util.UUID player, net.minecraft.world.item.Item item, long amount) {
+    }
+
+    /**
+     * Orders by job. Not saved: after a restart the goods simply stay in the
+     * store — the same place they go to when the player is gone.
+     */
+    private final Map<Long, Order> orders = new HashMap<>();
+
+    private boolean declaresFunction(String name) {
+        return program.declarations().stream()
+                .anyMatch(decl -> decl instanceof Decl.Fn fn && fn.name().equals(name));
+    }
+
+    /**
+     * Hands out what the store has and orders the rest.
+     *
+     * <p>What is there goes straight into the inventory, what does not fit
+     * falls at the player's feet. What is missing is crafted — when the
+     * selection names exactly one item — and delivered once the job is done.
+     */
+    private void order(net.minecraft.world.entity.player.Player player, Expr.Call call, String label) {
+        Expr what = call.arguments().isEmpty() ? null : call.arguments().get(0).value();
+        List<net.minecraft.world.item.Item> items = what == null ? List.of()
+                : dev.devpanda.factorynetwork.runtime.ItemSelection.resolve(what);
+        if (items.isEmpty()) {
+            note(dev.devpanda.factorynetwork.runtime.LogLevel.ERROR, label,
+                    "request braucht eine Auswahl, zum Beispiel request(64 item:iron_ingot).");
+            return;
+        }
+        long wanted = what instanceof Expr.Amount amount && amount.count() != null
+                ? Math.max(1, amount.count()) : 1;
+        var test = dev.devpanda.factorynetwork.runtime.SelectionConditions.of(what);
+        long given = handOut(player, items, test, wanted);
+        long missing = wanted - given;
+        String name = Names.of(items.get(0));
+        if (missing <= 0) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.order.delivered", given, name));
+            return;
+        }
+        var job = items.size() == 1 && test == null
+                ? requestCraft(items.get(0), (int) Math.min(Integer.MAX_VALUE, missing)) : null;
+        if (job != null) {
+            orders.put(job.id(), new Order(player.getUUID(), items.get(0), missing));
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.order.crafting", given, missing, name));
+        } else {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.order.missing", given, missing, name));
+        }
+    }
+
+    /** Takes up to {@code wanted} out of the store and gives it to the player; returns how much. */
+    private long handOut(net.minecraft.world.entity.player.Player player,
+                         List<net.minecraft.world.item.Item> items,
+                         java.util.function.Predicate<net.minecraft.world.item.ItemStack> test,
+                         long wanted) {
+        long given = 0;
+        while (given < wanted) {
+            var key = storage.firstPresent(items, test);
+            if (key == null) {
+                break;
+            }
+            long portion = Math.min(Math.min(wanted - given, key.maxStackSize()), storage.count(key));
+            long taken = storage.extract(key, portion);
+            if (taken <= 0) {
+                break;
+            }
+            var stack = key.toStack((int) taken);
+            if (!player.getInventory().add(stack) || !stack.isEmpty()) {
+                player.drop(stack, false);
+            }
+            given += taken;
+        }
+        return given;
+    }
+
+    /**
+     * A job behind an order is done: the goods go to the player who
+     * ordered. If they are gone, the goods stay where the job put them — in
+     * the store.
+     */
+    private void deliverOrder(dev.devpanda.factorynetwork.crafting.CraftingJob job) {
+        Order order = orders.remove(job.id());
+        if (order == null || level == null || level.getServer() == null) {
+            return;
+        }
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(order.player());
+        if (player == null) {
+            return;
+        }
+        long given = handOut(player, List.of(order.item()), null, order.amount());
+        if (given > 0) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.order.arrived", given, Names.of(order.item())));
         }
     }
 

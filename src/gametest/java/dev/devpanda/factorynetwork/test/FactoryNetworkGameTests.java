@@ -11920,6 +11920,42 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * The order button: what the store has goes straight to the player who
+     * pressed, the rest is crafted; with the player gone it stays in the store.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void anOrderButtonDeliversAndCraftsTheRestIntoTheStore(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                display ausgabe {
+                    button "Truhen" request(3 item:chest)
+                }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        entity.storage().insert(Items.CHEST, 1);
+        entity.storage().insert(Items.OAK_PLANKS, 16);
+        // A mock player is in no player list: by the time the job is done it
+        // counts as gone, and the crafted goods stay in the store.
+        var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+
+        entity.pressDisplayButton("ausgabe", 0, player);
+        helper.assertValueEqual(player.getInventory().countItem(Items.CHEST), 1,
+                "die eine Truhe aus dem Lager kommt sofort");
+        helper.assertValueEqual(entity.craftingJobs().size(), 1, "die zwei fehlenden werden bestellt");
+
+        helper.startSequence()
+                .thenIdle(300)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.craftingJobs().size(), 0, "der Auftrag ist durch");
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 2L,
+                            "der Spieler ist weg, die zwei gefertigten bleiben im Lager");
+                })
+                .thenSucceed();
+    }
+
+    /**
      * Without ingredients the job waits and says what is missing.
      *
      * <p>The same honesty as a worker in front of a full chest: a job that

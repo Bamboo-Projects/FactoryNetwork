@@ -135,6 +135,67 @@ public class DisplayBlockEntity extends BlockEntity {
         }
     }
 
+    /**
+     * A right-click on the wall: the button line under the cursor is
+     * pressed, by this player. Mirrors the renderer's layout — lines centred
+     * on the wall, nine text units each. A wall with an item grid has lines
+     * of other heights; there a click opens the name window as before.
+     *
+     * @return whether a button was hit
+     */
+    public boolean pressAt(net.minecraft.server.level.ServerPlayer player,
+                           net.minecraft.world.phys.Vec3 hit) {
+        if (level == null) {
+            return false;
+        }
+        dev.devpanda.factorynetwork.block.DisplayWall wall = wall();
+        String name = wallName(wall);
+        if (name.isBlank()) {
+            return false;
+        }
+        for (var controller : ControllerRegistry.allOwning(level, worldPosition)) {
+            Decl.Display declaration = controller.program().declarations().stream()
+                    .filter(Decl.Display.class::isInstance)
+                    .map(Decl.Display.class::cast)
+                    .filter(candidate -> candidate.name().equals(name))
+                    .findFirst()
+                    .orElse(null);
+            if (declaration == null) {
+                continue;
+            }
+            DisplayValues values = new DisplayValues(controller.graph(), controller.storage(),
+                    controller.runtime(), controller.globals(), controller.getLevel())
+                    .withStores(controller.stores());
+            List<Integer> buttonOf = new ArrayList<>();
+            for (DisplayValues.Evaluated entry : values.evaluateEntries(declaration)) {
+                for (DisplayValues.Line line : entry.lines()) {
+                    if (format(line).isGrid()) {
+                        return false;
+                    }
+                    buttonOf.add(line.kind() == Decl.Display.Entry.Kind.BUTTON ? entry.entry() : -1);
+                }
+            }
+            int scale = scaleOf(declaration);
+            int room = Math.max(1, wall.rows() * LINES_PER_PANEL / scale);
+            int shown = Math.min(buttonOf.size(), room);
+            float top = -(shown * LINE_UNITS) / 2;
+            double centreY = wall.members().stream().mapToInt(BlockPos::getY).average().orElse(0) + 0.5;
+            double textY = -(hit.y - centreY) / (TEXT_SCALE * scale);
+            int line = (int) Math.floor((textY - top) / LINE_UNITS);
+            if (line < 0 || line >= shown || buttonOf.get(line) < 0) {
+                return false;
+            }
+            controller.pressDisplayButton(name, buttonOf.get(line), player);
+            return true;
+        }
+        return false;
+    }
+
+    /** The renderer's measures, needed to find the line under a click. */
+    private static final int LINES_PER_PANEL = 12;
+    private static final int LINE_UNITS = 9;
+    private static final float TEXT_SCALE = 0.006F;
+
     /** A scale that can actually be drawn. */
     private static int clampScale(int wanted) {
         return Math.max(1, Math.min(MAX_SCALE, wanted));
