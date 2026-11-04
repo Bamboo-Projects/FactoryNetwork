@@ -154,6 +154,20 @@ zweiunddreißig Zeichen und im Ganzen bis sechsundneunzig. Ein Punkt gehört
 nicht dazu — damit gibt es kein `..`, und aus dem Ordner deiner Welt führt
 kein Dateiname heraus.
 
+## Programme mitnehmen
+
+Eine **Programmdiskette** trägt alle Dateien eines Netzes:
+
+- **Rechtsklick** mit der Diskette auf einen Block des Netzes, etwa den
+  Controller oder das Terminal, schreibt das laufende Programm darauf. Was
+  vorher draufstand, ist dann weg.
+- **Schleichen und Rechtsklick** liest sie in den **Entwurf** des Netzes,
+  nicht gleich ins laufende Programm. Du siehst es dir im Editor an und
+  startest es mit Übernehmen. Ein fremdes Programm läuft so nie ungesehen los.
+
+Auf der Diskette steht, wie viele Dateien und Zeilen sie trägt, und die ersten
+Dateinamen. Einen Namen gibst du ihr am Amboss.
+
 ## Wenn jemand anders die Datei hält
 
 Im Mehrspielerbetrieb gehört eine Datei dem, der sie geöffnet hat — sonst

@@ -70,6 +70,54 @@ public final class FnEvents {
     }
 
     /**
+     * A program disk on a network block: right-click writes the running
+     * program onto it, sneak and right-click reads it into the draft.
+     * Before the block sees the click, so that a terminal does not open.
+     */
+    @SubscribeEvent
+    public static void onProgramDisk(PlayerInteractEvent.RightClickBlock event) {
+        if (event.isCanceled() || event.getHand() != InteractionHand.MAIN_HAND
+                || !(event.getItemStack().getItem() instanceof dev.devpanda.factorynetwork.item.ProgramDiskItem)) {
+            return;
+        }
+        var level = event.getLevel();
+        var pos = event.getPos();
+        dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity controller =
+                level.getBlockEntity(pos) instanceof dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity own
+                        ? own
+                        : dev.devpanda.factorynetwork.network.ControllerRegistry.owning(level, pos).orElse(null);
+        if (controller == null) {
+            return;
+        }
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.SUCCESS);
+        if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player)) {
+            return;
+        }
+        ItemStack disk = event.getItemStack();
+        if (!player.isShiftKeyDown()) {
+            dev.devpanda.factorynetwork.item.ProgramDiskItem.write(disk, controller.project());
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.disk.written", controller.project().files().size()));
+            return;
+        }
+        var program = dev.devpanda.factorynetwork.item.ProgramDiskItem.read(disk);
+        if (program == null) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.disk.blank"));
+            return;
+        }
+        if (!dev.devpanda.factorynetwork.network.packet.DeployProgramPacket.mayEdit(player, controller)) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.factorynetwork.disk.not_yours"));
+            return;
+        }
+        controller.acceptDraft(program, player.getUUID(), player.getGameProfile().name());
+        player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                "message.factorynetwork.disk.loaded", program.files().size()));
+    }
+
+    /**
      * The wrench's right-click without sneaking: if it carries settings, the
      * connector under the cursor gets them. Without, the click goes on as
      * usual and opens the name window.

@@ -12051,6 +12051,27 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /** A program disk carries every file; read back, it lands in the draft, not the running program. */
+    @GameTest(template = EMPTY, timeoutTicks = 60)
+    public static void aProgramDiskCarriesTheProject(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        var project = new dev.devpanda.factorynetwork.lang.Project(java.util.Map.of(
+                "main.mf", "fn a() { return 1 }\n", "erz/brecher.mf", "fn b() { return 2 }\n"));
+        ItemStack disk = new ItemStack(dev.devpanda.factorynetwork.registry.FnItems.PROGRAM_DISK.get());
+        helper.assertTrue(dev.devpanda.factorynetwork.item.ProgramDiskItem.read(disk) == null, "leer");
+        dev.devpanda.factorynetwork.item.ProgramDiskItem.write(disk, project);
+        var back = dev.devpanda.factorynetwork.item.ProgramDiskItem.read(disk);
+        helper.assertValueEqual(back.files(), project.files(), "alle Dateien kommen zurück");
+        entity.acceptDraft(back, null, "");
+        helper.assertValueEqual(entity.draft().files().get("erz/brecher.mf"), "fn b() { return 2 }\n",
+                "im Entwurf");
+        helper.assertTrue(!entity.project().files().containsKey("erz/brecher.mf"),
+                "das laufende Programm bleibt, bis jemand übernimmt");
+        helper.succeed();
+    }
+
     /** give to a player who is not online gives nothing, and the goods stay in the store. */
     @GameTest(template = EMPTY, timeoutTicks = 100)
     public static void giveToAnAbsentPlayerKeepsTheGoods(GameTestHelper helper) {

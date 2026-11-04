@@ -56,7 +56,7 @@ public record DeployProgramPacket(BlockPos terminal, Map<String, String> files)
      * it needs. Operators are always allowed — otherwise a server would have
      * no one to get an orphaned plant running again.
      */
-    static boolean mayEdit(ServerPlayer player,
+    public static boolean mayEdit(ServerPlayer player,
                            dev.devpanda.factorynetwork.block.entity.ControllerBlockEntity
                                    controller) {
         return dev.devpanda.factorynetwork.FnProtection.mayEdit(

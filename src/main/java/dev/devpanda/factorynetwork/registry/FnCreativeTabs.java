@@ -59,6 +59,7 @@ public final class FnCreativeTabs {
                         output.accept(FnItems.COMBAT_UPGRADE.get());
                         output.accept(FnItems.WORK_UPGRADE.get());
                         output.accept(FnItems.AREA_UPGRADE.get());
+                        output.accept(FnItems.PROGRAM_DISK.get());
                         output.accept(FnItems.DRIVE.get());
                         output.accept(FnItems.RACK.get());
                         output.accept(FnItems.SERVER_CHASSIS.get());

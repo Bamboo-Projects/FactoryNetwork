@@ -184,6 +184,10 @@ public final class FnItems {
             props -> new dev.devpanda.factorynetwork.item.ArmUpgradeItem(props.stacksTo(16),
                     dev.devpanda.factorynetwork.upgrade.Arm.AREA));
 
+    /** A program to carry from one network to the next. */
+    public static final DeferredItem<Item> PROGRAM_DISK = ITEMS.registerItem("program_disk",
+            props -> new dev.devpanda.factorynetwork.item.ProgramDiskItem(props.stacksTo(1)));
+
     public static final DeferredItem<Item> INFINITY_CARD = ITEMS.registerItem(
             dev.devpanda.factorynetwork.upgrade.Card.INFINITY.id(),
             props -> new dev.devpanda.factorynetwork.item.UpgradeItem(
