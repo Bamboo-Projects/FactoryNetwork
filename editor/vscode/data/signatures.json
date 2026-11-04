@@ -733,6 +733,16 @@
       "name": "craft",
       "shape": "craft(auswahl) int",
       "help": "Bestellt eine Fertigung und liefert die Kennung des Auftrags. Null heißt: kein Rezept."
+    },
+    {
+      "name": "give",
+      "shape": "give(spieler, auswahl) int",
+      "help": "Gibt einem Spieler etwas aus dem Lager ins Inventar. Was nicht passt, fällt vor seine Füße. Ist er nicht da, bleibt alles im Lager. Gibt zurück, wie viel ankam."
+    },
+    {
+      "name": "notify",
+      "shape": "notify(spieler, text) bool",
+      "help": "Zeigt dem Spieler eine kurze Nachricht über der Leiste. Gibt zurück, ob er da war."
     }
   ],
   "builtinEvents": [

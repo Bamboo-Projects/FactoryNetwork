@@ -209,6 +209,21 @@ Hinter dem Punkt eines Connectornamens steht:
   die Maschinen, die von sich aus nichts tun. Zurück kommt, ob der Klick
   angekommen ist; ein Fenster geht dabei nicht auf.
 
+Zwei Funktionen haben einen Spieler als Ziel, beim Namen genannt, so wie
+die Hallen-Ereignisse ihn mitgeben:
+
+- `give(spieler, 64 item:bread)` — aus dem Lager ins Inventar. Was nicht
+  passt, fällt vor die Füße. Ist der Spieler nicht da, bleibt alles im Lager.
+  Zurück kommt, wie viel ankam.
+- `notify(spieler, "Eisen knapp")` — eine kurze Zeile über der Leiste.
+
+```
+on hall_entered(halle, spieler) {
+    give(spieler, 16 item:bread)
+    notify(spieler, "Willkommen in " + halle)
+}
+```
+
 Vier Verben greifen in die Welt vor dem Connector. Was sie brauchen, nehmen
 sie aus dem Netzspeicher, was dabei herauskommt, legen sie hinein. **Jedes
 braucht ein Upgrade im Connector**, sonst warnt schon der Editor:

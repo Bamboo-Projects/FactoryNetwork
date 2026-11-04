@@ -1072,6 +1072,59 @@ public final class WorldHost implements Interpreter.Host {
                 (int) Math.max(1, Math.min(amount, 100_000)));
     }
 
+    /** A player on this server by name, or {@code null}. */
+    private net.minecraft.server.level.ServerPlayer playerNamed(String name) {
+        if (level == null || level.getServer() == null) {
+            return null;
+        }
+        return level.getServer().getPlayerList().getPlayerByName(name);
+    }
+
+    /**
+     * {@code give(spieler, 64 item:bread)} — from the store into the
+     * inventory; what does not fit falls at the player's feet. A player who
+     * is not online gets nothing, and the goods stay in the store.
+     */
+    @Override
+    public long giveTo(String name, Value what) {
+        var player = playerNamed(name);
+        if (player == null) {
+            return 0;
+        }
+        List<Item> items = itemsOf(what);
+        var test = conditionOf(what);
+        long wanted = Math.max(1, amountOf(what));
+        long given = 0;
+        while (given < wanted) {
+            var key = storage.firstPresent(items, test);
+            if (key == null) {
+                break;
+            }
+            long portion = Math.min(Math.min(wanted - given, key.maxStackSize()), storage.count(key));
+            long taken = storage.extract(key, portion);
+            if (taken <= 0) {
+                break;
+            }
+            ItemStack stack = key.toStack((int) taken);
+            if (!player.getInventory().add(stack) || !stack.isEmpty()) {
+                player.drop(stack, false);
+            }
+            given += taken;
+        }
+        return given;
+    }
+
+    /** {@code notify(spieler, "Eisen knapp")} — a line above the hotbar. */
+    @Override
+    public boolean notifyPlayer(String name, String text) {
+        var player = playerNamed(name);
+        if (player == null) {
+            return false;
+        }
+        player.sendOverlayMessage(net.minecraft.network.chat.Component.literal(text));
+        return true;
+    }
+
     /**
      * A machine's energy level.
      *

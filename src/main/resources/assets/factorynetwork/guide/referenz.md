@@ -107,6 +107,8 @@ Ohne Punkt davor, überall aufrufbar.
 | `ceil(zahl) int` | Aufgerundet. |
 | `random(von, bis) int` | Eine Zahl dazwischen, beide Enden eingeschlossen. |
 | `craft(auswahl) int` | Bestellt eine Fertigung und liefert die Kennung des Auftrags. Null heißt: kein Rezept. |
+| `give(spieler, auswahl) int` | Gibt einem Spieler etwas aus dem Lager ins Inventar. Was nicht passt, fällt vor seine Füße. Ist er nicht da, bleibt alles im Lager. Gibt zurück, wie viel ankam. |
+| `notify(spieler, text) bool` | Zeigt dem Spieler eine kurze Nachricht über der Leiste. Gibt zurück, ob er da war. |
 
 ## Was ein Gerät hat
 

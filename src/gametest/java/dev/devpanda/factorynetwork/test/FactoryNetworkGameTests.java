@@ -11993,6 +11993,28 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /** give to a player who is not online gives nothing, and the goods stay in the store. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void giveToAnAbsentPlayerKeepsTheGoods(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.BREAD, 5);
+        helper.assertTrue(entity.deploy("""
+                fn austeilen() { return give("niemand", 3 item:bread) }
+                fn melden() { return notify("niemand", "hallo") }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        var austeilen = entity.startFlow("austeilen", java.util.List.of());
+        helper.assertValueEqual(austeilen.status().name(), "DONE", "give läuft: " + austeilen.detail());
+        helper.assertValueEqual(((dev.devpanda.factorynetwork.runtime.Value.Int) austeilen.result()).value(),
+                0L, "niemand bekommt etwas");
+        helper.assertValueEqual(entity.storage().count(Items.BREAD), 5L, "das Brot bleibt im Lager");
+        var melden = entity.startFlow("melden", java.util.List.of());
+        helper.assertValueEqual(((dev.devpanda.factorynetwork.runtime.Value.Bool) melden.result()).value(),
+                false, "notify sagt, dass niemand da war");
+        helper.succeed();
+    }
+
     /** stock keeps an amount in the store: below it, the network crafts the difference. */
     @GameTest(template = EMPTY, timeoutTicks = 600)
     public static void stockKeepsAnAmountInTheStore(GameTestHelper helper) {

@@ -134,6 +134,16 @@ public final class Interpreter {
             return 0;
         }
 
+        /** Hands goods from the store to a player; returns how many arrived. */
+        default long giveTo(String player, Value what) {
+            throw new ScriptError("Ohne Welt gibt es niemanden, dem man etwas geben kann.");
+        }
+
+        /** A short note above the player's hotbar; whether they were there to read it. */
+        default boolean notifyPlayer(String player, String text) {
+            throw new ScriptError("Ohne Welt gibt es niemanden, dem man etwas sagen kann.");
+        }
+
         /**
          * How much energy a device holds, in FE.
          *
@@ -1608,6 +1618,18 @@ public final class Interpreter {
         if ("craft".equals(name)) {
             return new Value.Int(host.craft(arguments.isEmpty()
                     ? Value.Nothing.get() : arguments.get(0)));
+        }
+        // The player as a target: by name, as the hall events pass it.
+        if ("give".equals(name) || "notify".equals(name)) {
+            if (arguments.size() < 2 || !(arguments.get(0) instanceof Value.Text who)) {
+                throw new ScriptError(name + " braucht einen Spielernamen und dahinter, was.",
+                        "give".equals(name) ? "Zum Beispiel: give(spieler, 64 item:bread)"
+                                : "Zum Beispiel: notify(spieler, \"Eisen knapp\")");
+            }
+            if ("give".equals(name)) {
+                return new Value.Int(host.giveTo(who.value(), arguments.get(1)));
+            }
+            return new Value.Bool(host.notifyPlayer(who.value(), arguments.get(1).describe()));
         }
         boolean known = program.functions().stream()
                 .anyMatch(function -> function.name().equals(name));
