@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "factorynetwork:item/batch_card"
+    "model": "factorynetwork:item/work_upgrade"
   }
 }

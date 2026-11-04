@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "factorynetwork:item/acceleration_card"
+    "model": "factorynetwork:item/combat_upgrade"
   }
 }
