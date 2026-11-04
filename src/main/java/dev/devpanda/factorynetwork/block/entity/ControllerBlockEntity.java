@@ -902,6 +902,11 @@ public class ControllerBlockEntity extends BlockEntity {
      * more device, more throughput.
      */
     private void tickCrafting() {
+        // stock orders before the early exit: an empty job list is exactly
+        // when it has to look whether something is running low.
+        if (level != null && level.getGameTime() % CRAFT_INTERVAL == 0) {
+            keepStock();
+        }
         if (jobs.isEmpty()) {
             return;
         }
@@ -1001,6 +1006,39 @@ public class ControllerBlockEntity extends BlockEntity {
         refreshRecipes();
         return dev.devpanda.factorynetwork.crafting.CraftingPlanner.anyOf(
                 handCache, machineCache, declaredCache);
+    }
+
+    /**
+     * {@code stock 512 item:torch}: below that, a job for the difference.
+     *
+     * <p>What open jobs will still bring counts as there — otherwise every
+     * cycle would order the same difference again while the first job runs.
+     */
+    private void keepStock() {
+        if (program() == null) {
+            return;
+        }
+        for (Decl declaration : program().declarations()) {
+            if (!(declaration instanceof Decl.Stock stock)
+                    || !(stock.amount() instanceof Expr.Amount amount) || amount.count() == null) {
+                continue;
+            }
+            var items = dev.devpanda.factorynetwork.runtime.ItemSelection.resolve(amount.selection());
+            if (items.size() != 1) {
+                continue;
+            }
+            var item = items.get(0);
+            long coming = 0;
+            for (var job : jobs) {
+                if (job.target() == item) {
+                    coming += job.remaining();
+                }
+            }
+            long missing = amount.count() - storage.count(item) - coming;
+            if (missing > 0) {
+                requestCraft(item, (int) Math.min(Integer.MAX_VALUE, missing));
+            }
+        }
     }
 
     /** After this long on the same reason, {@code craft_stuck} fires: 30 seconds. */

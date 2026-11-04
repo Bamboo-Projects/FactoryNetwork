@@ -11993,6 +11993,31 @@ public final class FactoryNetworkGameTests {
                 .thenSucceed();
     }
 
+    /** stock keeps an amount in the store: below it, the network crafts the difference. */
+    @GameTest(template = EMPTY, timeoutTicks = 600)
+    public static void stockKeepsAnAmountInTheStore(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        helper.setBlock(controller.east().above(), FnBlocks.FABRICATOR.get());
+        entity.rebuildNetwork();
+        entity.storage().insert(Items.OAK_PLANKS, 64);
+        helper.assertTrue(entity.deploy("""
+                stock 3 item:chest
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+
+        helper.startSequence()
+                .thenIdle(200)
+                .thenExecute(() -> {
+                    helper.assertValueEqual(entity.storage().count(Items.CHEST), 3L,
+                            "drei Truhen gefertigt, nicht mehr");
+                    entity.storage().extract(Items.CHEST, 2);
+                })
+                .thenIdle(200)
+                .thenExecute(() -> helper.assertValueEqual(entity.storage().count(Items.CHEST), 3L,
+                        "zwei entnommen, zwei nachgefertigt"))
+                .thenSucceed();
+    }
+
     /**
      * Without ingredients the job waits and says what is missing.
      *

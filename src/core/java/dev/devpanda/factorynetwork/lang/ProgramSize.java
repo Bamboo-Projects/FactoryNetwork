@@ -53,6 +53,7 @@ public final class ProgramSize {
             // A store costs its entries. The one in front counts it itself; a
             // store with no braces content is thus not free, because it costs
             // the network one inventory read per tick.
+            case Decl.Stock ignored -> 0;
             case Decl.Store store -> (store.filter() == null ? 0 : 1)
                     + (store.priority() == 0 ? 0 : 1);
             // As with a group: one per line. A template of twenty selectors is

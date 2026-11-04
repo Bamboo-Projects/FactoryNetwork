@@ -17,7 +17,7 @@
   const keywords = ('if else for in while break continue return fn let true false it ' +
     'worker group multiblock event display on import global const power all from to ' +
     'filter maintain rate per when priority strategy overflow members devices title ' +
-    'row text progress indicator list button scale recipe at out store emit await ' +
+    'row text progress indicator list button scale recipe at out store stock emit await ' +
     'where timeout sleep move except storage crafting world network workers multiblocks').split(' ');
 
   window.fnSetBackground = url => { $('minecraft-background').src = url; };

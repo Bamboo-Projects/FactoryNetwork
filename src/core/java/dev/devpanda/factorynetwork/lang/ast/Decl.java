@@ -106,6 +106,20 @@ public sealed interface Decl {
         }
     }
 
+    /**
+     * {@code stock 512 item:torch} — keep this much in the store; when it
+     * falls below, the network crafts the difference on its own.
+     *
+     * @param amount the amount and the selection, as an {@link Expr.Amount}
+     */
+    record Stock(Expr amount, Span span) implements Decl {
+
+        @Override
+        public String name() {
+            return "stock";
+        }
+    }
+
     record Recipe(String name, String device, List<Part> inputs, List<Part> outputs,
                   Span span) implements Decl {
 

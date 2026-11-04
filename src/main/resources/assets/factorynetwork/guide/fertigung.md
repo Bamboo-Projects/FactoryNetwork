@@ -244,6 +244,18 @@ on craft_stuck(auftrag, grund) {
 }
 ```
 
+## Bestand halten
+
+```fn
+stock 512 item:torch
+stock 64 item:chest
+```
+
+Eine Zeile, und das Netz hält den Bestand: Fällt er unter die Zahl, bestellt
+es die Differenz selbst, wie ein Auftrag mit `craft`. Was offene Aufträge
+noch bringen, zählt schon mit, damit nicht jede Sekunde neu bestellt wird.
+Gemeint ist genau ein Gegenstand; eine Auswahl über ein Tag fertigt nichts.
+
 ## Der Plan im Tab
 
 Unter jedem Auftrag steht im Fertigungs-Tab sein Plan: jede Stufe mit Menge

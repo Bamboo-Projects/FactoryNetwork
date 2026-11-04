@@ -295,7 +295,7 @@ public final class Signatures {
      */
     public static final List<String> DECLARATIONS = List.of(
             "worker", "group", "filter", "multiblock", "event", "display", "recipe",
-            "store", "fn", "on", "global", "const");
+            "store", "stock", "fn", "on", "global", "const");
 
     /**
      * The declarations in which entries with a shape stand.

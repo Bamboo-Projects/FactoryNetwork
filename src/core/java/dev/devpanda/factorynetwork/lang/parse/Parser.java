@@ -86,6 +86,7 @@ public final class Parser {
             case FILTER -> parseFilterTemplate();
             case RECIPE -> parseRecipe();
             case STORE -> parseStore();
+            case STOCK -> parseStock();
             case IMPORT -> {
                 error(start.span(), "Module gibt es noch nicht.",
                         "import ist für später reserviert. Alle .mf-Dateien eines Projekts "
@@ -97,7 +98,7 @@ public final class Parser {
                 error(start.span(),
                         "Hier wird eine Deklaration erwartet, gefunden wurde " + describe(start) + ".",
                         "Auf oberster Ebene stehen worker, group, filter, multiblock, event, "
-                                + "display, recipe, fn, on, global und const. Anweisungen "
+                                + "display, recipe, store, stock, fn, on, global und const. Anweisungen "
                                 + "gehören in eine Funktion.");
                 recoverToDeclaration();
                 yield null;
@@ -115,6 +116,19 @@ public final class Parser {
      * its own name and runs <i>at</i> a machine; a store <i>is</i> the device,
      * and a second name next to it would be one too many.
      */
+    /** {@code stock 512 item:torch}: an amount and a selection, on one line. */
+    private Decl parseStock() {
+        Token keyword = advance();
+        Expr amount = parseExpression();
+        if (!(amount instanceof Expr.Amount counted) || counted.count() == null) {
+            error(amount.span(), "Nach stock fehlen Menge und Auswahl.",
+                    "Zum Beispiel: stock 512 item:torch");
+            recoverToDeclaration();
+            return new Decl.Invalid("stock", keyword.span());
+        }
+        return new Decl.Stock(amount, keyword.span().to(amount.span()));
+    }
+
     private Decl parseStore() {
         Token keyword = advance();
         String device = expectName("des Geräts");
