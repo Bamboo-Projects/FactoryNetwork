@@ -214,7 +214,10 @@ die Hallen-Ereignisse ihn mitgeben:
 
 - `give(spieler, 64 item:bread)` — aus dem Lager ins Inventar. Was nicht
   passt, fällt vor die Füße. Ist der Spieler nicht da, bleibt alles im Lager.
-  Zurück kommt, wie viel ankam.
+  Zurück kommt, wie viel ankam. Mit einer Zahl dahinter zuerst in dieses
+  Fach: `give(spieler, 64 item:torch, 8)` legt die Fackeln ganz rechts in die
+  Leiste. 0 bis 8 ist die Leiste, 9 bis 35 das Inventar darüber; ist das Fach
+  belegt, geht der Rest in die übrigen.
 - `notify(spieler, "Eisen knapp")` — eine kurze Zeile über der Leiste.
 
 ```

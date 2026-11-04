@@ -1150,7 +1150,7 @@ public final class WorldHost implements Interpreter.Host {
      * is not online gets nothing, and the goods stay in the store.
      */
     @Override
-    public long giveTo(String name, Value what) {
+    public long giveTo(String name, Value what, int slot) {
         var player = playerNamed(name);
         if (player == null) {
             return 0;
@@ -1170,7 +1170,22 @@ public final class WorldHost implements Interpreter.Host {
                 break;
             }
             ItemStack stack = key.toStack((int) taken);
-            if (!player.getInventory().add(stack) || !stack.isEmpty()) {
+            // The named slot first: empty, or holding the same thing with room.
+            if (slot >= 0) {
+                var inventory = player.getInventory();
+                ItemStack there = inventory.getItem(slot);
+                if (there.isEmpty()) {
+                    int fits = Math.min(stack.getCount(), stack.getMaxStackSize());
+                    inventory.setItem(slot, stack.split(fits));
+                } else if (ItemStack.isSameItemSameComponents(there, stack)) {
+                    int fits = Math.min(stack.getCount(), there.getMaxStackSize() - there.getCount());
+                    if (fits > 0) {
+                        there.grow(fits);
+                        stack.shrink(fits);
+                    }
+                }
+            }
+            if (!stack.isEmpty() && (!player.getInventory().add(stack) || !stack.isEmpty())) {
                 player.drop(stack, false);
             }
             given += taken;

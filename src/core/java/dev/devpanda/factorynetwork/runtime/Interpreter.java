@@ -135,7 +135,7 @@ public final class Interpreter {
         }
 
         /** Hands goods from the store to a player; returns how many arrived. */
-        default long giveTo(String player, Value what) {
+        default long giveTo(String player, Value what, int slot) {
             throw new ScriptError("Ohne Welt gibt es niemanden, dem man etwas geben kann.");
         }
 
@@ -1627,7 +1627,16 @@ public final class Interpreter {
                                 : "Zum Beispiel: notify(spieler, \"Eisen knapp\")");
             }
             if ("give".equals(name)) {
-                return new Value.Int(host.giveTo(who.value(), arguments.get(1)));
+                int slot = -1;
+                if (arguments.size() > 2) {
+                    if (!(arguments.get(2) instanceof Value.Int number)
+                            || number.value() < 0 || number.value() > 35) {
+                        throw new ScriptError("Das Fach bei give ist eine Zahl von 0 bis 35.",
+                                "0 bis 8 ist die Leiste, 9 bis 35 das Inventar darüber.");
+                    }
+                    slot = (int) number.value();
+                }
+                return new Value.Int(host.giveTo(who.value(), arguments.get(1), slot));
             }
             return new Value.Bool(host.notifyPlayer(who.value(), arguments.get(1).describe()));
         }

@@ -268,10 +268,11 @@ public final class Signatures {
             new Member("craft", "craft(auswahl) int",
                     "Bestellt eine Fertigung und liefert die Kennung des Auftrags. "
                             + "Null heißt: kein Rezept."),
-            new Member("give", "give(spieler, auswahl) int",
-                    "Gibt einem Spieler etwas aus dem Lager ins Inventar. Was nicht passt, "
-                            + "fällt vor seine Füße. Ist er nicht da, bleibt alles im Lager. "
-                            + "Gibt zurück, wie viel ankam."),
+            new Member("give", "give(spieler, auswahl), give(spieler, auswahl, fach) int",
+                    "Gibt einem Spieler etwas aus dem Lager ins Inventar, mit Fach zuerst "
+                            + "dorthin: 0 bis 8 ist die Leiste, 9 bis 35 das Inventar. Was nicht "
+                            + "passt, kommt in andere Fächer oder vor seine Füße. Ist er nicht da, "
+                            + "bleibt alles im Lager. Gibt zurück, wie viel ankam."),
             new Member("notify", "notify(spieler, text) bool",
                     "Zeigt dem Spieler eine kurze Nachricht über der Leiste. Gibt zurück, "
                             + "ob er da war."));
