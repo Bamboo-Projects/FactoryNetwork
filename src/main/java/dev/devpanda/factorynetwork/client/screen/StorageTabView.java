@@ -191,7 +191,9 @@ public class StorageTabView {
         String shown = search.isEmpty()
                 ? Component.translatable("screen.factorynetwork.terminal.search").getString()
                 : search.toString();
-        int colour = search.isEmpty() ? 0xFF6E7A70 : 0xFFA3D9A5;
+        // A selection the language does not understand stays red until it does.
+        int colour = search.isEmpty() ? 0xFF6E7A70
+                : ClientStorageView.queryInvalid() ? TerminalScreen.BAD : 0xFFA3D9A5;
         graphics.pose().pushMatrix();
         // Since 26.1 later strokes lie above earlier ones; no depth step needed.
         graphics.text(font, font.plainSubstrByWidth(shown, fieldWidth - 8),
@@ -465,7 +467,9 @@ public class StorageTabView {
     private void applySearch() {
         ClientStorageView.setQuery(search.toString());
         ClientStorageView.rememberSearch(search.toString());
-        if (FnClientConfig.searchMode().jeiSync() && ExternalSearch.available()) {
+        // JEI does not speak the language: a selection stays in the terminal.
+        if (FnClientConfig.searchMode().jeiSync() && ExternalSearch.available()
+                && !dev.devpanda.factorynetwork.client.StorageQuery.isLanguage(search.toString())) {
             ExternalSearch.setText(search.toString());
             lastJeiText = search.toString();
         }

@@ -847,6 +847,43 @@ public final class FactoryNetworkGameTests {
     }
 
     /**
+     * The terminal search speaks the language: whatever stands after filter
+     * finds the same stacks in the search field.
+     */
+    @GameTest(template = EMPTY, timeoutTicks = 40)
+    public static void theTerminalSearchReadsSelections(GameTestHelper helper) {
+        var enchantments = helper.getLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        ItemStack enchanted = new ItemStack(Items.DIAMOND_SWORD);
+        enchanted.enchant(enchantments.getOrThrow(
+                net.minecraft.world.item.enchantment.Enchantments.SHARPNESS), 2);
+        var query = dev.devpanda.factorynetwork.client.StorageQuery.of(
+                "item:diamond_sword enchanted:sharpness");
+        helper.assertTrue(query != null, "die Auswahl wird verstanden");
+        helper.assertTrue(query.matches(enchanted), "das verzauberte Schwert wird gefunden");
+        helper.assertTrue(!query.matches(new ItemStack(Items.DIAMOND_SWORD)),
+                "das schlichte nicht");
+
+        var except = dev.devpanda.factorynetwork.client.StorageQuery.of(
+                "tag:c/ingots except item:gold_ingot");
+        helper.assertTrue(except != null && except.matches(new ItemStack(Items.IRON_INGOT)),
+                "Eisen ist ein Barren");
+        helper.assertTrue(!except.matches(new ItemStack(Items.GOLD_INGOT)), "Gold ist ausgenommen");
+
+        var water = dev.devpanda.factorynetwork.client.StorageQuery.of("fluid:water");
+        helper.assertTrue(water != null
+                && water.matches(net.minecraft.world.level.material.Fluids.WATER), "Wasser");
+
+        helper.assertTrue(dev.devpanda.factorynetwork.client.StorageQuery.of("item:") == null,
+                "eine halbe Auswahl ist keine");
+        helper.assertTrue(dev.devpanda.factorynetwork.client.StorageQuery.of("3 + 4") == null,
+                "eine Rechnung ist keine Suche");
+        helper.assertTrue(!dev.devpanda.factorynetwork.client.StorageQuery.isLanguage("eisen"),
+                "Text bleibt Text");
+        helper.succeed();
+    }
+
+    /**
      * A filter with a data-component condition takes only the stacks that
      * carry it: of two diamond swords, the enchanted one moves and the plain
      * one stays. In the program, damage bounds count only what passes.

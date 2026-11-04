@@ -147,7 +147,13 @@ und nicht als Stapelzahl: Ein Netzbestand geht weit über vierundsechzig hinaus.
 
 - **Suchen** — das Feld links oben. Solange es tippt, gehören ihm alle Tasten;
   sonst stünde man nach dem „e" in „Eisenerz" wieder in der Welt. Der erste
-  Escape verlässt die Suche, der zweite das Terminal.
+  Escape verlässt die Suche, der zweite das Terminal. Text sucht im Namen,
+  `@mek` nach Mod — und **alles, was nach `filter` stehen darf, sucht auch
+  hier**: `tag:c/ingots except item:*_nugget`,
+  `item:diamond_sword enchanted:sharpness`, `fluid:water`. Sobald ein
+  Doppelpunkt im Feld steht, liest es die Sprache; versteht sie die Auswahl
+  nicht, wird der Text rot. JEI bekommt so eine Auswahl nicht mit, es kennt
+  sie nicht.
 - **Sortieren** — drei Knöpfe rechts daneben: **#** nach Menge, **A** nach
   Name, **M** nach Mod. Ein Klick auf den aktiven dreht die Richtung um; der
   Pfeil auf dem Knopf sagt, welche gerade gilt.

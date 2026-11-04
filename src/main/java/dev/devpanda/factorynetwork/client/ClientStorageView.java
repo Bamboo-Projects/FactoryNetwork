@@ -116,7 +116,16 @@ public final class ClientStorageView {
 
     public static void setQuery(String text) {
         query = text == null ? "" : text.trim().toLowerCase(Locale.ROOT);
+        language = StorageQuery.isLanguage(query) ? StorageQuery.of(query) : null;
         refilter();
+    }
+
+    /** The search in the language, or {@code null} for text and while it does not parse. */
+    private static StorageQuery language;
+
+    /** A search with a colon that the language does not understand: the field says so. */
+    public static boolean queryInvalid() {
+        return StorageQuery.isLanguage(query) && language == null;
     }
 
     /**
@@ -180,7 +189,9 @@ public final class ClientStorageView {
                     .getKey(key.item()).getNamespace();
             // A shorthand like "@mek" searches by the mod instead of by the
             // name — in a large pack that is the more common question.
-            boolean matches = query.isEmpty()
+            boolean matches = StorageQuery.isLanguage(query)
+                    ? language != null && language.matches(stack)
+                    : query.isEmpty()
                     || (query.startsWith("@") ? mod.contains(query.substring(1))
                                               : name.contains(query));
             if (matches) {
@@ -199,7 +210,9 @@ public final class ClientStorageView {
             String name = bucket.getHoverName().getString().toLowerCase(Locale.ROOT);
             String mod = net.minecraft.core.registries.BuiltInRegistries.FLUID
                     .getKey(fluid).getNamespace();
-            boolean matches = query.isEmpty()
+            boolean matches = StorageQuery.isLanguage(query)
+                    ? language != null && language.matches(fluid)
+                    : query.isEmpty()
                     || (query.startsWith("@") ? mod.contains(query.substring(1))
                                               : name.contains(query));
             if (matches) {
