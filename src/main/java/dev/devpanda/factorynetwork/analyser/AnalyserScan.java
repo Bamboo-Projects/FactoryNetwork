@@ -130,7 +130,49 @@ public final class AnalyserScan {
                 graph.connectorNames().size(), graph.cableCount(),
                 0, unnamed.size(), duplicates.size(), tight, full);
         return new AnalyserData(List.copyOf(nodes), List.copyOf(links), summary,
-                heatOf(controller, graph));
+                heatOf(controller, graph), floatingOf(controller, graph));
+    }
+
+    /** How many lines float above one machine; more would cover the factory. */
+    public static final int FLOATING_LINES = 8;
+
+    /**
+     * The values above the machines: every {@code display} whose name is a
+     * device's floats above the machine that device sees. No block, no
+     * texture — the analyser in hand is the goggles.
+     */
+    private static List<AnalyserData.Floating> floatingOf(ControllerBlockEntity controller,
+                                                          FactoryGraph graph) {
+        var program = controller.program();
+        if (program == null) {
+            return List.of();
+        }
+        List<AnalyserData.Floating> found = new ArrayList<>();
+        dev.devpanda.factorynetwork.runtime.DisplayValues values = null;
+        for (var declaration : program.declarations()) {
+            if (!(declaration instanceof dev.devpanda.factorynetwork.lang.ast.Decl.Display display)) {
+                continue;
+            }
+            var where = graph.connectors().get(display.name());
+            if (where == null || where.dimension() != null || where.side() == null) {
+                continue;
+            }
+            if (values == null) {
+                values = new dev.devpanda.factorynetwork.runtime.DisplayValues(graph,
+                        controller.storage(), controller.runtime(), controller.globals(),
+                        controller.getLevel()).withStores(controller.stores());
+            }
+            List<String> lines = new ArrayList<>();
+            for (var line : values.evaluate(display)) {
+                if (lines.size() >= FLOATING_LINES) {
+                    break;
+                }
+                lines.add(dev.devpanda.factorynetwork.block.entity.DisplayBlockEntity
+                        .format(line).text());
+            }
+            found.add(new AnalyserData.Floating(where.pos().relative(where.side()), lines));
+        }
+        return found;
     }
 
     /**

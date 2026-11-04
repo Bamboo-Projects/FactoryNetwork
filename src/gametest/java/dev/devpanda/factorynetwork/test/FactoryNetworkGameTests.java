@@ -1633,6 +1633,26 @@ public final class FactoryNetworkGameTests {
         helper.succeed();
     }
 
+    /** A display named like a device floats above its machine, for the analyser. */
+    @GameTest(template = EMPTY, timeoutTicks = 100)
+    public static void aDisplayNamedLikeAdeviceFloatsAboveIt(GameTestHelper helper) {
+        BlockPos controller = buildSetup(helper);
+        ControllerBlockEntity entity = controllerAt(helper, controller);
+        entity.rebuildNetwork();
+        helper.assertTrue(entity.deploy("""
+                display quarry_output {
+                    row "Kohle" 12
+                }
+                """), "Das Programm wurde nicht übernommen: " + entity.diagnostics());
+        var floating = dev.devpanda.factorynetwork.analyser.AnalyserScan.of(entity).floating();
+        helper.assertValueEqual(floating.size(), 1, "eine Tafel schwebt");
+        helper.assertValueEqual(floating.get(0).pos(),
+                helper.absolutePos(controller.east().north().north()), "über der Maschine");
+        helper.assertTrue(floating.get(0).lines().get(0).contains("12"),
+                "mit ihrem Wert: " + floating.get(0).lines());
+        helper.succeed();
+    }
+
     /**
      * The world verbs: mine puts the drops into the storage, place takes the
      * block from it, use spends bone meal on a crop, attack hits a creature
@@ -4119,12 +4139,16 @@ public final class FactoryNetworkGameTests {
                 new dev.devpanda.factorynetwork.analyser.AnalyserData.Summary(
                         3, 12, 1, 0, 0, 2, 1),
                 java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Heat(
-                        BlockPos.ZERO, 420)));
+                        BlockPos.ZERO, 420)),
+                java.util.List.of(new dev.devpanda.factorynetwork.analyser.AnalyserData.Floating(
+                        BlockPos.ZERO.above(), java.util.List.of("§7Kohle §f12"))));
         var netzZurueck = roundTrip(helper,
                 dev.devpanda.factorynetwork.network.packet.AnalyserDataPacket.STREAM_CODEC, netz);
         helper.assertValueEqual(netzZurueck.summary().fullLinks(), 1,
                 "Die siebte Zahl der Übersicht — sie passt nicht mehr in composite");
         helper.assertValueEqual(netzZurueck.heat().get(0).micros(), 420, "Das Wärmebild geht mit");
+        helper.assertValueEqual(netzZurueck.floating().get(0).lines().get(0), "§7Kohle §f12",
+                "Die Werte über der Maschine gehen mit");
         helper.assertValueEqual(netzZurueck.nodes().get(0).label(), "brecher", "Gerätename");
         helper.assertValueEqual(netzZurueck.links().get(0).load(), 8, "Kanallast der Strecke");
 

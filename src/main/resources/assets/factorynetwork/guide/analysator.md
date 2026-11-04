@@ -64,6 +64,11 @@ wandern kleine **türkise Päckchen**. Je voller die Leitung, desto mehr sind es
 So siehst du, was dein Programm gerade tut: Ein Worker, der steht, hat keine
 Päckchen auf seinem Weg.
 
+## Werte über den Maschinen
+
+Ein `display`, das wie ein Gerät heißt, schwebt mit dem Analysator in der
+Hand über dessen Maschine. Wie das geht, steht unter Anzeigen.
+
 ## Rechtsklick auf einen Connector sagt mehr
 
 Nicht am Würfel, sondern an der Maschine: Klick den Connector an, und über

@@ -44,6 +44,22 @@ Reiter *Anzeigen* des Terminals. Der Knopf wirkt an beiden Stellen.
 Ein Knopf darf etwas anstoßen, das wartet: Die Funktion dahinter wird ein
 Ablauf wie jeder andere und übersteht auch einen Serverneustart.
 
+## Werte über der Maschine
+
+Heißt ein `display` so wie ein Gerät, braucht es keine Tafel: Seine Zeilen
+schweben über der Maschine, solange du den **Analysator** in der Hand hältst.
+
+```
+display ofen_1 {
+    row "Kohle" ofen_1.count(item:coal)
+    progress "Erz" ofen_1.count(item:raw_iron) / 64.0
+}
+```
+
+Über dem Ofen steht dann „Kohle 12“ und der Balken, auch durch Wände
+hindurch. Mehr als acht Zeilen schweben nicht, sonst verdeckt die Schrift die
+Fabrik. Eine Tafel mit demselben Namen zeigt dasselbe zusätzlich.
+
 ## Gegenstände zeigen
 
 ```

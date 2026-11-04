@@ -24,7 +24,8 @@ import java.util.List;
  * would otherwise turn every touch of the tool into a transfer you can feel.
  */
 public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserData.Link> links,
-                                 AnalyserData.Summary summary, List<AnalyserData.Heat> heat)
+                                 AnalyserData.Summary summary, List<AnalyserData.Heat> heat,
+                                 List<AnalyserData.Floating> floating)
         implements CustomPacketPayload {
 
     public static final int MAX_NODES = 2048;
@@ -77,12 +78,21 @@ public record AnalyserDataPacket(List<AnalyserData.Node> nodes, List<AnalyserDat
                     ByteBufCodecs.VAR_INT, AnalyserData.Heat::micros,
                     AnalyserData.Heat::new);
 
+    private static final StreamCodec<RegistryFriendlyByteBuf, AnalyserData.Floating> FLOATING =
+            StreamCodec.composite(
+                    BlockPos.STREAM_CODEC, AnalyserData.Floating::pos,
+                    ByteBufCodecs.stringUtf8(256).apply(ByteBufCodecs.list(
+                            dev.devpanda.factorynetwork.analyser.AnalyserScan.FLOATING_LINES)),
+                    AnalyserData.Floating::lines,
+                    AnalyserData.Floating::new);
+
     public static final StreamCodec<RegistryFriendlyByteBuf, AnalyserDataPacket> STREAM_CODEC =
             StreamCodec.composite(
                     NODE.apply(ByteBufCodecs.list(MAX_NODES)), AnalyserDataPacket::nodes,
                     LINK.apply(ByteBufCodecs.list(MAX_LINKS)), AnalyserDataPacket::links,
                     SUMMARY, AnalyserDataPacket::summary,
                     HEAT.apply(ByteBufCodecs.list(MAX_NODES)), AnalyserDataPacket::heat,
+                    FLOATING.apply(ByteBufCodecs.list(256)), AnalyserDataPacket::floating,
                     AnalyserDataPacket::new);
 
     @Override

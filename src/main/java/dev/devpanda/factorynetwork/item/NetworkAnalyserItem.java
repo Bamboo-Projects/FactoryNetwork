@@ -130,7 +130,8 @@ public class NetworkAnalyserItem extends Item {
         }
         var data = AnalyserScan.of(controller);
         PacketDistributor.sendToPlayer(player,
-                new AnalyserDataPacket(data.nodes(), data.links(), data.summary(), data.heat()));
+                new AnalyserDataPacket(data.nodes(), data.links(), data.summary(), data.heat(),
+                        data.floating()));
     }
 
     /** The location this tool watches. */

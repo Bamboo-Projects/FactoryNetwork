@@ -19,7 +19,8 @@ public final class ClientAnalyserState {
     }
 
     public static void accept(AnalyserDataPacket packet) {
-        data = new AnalyserData(packet.nodes(), packet.links(), packet.summary(), packet.heat());
+        data = new AnalyserData(packet.nodes(), packet.links(), packet.summary(), packet.heat(),
+                packet.floating());
         lastUpdate = System.currentTimeMillis();
     }
 

@@ -12,7 +12,13 @@ import java.util.List;
  * is server state, and mirroring it would mean maintaining it twice.
  */
 public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary,
-                           List<Heat> heat) {
+                           List<Heat> heat, List<Floating> floating) {
+
+    /**
+     * A {@code display} named like a device, floating above its machine: the
+     * finished lines, as a display block would show them.
+     */
+    public record Floating(BlockPos pos, List<String> lines) {}
 
     /**
      * What a device costs the server: the dearest worker that reaches it, in
@@ -90,6 +96,6 @@ public record AnalyserData(List<Node> nodes, List<Link> links, Summary summary,
 
     public static AnalyserData empty() {
         return new AnalyserData(List.of(), List.of(),
-                new Summary(0, 0, 0, 0, 0, 0, 0), List.of());
+                new Summary(0, 0, 0, 0, 0, 0, 0), List.of(), List.of());
     }
 }
