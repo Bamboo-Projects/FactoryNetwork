@@ -2711,7 +2711,7 @@ public class ControllerBlockEntity extends BlockEntity {
     public DisplayValues displayValues() {
         return new DisplayValues(graph, storage, runtime, globals, level).withStores(stores)
                 .withCharts((name, index) -> {
-                    var points = chartPoints.get(name + "#" + index);
+                    var points = chartPoints.get(chartKey(name, index));
                     return points == null ? List.of() : List.copyOf(points);
                 });
     }
@@ -2721,6 +2721,25 @@ public class ControllerBlockEntity extends BlockEntity {
      * restart a chart starts empty and fills again.
      */
     private final Map<String, java.util.ArrayDeque<Double>> chartPoints = new HashMap<>();
+
+    /**
+     * A chart's key: display, place and its label. A changed program
+     * whose chart now shows something else starts a fresh series instead of
+     * drawing iron after bread.
+     */
+    private String chartKey(String display, int index) {
+        String shown = "";
+        if (program != null) {
+            for (Decl declaration : program.declarations()) {
+                if (declaration instanceof Decl.Display found && found.name().equals(display)
+                        && index < found.entries().size()) {
+                    var entry = found.entries().get(index);
+                    shown = entry.label();
+                }
+            }
+        }
+        return display + "#" + index + "#" + shown;
+    }
 
     /** Takes a point for every chart whose interval has come round. */
     private void tickCharts() {
@@ -2750,7 +2769,7 @@ public class ControllerBlockEntity extends BlockEntity {
                 if (point == null) {
                     continue;
                 }
-                var points = chartPoints.computeIfAbsent(display.name() + "#" + i,
+                var points = chartPoints.computeIfAbsent(chartKey(display.name(), i),
                         key -> new java.util.ArrayDeque<>());
                 points.addLast(point);
                 while (points.size() > DisplayValues.CHART_POINTS) {
