@@ -47,6 +47,8 @@ public class TerminalMenu extends AbstractContainerMenu {
     private final BlockPos position;
     /** How many grid rows the window has; fewer on a small screen. */
     private final int rows;
+    /** How many grid columns the window has; fewer on a narrow screen. */
+    private final int columns;
     private final Player owner;
 
     /**
@@ -140,18 +142,22 @@ public class TerminalMenu extends AbstractContainerMenu {
         // Only the client's slot positions are ever drawn; the server keeps the full layout.
         this.rows = inventory.player.level().isClientSide()
                 ? TerminalLayout.fittingRows.getAsInt() : TerminalLayout.GRID_ROWS;
+        this.columns = inventory.player.level().isClientSide()
+                ? TerminalLayout.fittingColumns.getAsInt() : TerminalLayout.GRID_COLUMNS;
         int shift = TerminalLayout.height(rows) - TerminalLayout.HEIGHT;
+        // The inventory stays centred in the narrower window.
+        int shiftX = (TerminalLayout.width(columns) - TerminalLayout.WIDTH) / 2;
 
         // Three rows of inventory
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(slotFor(inventory, column + row * 9 + 9,
-                        INV_X + column * SLOT_SIZE, INV_Y + shift + row * SLOT_SIZE));
+                        INV_X + shiftX + column * SLOT_SIZE, INV_Y + shift + row * SLOT_SIZE));
             }
         }
         // Hotbar
         for (int column = 0; column < 9; column++) {
-            addSlot(slotFor(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y + shift));
+            addSlot(slotFor(inventory, column, INV_X + shiftX + column * SLOT_SIZE, HOTBAR_Y + shift));
         }
 
         // From now on the player receives the network state — the status row
@@ -196,6 +202,11 @@ public class TerminalMenu extends AbstractContainerMenu {
     /** How many grid rows the window has. */
     public int rows() {
         return rows;
+    }
+
+    /** How many grid columns the window has. */
+    public int columns() {
+        return columns;
     }
 
     public BlockPos position() {

@@ -166,12 +166,20 @@ public class NetworkTabView {
         String rate = capacity > 0
                 ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity).getString()
                 : Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
-        graphics.text(font, rate, right - font.width(rate), line + 3,
-                TerminalScreen.TEXT, false);
-        String gesamt = Bandwidth.total(ClientTraffic.total());
-        graphics.text(font, gesamt,
-                right - 8 - font.width(rate) - font.width(gesamt), line + 3,
-                TerminalScreen.TEXT_DIM, false);
+        // In a narrow window the head row cannot hold all three: the total
+        // goes first, and if the rate still touches the power it moves into
+        // the curve below, where it belongs anyway.
+        int powerEnd = x + 3 + font.width(power) + 8;
+        boolean rateInCurve = right - font.width(rate) < powerEnd;
+        if (!rateInCurve) {
+            graphics.text(font, rate, right - font.width(rate), line + 3,
+                    TerminalScreen.TEXT, false);
+            String gesamt = Bandwidth.total(ClientTraffic.total());
+            int gesamtX = right - 8 - font.width(rate) - font.width(gesamt);
+            if (gesamtX >= powerEnd) {
+                graphics.text(font, gesamt, gesamtX, line + 3, TerminalScreen.TEXT_DIM, false);
+            }
+        }
 
         // And below it the curve across the full width.
         int sparkLeft = x + 3;
@@ -209,6 +217,10 @@ public class NetworkTabView {
                 : Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
         graphics.text(font, spitze, sparkLeft + 2, sparkTop + 1,
                 TerminalScreen.TEXT_FAINT, false);
+        if (rateInCurve) {
+            graphics.text(font, rate, right - 2 - font.width(rate), sparkTop + 1,
+                    TerminalScreen.TEXT, false);
+        }
 
         // A line below it separates the head from the content.
         graphics.fill(x + 3, line + HEAD_HEIGHT, x + width - 3, line + HEAD_HEIGHT + 1,

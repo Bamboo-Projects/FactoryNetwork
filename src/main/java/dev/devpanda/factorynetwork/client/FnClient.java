@@ -152,6 +152,9 @@ public final class FnClient {
         dev.devpanda.factorynetwork.client.menu.TerminalLayout.fittingRows = () ->
                 dev.devpanda.factorynetwork.client.menu.TerminalLayout.rowsFor(
                         net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight());
+        dev.devpanda.factorynetwork.client.menu.TerminalLayout.fittingColumns = () ->
+                dev.devpanda.factorynetwork.client.menu.TerminalLayout.columnsFor(
+                        net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledWidth());
         dev.devpanda.factorynetwork.item.ProgramDiskItem.openShare = () -> {
             var client = net.minecraft.client.Minecraft.getInstance();
             if (!dev.devpanda.factorynetwork.network.packet.ShareAllowedPacket.allowedHere()) {

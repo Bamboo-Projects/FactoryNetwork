@@ -43,11 +43,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     // The measurements live in TerminalLayout, because the menu needs them
     // too and runs on a server without graphics. Here only the short names.
-    static final int WIDTH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH;
     static final int SCREEN_X0 =
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X0;
-    static final int SCREEN_X1 =
-            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X1;
     static final int SCREEN_TOP =
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_TOP;
     static final int SCREEN_PAD =
@@ -57,10 +54,12 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.STATUS_ROW;
     static final int WORK_X = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_X;
     static final int WORK_Y = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_Y;
-    static final int WORK_W = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W;
 
     /** Height of the window, the work area and the pane: all follow the row count. */
     private final int windowHeight;
+    private final int windowWidth;
+    private final int screenX1;
+    private final int workW;
     private final int workH;
     private final int screenBottom;
 
@@ -99,8 +98,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private CodeTabView codeView;
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, WIDTH,
+        super(menu, inventory, title,
+                dev.devpanda.factorynetwork.client.menu.TerminalLayout.width(menu.columns()),
                 dev.devpanda.factorynetwork.client.menu.TerminalLayout.height(menu.rows()));
+        this.windowWidth = dev.devpanda.factorynetwork.client.menu.TerminalLayout.width(menu.columns());
+        int narrower = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH - windowWidth;
+        this.screenX1 = dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X1 - narrower;
+        this.workW = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W - narrower;
         this.windowHeight = dev.devpanda.factorynetwork.client.menu.TerminalLayout.height(menu.rows());
         this.workH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.workHeight(menu.rows());
         this.screenBottom = dev.devpanda.factorynetwork.client.menu.TerminalLayout.screenBottom(menu.rows());
@@ -111,15 +115,15 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     protected void init() {
         super.init();
         storageView = new StorageTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, workH);
-        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, workH);
+                workW, workH);
+        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, workH);
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, workH);
+                workW, workH);
         craftingView = new CraftingTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, workH);
-        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, workH);
+                workW, workH);
+        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, workH);
         codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, workH);
+                workW, workH);
         announceTab();
     }
 
@@ -172,14 +176,26 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        // The texture is drawn for the full row count; with fewer rows a strip
-        // of the plain pane is left out, so frame and inventory move up.
+        // The texture is drawn for the full size. With fewer rows a strip of
+        // plain pane is left out across, with fewer columns one on each side
+        // of the inventory, so the frame closes in and the inventory stays centred.
         int cut = WORK_Y + 30;
         int skip = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT - windowHeight;
-        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
-                leftPos, topPos, 0, 0, WIDTH, cut, 512, 512);
-        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
-                leftPos, topPos + cut, 0, cut + skip, WIDTH, windowHeight - cut, 512, 512);
+        int side = (dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH - windowWidth) / 2;
+        int[][] across = {{0, 0, cut}, {cut, cut + skip, windowHeight - cut}};
+        // The strips sit left and right of the inventory, where the sheet is plain.
+        int left = 20;
+        int right = 270;
+        // {target x, source u, width}
+        int[][] along = {{0, 0, left}, {left, left + side, right - left - side},
+                {right - side, right + side, windowWidth - (right - side)}};
+        for (int[] row : across) {
+            for (int[] column : along) {
+                graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
+                        leftPos + column[0], topPos + row[0], column[1], row[1], column[2], row[2],
+                        512, 512);
+            }
+        }
         drawTabs(graphics, mouseX, mouseY);
         switch (tab) {
             case STORAGE -> storageView.extractRenderState(graphics, mouseX, mouseY);
@@ -218,7 +234,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         for (TerminalTab candidate : tabs()) {
             labels += tabWidth(candidate);
         }
-        int room = SCREEN_X1 - (SCREEN_X0 + 6) - labels;
+        int room = screenX1 - (SCREEN_X0 + 6) - labels;
         // Fewer tabs, wider gaps: five labels should fill the bar and not
         // clump together on the left.
         int gaps = Math.max(1, tabs().size() - 1);
@@ -282,7 +298,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      */
     private void drawStatus(GuiGraphicsExtractor graphics) {
         int y = topPos + screenBottom - STATUS_ROW + 1;
-        int right = leftPos + SCREEN_X1 - 4;
+        int right = leftPos + screenX1 - 4;
         int left = leftPos + WORK_X + 1;
 
         var supply = dev.devpanda.factorynetwork.client.ClientFlowState.supply();
@@ -314,8 +330,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         if (platz < 20) {
             return;
         }
-        Component gekuerzt = FnFonts.mono(
-                font.plainSubstrByWidth(eigenes.getString(), platz));
+        // Measured in the font it is drawn in: cut by the default font, the
+        // wider mono text ran into the power reading on a narrow window.
+        String text = eigenes.getString();
+        while (!text.isEmpty() && font.width(FnFonts.mono(text)) > platz) {
+            text = text.substring(0, text.length() - 1);
+        }
+        Component gekuerzt = FnFonts.mono(text);
         graphics.text(font, gekuerzt, left, y + 2,
                 tab == TerminalTab.STORAGE && storageView.isFull() ? 0xFFD08A3C : TEXT_FAINT,
                 false);
@@ -334,7 +355,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private void renderStatusTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         int y = topPos + screenBottom - STATUS_ROW + 1;
         if (mouseY < y || mouseY >= y + STATUS_ROW
-                || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + SCREEN_X1) {
+                || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + screenX1) {
             return;
         }
         java.util.List<Component> lines = new java.util.ArrayList<>();
@@ -357,7 +378,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // The window title is in the tab bar; only the inventory is labelled,
         // as in every vanilla window.
-        graphics.text(font, playerInventoryTitle, (WIDTH - 9 * 18) / 2,
+        graphics.text(font, playerInventoryTitle, (windowWidth - 9 * 18) / 2,
                 inventoryLabelY, Widgets.CASE_TEXT, false);
     }
 

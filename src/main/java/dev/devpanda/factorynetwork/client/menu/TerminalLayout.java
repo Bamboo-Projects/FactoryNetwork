@@ -98,6 +98,29 @@ public final class TerminalLayout {
      */
     public static java.util.function.IntSupplier fittingRows = () -> GRID_ROWS;
 
+    /** Fewer columns than this and the tab labels no longer fit in one row. */
+    public static final int MIN_COLUMNS = 12;
+
+    /**
+     * Room the window leaves free on each side, for the item list of JEI. At
+     * GUI scale 4 the full width left JEI two columns; with this, five.
+     */
+    public static final int SIDE_ROOM = 110;
+
+    /** How many grid columns the client has room for; set by the client like {@link #fittingRows}. */
+    public static java.util.function.IntSupplier fittingColumns = () -> GRID_COLUMNS;
+
+    public static int width(int columns) {
+        return WIDTH - (GRID_COLUMNS - columns) * SLOT;
+    }
+
+    /** The most columns, at most {@link #GRID_COLUMNS}, that leave {@link #SIDE_ROOM} on each side. */
+    public static int columnsFor(int available) {
+        int missing = WIDTH + 2 * SIDE_ROOM - available;
+        int columns = missing <= 0 ? GRID_COLUMNS : GRID_COLUMNS - (missing + SLOT - 1) / SLOT;
+        return Math.max(MIN_COLUMNS, Math.min(GRID_COLUMNS, columns));
+    }
+
     public static int workHeight(int rows) {
         return SEARCH_ROW + 2 + rows * SLOT;
     }

@@ -35,8 +35,6 @@ public class StorageTabView {
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
     private static final int SLOT = 18;
-    private static final int COLUMNS = dev.devpanda.factorynetwork.client.menu
-            .TerminalLayout.GRID_COLUMNS;
     /**
      * Six rows, since the footer moved into the status line.
      *
@@ -52,6 +50,8 @@ public class StorageTabView {
     private final int height;
     /** Visible grid rows: nine, fewer on a small screen. */
     private final int rows;
+    /** Visible grid columns: seventeen, fewer on a narrow screen. */
+    private final int columns;
 
     private final StringBuilder search = new StringBuilder();
     private boolean searchFocused;
@@ -68,6 +68,9 @@ public class StorageTabView {
         this.height = height;
         // As many rows as the work area holds below the search row.
         this.rows = (height - 15) / SLOT;
+        // As many columns as the work area holds beside the scrollbar.
+        this.columns = dev.devpanda.factorynetwork.client.menu.TerminalLayout.GRID_COLUMNS
+                - (dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W - width) / SLOT;
         SearchMode mode = FnClientConfig.searchMode();
         String start = FnClientConfig.rememberSearch() ? ClientStorageView.lastSearch() : "";
         if (mode.jeiSync() && ExternalSearch.available()) {
@@ -91,7 +94,7 @@ public class StorageTabView {
     }
 
     private int maxScroll() {
-        int rows = (ClientStorageView.rows().size() + COLUMNS - 1) / COLUMNS;
+        int rows = (ClientStorageView.rows().size() + columns - 1) / columns;
         return Math.max(0, rows - this.rows);
     }
 
@@ -114,22 +117,22 @@ public class StorageTabView {
         // Grid background, one tile per cell. The texture holds eight rows and
         // the grid has nine; drawn as one piece, the last row stayed empty.
         for (int row = 0; row < this.rows; row++) {
-            for (int column = 0; column < COLUMNS; column++) {
+            for (int column = 0; column < columns; column++) {
                 graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GRID,
                         gridX() + column * SLOT, gridY() + row * SLOT, 0, 0, SLOT, SLOT, 512, 512);
             }
         }
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
-        int first = scrollRow * COLUMNS;
-        for (int index = 0; index < COLUMNS * this.rows; index++) {
+        int first = scrollRow * columns;
+        for (int index = 0; index < columns * this.rows; index++) {
             int position = first + index;
             if (position >= rows.size()) {
                 break;
             }
             ClientStorageView.Row row = rows.get(position);
-            int cellX = gridX() + (index % COLUMNS) * SLOT + 1;
-            int cellY = gridY() + (index / COLUMNS) * SLOT + 1;
+            int cellX = gridX() + (index % columns) * SLOT + 1;
+            int cellY = gridY() + (index / columns) * SLOT + 1;
 
             graphics.item(row.stack(), cellX, cellY);
             // The amount is shown as text beside it, not as a stack count: a
@@ -211,7 +214,7 @@ public class StorageTabView {
     }
 
     private void drawScrollbar(GuiGraphicsExtractor graphics) {
-        int trackX = gridX() + COLUMNS * SLOT + 2;
+        int trackX = gridX() + columns * SLOT + 2;
         int trackY = gridY();
         int trackH = this.rows * SLOT;
 
@@ -299,10 +302,10 @@ public class StorageTabView {
         // above the grid, where the sort buttons sit, counted as the first row.
         int column = (int) Math.floor((mouseX - gridX()) / SLOT);
         int row = (int) Math.floor((mouseY - gridY()) / SLOT);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= this.rows) {
+        if (column < 0 || column >= columns || row < 0 || row >= this.rows) {
             return false;
         }
-        int index = (scrollRow + row) * COLUMNS + column;
+        int index = (scrollRow + row) * columns + column;
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
 
         ItemStack carried = screen.getMenu().getCarried();
@@ -418,10 +421,10 @@ public class StorageTabView {
         // above the grid, where the sort buttons sit, counted as the first row.
         int column = (int) Math.floor((mouseX - gridX()) / SLOT);
         int row = (int) Math.floor((mouseY - gridY()) / SLOT);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= this.rows) {
+        if (column < 0 || column >= columns || row < 0 || row >= this.rows) {
             return null;
         }
-        int index = (scrollRow + row) * COLUMNS + column;
+        int index = (scrollRow + row) * columns + column;
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
         return index >= 0 && index < rows.size() ? rows.get(index) : null;
     }

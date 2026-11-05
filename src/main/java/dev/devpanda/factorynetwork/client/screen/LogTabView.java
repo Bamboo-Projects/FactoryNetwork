@@ -211,7 +211,12 @@ public class LogTabView {
 
         // Right-aligned and away from the filters: "Clear" is the only button
         // here that takes something away, and it should not sit next to the
-        // one you press often.
+        // one you press often. In a narrow window they would touch the
+        // filters; then they get a row of their own.
+        int actionsWide = actionWidth("clear") + 2 + actionWidth("copy");
+        if (left + 4 > x + width - 3 - actionsWide) {
+            line += LINE + 2;
+        }
         int right = x + width - 3;
         right = renderAction(graphics, right, line, "clear", mouseX, mouseY);
         renderAction(graphics, right - 2, line, "copy", mouseX, mouseY);
@@ -219,6 +224,10 @@ public class LogTabView {
     }
 
     /** A button on the right; returns where the next one may end. */
+    private int actionWidth(String key) {
+        return font.width(Component.translatable("screen.factorynetwork.terminal.log." + key)) + 6;
+    }
+
     private int renderAction(GuiGraphicsExtractor graphics, int right, int line,
                              String key, int mouseX, int mouseY) {
         String label = Component.translatable(
