@@ -25,15 +25,16 @@ class ShareClientTest {
     @Test
     @DisplayName("An update carries the key; a bound upload the proof, and only then a name")
     void updateCarriesKeyAndProofOnlyWhenAsked() {
-        var update = JsonParser.parseString(ShareClient.body("Erz", Map.of("main.mf", "x"), "abc", null, false))
+        var update = JsonParser.parseString(ShareClient.body("Erz", "", Map.of("main.mf", "x"), "abc", null, false))
                 .getAsJsonObject();
         assertEquals("abc", update.get("key").getAsString());
         assertFalse(update.has("auth"), "ohne Bindung kein Spielername");
-        var bound = JsonParser.parseString(ShareClient.body("Erz", Map.of("main.mf", "x"), null,
+        var bound = JsonParser.parseString(ShareClient.body("Erz", "Sortiert Erz", Map.of("main.mf", "x"), null,
                 new ShareClient.Proof("Dev", "00ff"), true)).getAsJsonObject();
         assertEquals("Dev", bound.getAsJsonObject("auth").get("username").getAsString());
         assertEquals(true, bound.get("bind").getAsBoolean());
         assertFalse(bound.has("key"));
+        assertEquals("Sortiert Erz", bound.get("description").getAsString());
     }
 
     @Test

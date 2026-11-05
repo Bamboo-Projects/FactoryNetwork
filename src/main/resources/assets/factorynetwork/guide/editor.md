@@ -171,7 +171,11 @@ Dateinamen. Einen Namen gibst du ihr am Amboss.
 ## Programme teilen
 
 Mit der Diskette in der Hand teilst du ein Programm mit allen, die
-FactoryNetwork spielen, ganz ohne Konto:
+FactoryNetwork spielen, ganz ohne Konto. **Rechtsklick in die Luft** mit der
+Diskette (oder `/fnshare`) öffnet das Fenster dafür: Unter **Entdecken**
+suchst du in Titeln und Beschreibungen, sortierst nach neu oder beliebt und
+holst ein Programm mit einem Klick auf die Diskette. Unter **Hochladen** gibst
+du Titel und Beschreibung ein. Dasselbe geht auch im Chat:
 
 - `/fnshare upload Erzsortierer` — lädt die Diskette hoch und gibt einen Code
   wie `FN-7K2Q9M` zurück. Ein Klick darauf kopiert ihn.

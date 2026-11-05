@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 public final class ShareClient {
 
     /** One entry of the public list. */
-    public record Listed(String code, String title, int files, int lines, int downloads) {
+    public record Listed(String code, String title, String summary, int files, int lines, int downloads) {
     }
 
     /** What an upload hands back: the code, the key for later updates, whether it is bound. */
@@ -58,7 +58,8 @@ public final class ShareClient {
     }
 
     /** A fetched program. */
-    public record Shared(String code, String title, Map<String, String> files) {
+    public record Shared(String code, String title, String description, Map<String, String> files,
+                         int downloads) {
     }
 
     private static final Gson GSON = new Gson();
@@ -77,14 +78,17 @@ public final class ShareClient {
 
     /** The JSON an upload sends. */
     public static String uploadBody(String title, Map<String, String> files) {
-        return body(title, files, null, null, false);
+        return body(title, "", files, null, null, false);
     }
 
     /** The JSON of an upload or update: never the player's name unless proof was asked for. */
-    public static String body(String title, Map<String, String> files, String key, Proof proof,
-                              boolean bind) {
+    public static String body(String title, String description, Map<String, String> files, String key,
+                              Proof proof, boolean bind) {
         JsonObject body = new JsonObject();
         body.addProperty("title", title);
+        if (description != null && !description.isBlank()) {
+            body.addProperty("description", description);
+        }
         body.add("files", GSON.toJsonTree(files));
         if (key != null && !key.isEmpty()) {
             body.addProperty("key", key);
@@ -101,33 +105,40 @@ public final class ShareClient {
         return body.toString();
     }
 
-    public static CompletableFuture<Uploaded> upload(String title, Map<String, String> files,
-                                                     Proof proof, boolean bind) {
+    public static CompletableFuture<Uploaded> upload(String title, String description,
+                                                     Map<String, String> files, Proof proof, boolean bind) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(base() + "/v1/programs"))
                 .timeout(Duration.ofSeconds(15))
                 .header("content-type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body(title, files, null, proof, bind)))
+                .POST(HttpRequest.BodyPublishers.ofString(body(title, description, files, null, proof, bind)))
                 .build();
         return send(request).thenApply(json -> new Uploaded(json.get("code").getAsString(),
                 json.get("key").getAsString(), json.get("bound").getAsBoolean()));
     }
 
     /** A new version under an existing code, with the disk's key or the bound account. */
-    public static CompletableFuture<Uploaded> update(String code, String title, Map<String, String> files,
-                                                     String key, Proof proof, boolean bind) {
+    public static CompletableFuture<Uploaded> update(String code, String title, String description,
+                                                     Map<String, String> files, String key, Proof proof,
+                                                     boolean bind) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(base() + "/v1/programs/"
                         + URLEncoder.encode(code, StandardCharsets.UTF_8)))
                 .timeout(Duration.ofSeconds(15))
                 .header("content-type", "application/json")
-                .PUT(HttpRequest.BodyPublishers.ofString(body(title, files, key, proof, bind)))
+                .PUT(HttpRequest.BodyPublishers.ofString(body(title, description, files, key, proof, bind)))
                 .build();
         return send(request).thenApply(json -> new Uploaded(json.get("code").getAsString(),
                 key == null ? "" : key, json.get("bound").getAsBoolean()));
     }
 
     public static CompletableFuture<Shared> fetch(String code) {
+        return fetch(code, false);
+    }
+
+    /** With {@code preview}, a look that does not count as fetched. */
+    public static CompletableFuture<Shared> fetch(String code, boolean preview) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(base() + "/v1/programs/"
-                        + URLEncoder.encode(code.trim().toUpperCase(java.util.Locale.ROOT), StandardCharsets.UTF_8)))
+                        + URLEncoder.encode(code.trim().toUpperCase(java.util.Locale.ROOT), StandardCharsets.UTF_8)
+                        + (preview ? "?preview=1" : "")))
                 .timeout(Duration.ofSeconds(15)).GET().build();
         return send(request).thenApply(ShareClient::parseShared);
     }
@@ -154,7 +165,9 @@ public final class ShareClient {
         Map<String, String> files = new LinkedHashMap<>();
         json.getAsJsonObject("files").entrySet()
                 .forEach(entry -> files.put(entry.getKey(), entry.getValue().getAsString()));
-        return new Shared(json.get("code").getAsString(), json.get("title").getAsString(), files);
+        return new Shared(json.get("code").getAsString(), json.get("title").getAsString(),
+                json.has("description") ? json.get("description").getAsString() : "", files,
+                json.has("downloads") ? json.get("downloads").getAsInt() : 0);
     }
 
     public static List<Listed> parseList(JsonObject json) {
@@ -163,6 +176,8 @@ public final class ShareClient {
         for (var element : programs) {
             JsonObject entry = element.getAsJsonObject();
             found.add(new Listed(entry.get("code").getAsString(), entry.get("title").getAsString(),
+                    entry.has("summary") && !entry.get("summary").isJsonNull()
+                            ? entry.get("summary").getAsString() : "",
                     entry.get("file_count").getAsInt(), entry.get("lines").getAsInt(),
                     entry.get("downloads").getAsInt()));
         }

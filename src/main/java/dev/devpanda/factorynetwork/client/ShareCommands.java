@@ -33,6 +33,11 @@ public final class ShareCommands {
 
     public static void register(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("fnshare")
+                .executes(context -> {
+                    later(() -> Minecraft.getInstance().setScreen(new dev.devpanda.factorynetwork.client
+                            .screen.ShareScreen()));
+                    return 1;
+                })
                 .then(Commands.literal("upload")
                         .then(Commands.literal("new")
                                 .then(Commands.argument("title", StringArgumentType.greedyString())
@@ -130,8 +135,8 @@ public final class ShareCommands {
                     }
                 })
                 .thenCompose(proof -> share == null
-                        ? ShareClient.upload(title, program.files(), proof, bind)
-                        : ShareClient.update(share.code(), title, program.files(), share.key(), proof, bind))
+                        ? ShareClient.upload(title, "", program.files(), proof, bind)
+                        : ShareClient.update(share.code(), title, "", program.files(), share.key(), proof, bind))
                 .whenComplete((uploaded, error) -> later(() -> {
                     if (error != null) {
                         failed(error);
@@ -169,7 +174,7 @@ public final class ShareCommands {
                                 "message.factorynetwork.share.no_account").getString(), error);
                     }
                 })
-                .thenCompose(proof -> ShareClient.update(code.toUpperCase(java.util.Locale.ROOT), title,
+                .thenCompose(proof -> ShareClient.update(code.toUpperCase(java.util.Locale.ROOT), title, "",
                         program.files(), "", proof, false))
                 .whenComplete((uploaded, error) -> later(() -> {
                     if (error != null) {

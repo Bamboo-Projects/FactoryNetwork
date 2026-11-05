@@ -37,8 +37,25 @@ public class ProgramDiskItem extends Item {
     /** The lore shows at most this many file names; more would be a wall of text. */
     private static final int LORE_FILES = 6;
 
+    /**
+     * Opens the share window on the client; set by the client at start, so
+     * that this class names nothing of the client.
+     */
+    public static Runnable openShare = () -> { };
+
     public ProgramDiskItem(Properties properties) {
         super(properties);
+    }
+
+    /** Right-click into the air: the share window. */
+    @Override
+    public net.minecraft.world.InteractionResult use(net.minecraft.world.level.Level level,
+                                                     net.minecraft.world.entity.player.Player player,
+                                                     net.minecraft.world.InteractionHand hand) {
+        if (level.isClientSide()) {
+            openShare.run();
+        }
+        return net.minecraft.world.InteractionResult.SUCCESS;
     }
 
     /** The program on this disk, or {@code null} if it is blank. */

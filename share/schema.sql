@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS programs (
   code TEXT PRIMARY KEY,
   title TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
   files TEXT NOT NULL,
   file_count INTEGER NOT NULL,
   lines INTEGER NOT NULL,

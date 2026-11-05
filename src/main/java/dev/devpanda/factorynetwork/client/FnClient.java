@@ -149,6 +149,9 @@ public final class FnClient {
             WebBridge.registerCommands(event);
         }
         ShareCommands.register(event);
+        dev.devpanda.factorynetwork.item.ProgramDiskItem.openShare = () ->
+                net.minecraft.client.Minecraft.getInstance().setScreen(
+                        new dev.devpanda.factorynetwork.client.screen.ShareScreen());
     }
 
     private FnClient() {

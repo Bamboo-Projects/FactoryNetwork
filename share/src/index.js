@@ -14,6 +14,7 @@
 const MAX_FILES = 64;
 const MAX_BYTES = 256 * 1024;
 const MAX_TITLE = 60;
+const MAX_DESCRIPTION = 1000;
 const PAGE = 20;
 const HIDE_AFTER_REPORTS = 3;
 const FILE_NAME = /^([a-z0-9_]{1,32}\/)*[a-z0-9_]{1,32}\.mf$/;
@@ -35,7 +36,8 @@ export default {
         return await list(url, env);
       }
       if (parts.length === 3 && request.method === "GET") {
-        return await fetchOne(parts[2], env);
+        // ?preview=1 is a look in the browser of the game: it does not count as fetched.
+        return await fetchOne(parts[2], env, url.searchParams.get("preview") !== "1");
       }
       if (parts.length === 3 && request.method === "PUT") {
         return await update(parts[2], request, env);
@@ -72,6 +74,8 @@ export function validate(body) {
   if (!body || typeof body !== "object") return "body must be an object";
   if (typeof body.title !== "string" || body.title.trim().length === 0) return "title missing";
   if (body.title.length > MAX_TITLE) return "title too long";
+  if (body.description !== undefined && typeof body.description !== "string") return "description is not text";
+  if ((body.description || "").length > MAX_DESCRIPTION) return "description too long";
   if (!body.files || typeof body.files !== "object") return "files missing";
   const names = Object.keys(body.files);
   if (names.length === 0 || names.length > MAX_FILES) return "between 1 and 64 files";
@@ -142,8 +146,8 @@ async function upload(request, env) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = newCode();
     const result = await env.DB.prepare(
-      "INSERT OR IGNORE INTO programs (code, title, files, file_count, lines, created, key_hash, owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(code, body.title.trim(), files, fileCount, lines, Date.now(), keyHash, owner).run();
+      "INSERT OR IGNORE INTO programs (code, title, description, files, file_count, lines, created, key_hash, owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(code, body.title.trim(), (body.description || "").trim(), files, fileCount, lines, Date.now(), keyHash, owner).run();
     if (result.meta.changes === 1) return json({ code, key, bound: owner !== null }, 201);
   }
   return json({ error: "no free code" }, 503);
@@ -166,28 +170,31 @@ async function update(code, request, env) {
   const owner = body.bind && player ? player : row.owner;
   const { files, fileCount, lines } = counts(body.files);
   await env.DB.prepare(
-    "UPDATE programs SET title = ?, files = ?, file_count = ?, lines = ?, updated = ?, owner = ? WHERE code = ?"
-  ).bind(body.title.trim(), files, fileCount, lines, Date.now(), owner, row.code).run();
+    "UPDATE programs SET title = ?, description = ?, files = ?, file_count = ?, lines = ?, updated = ?, owner = ? WHERE code = ?"
+  ).bind(body.title.trim(), (body.description || "").trim(), files, fileCount, lines, Date.now(), owner, row.code).run();
   return json({ code: row.code, bound: owner !== null });
 }
 
-async function fetchOne(code, env) {
+async function fetchOne(code, env, counts) {
   const row = await env.DB.prepare(
-    "SELECT code, title, files, created, updated, downloads FROM programs WHERE code = ?"
+    "SELECT code, title, description, files, created, updated, downloads FROM programs WHERE code = ?"
   ).bind(code.toUpperCase()).first();
   if (!row) return json({ error: "unknown code" }, 404);
-  await env.DB.prepare("UPDATE programs SET downloads = downloads + 1 WHERE code = ?").bind(row.code).run();
-  return json({ code: row.code, title: row.title, files: JSON.parse(row.files),
-    created: row.created, updated: row.updated, downloads: row.downloads + 1 });
+  if (counts) {
+    await env.DB.prepare("UPDATE programs SET downloads = downloads + 1 WHERE code = ?").bind(row.code).run();
+  }
+  return json({ code: row.code, title: row.title, description: row.description || "",
+    files: JSON.parse(row.files), created: row.created, updated: row.updated,
+    downloads: row.downloads + (counts ? 1 : 0) });
 }
 
 async function list(url, env) {
   const sort = url.searchParams.get("sort") === "popular" ? "downloads DESC, created DESC" : "created DESC";
   const page = Math.max(0, parseInt(url.searchParams.get("page") || "0", 10) || 0);
   const query = (url.searchParams.get("q") || "").trim().slice(0, 40);
-  const where = query ? "hidden = 0 AND title LIKE ?" : "hidden = 0";
+  const where = query ? "hidden = 0 AND (title LIKE ?1 OR description LIKE ?1)" : "hidden = 0";
   const statement = env.DB.prepare(
-    `SELECT code, title, file_count, lines, downloads, created FROM programs WHERE ${where} ORDER BY ${sort} LIMIT ? OFFSET ?`
+    `SELECT code, title, substr(description, 1, 140) AS summary, file_count, lines, downloads, created FROM programs WHERE ${where} ORDER BY ${sort} LIMIT ? OFFSET ?`
   );
   const bound = query
     ? statement.bind("%" + query.replace(/[%_]/g, "") + "%", PAGE, page * PAGE)
