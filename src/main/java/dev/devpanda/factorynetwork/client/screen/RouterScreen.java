@@ -114,11 +114,16 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         // Below the sides, what the router costs: one tick. Without this line
         // the delay would be an effect with no visible cause — and someone who
         // cleanly separates their network would not know what they pay for.
+        // The short form fits the window; the reason comes on hover. The
+        // long line ran out past the right edge.
         graphics.text(font, Component.translatable(
-                        "screen.factorynetwork.router.latency",
+                        "jade.factorynetwork.router.latency",
                         dev.devpanda.factorynetwork.network.Latency.PER_HOP),
-                leftPos + 9, topPos + ROW_TOP + Direction.values().length * ROW_HEIGHT + 4,
-                Widgets.CASE_TEXT_DIM, false);
+                leftPos + 9, latencyY(), Widgets.CASE_TEXT_DIM, false);
+    }
+
+    private int latencyY() {
+        return topPos + ROW_TOP + Direction.values().length * ROW_HEIGHT + 4;
     }
 
     @Override
@@ -137,6 +142,11 @@ public class RouterScreen extends AbstractContainerScreen<RouterMenu> {
         } else if (lane == 0) {
             graphics.setTooltipForNextFrame(
                     Component.translatable("screen.factorynetwork.router.off"), mouseX, mouseY);
+        } else if (mouseY >= latencyY() - 1 && mouseY < latencyY() + 9
+                && mouseX >= leftPos + 9 && mouseX < leftPos + imageWidth - 9) {
+            graphics.setTooltipForNextFrame(Component.translatable(
+                    "screen.factorynetwork.router.latency",
+                    dev.devpanda.factorynetwork.network.Latency.PER_HOP), mouseX, mouseY);
         }
     }
 

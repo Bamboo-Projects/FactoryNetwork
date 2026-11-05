@@ -205,10 +205,10 @@ public class NameScreen extends AbstractContainerScreen<NameMenu> {
 
         int buttons = y + FIELD + 3 + LINE + 4;
         int half = (width - 4) / 2;
-        addRenderableWidget(Button.builder(
+        addRenderableWidget(DarkButton.dark(
                 Component.translatable("screen.factorynetwork.name.apply"),
                 button -> confirm()).bounds(left, buttons, half, BUTTON).build());
-        addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),
+        addRenderableWidget(DarkButton.dark(Component.translatable("gui.cancel"),
                 button -> onClose()).bounds(left + width - half, buttons, half, BUTTON).build());
         onTyped(input.getValue());
     }

@@ -36,8 +36,6 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
-    private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath(
-            FactoryNetwork.MOD_ID, "textures/gui/terminal.png");
     private static final Identifier WIDGETS = Identifier.fromNamespaceAndPath(
             FactoryNetwork.MOD_ID, "textures/gui/widgets.png");
 
@@ -87,6 +85,16 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     /** Buttons in the screen: raised metal, lighter on hover. */
     static final int BUTTON = 0xFF232B27;
+
+    // The casing and the pane. The pane colours are the ones the old texture had.
+    static final int FRAME_EDGE = 0xFF080A09;
+    static final int FRAME_LIGHT = 0xFF3A4540;
+    static final int FRAME_SHADE = 0xFF141917;
+    static final int FRAME_BODY = 0xFF262E2A;
+    static final int PANE_EDGE = 0xFF080A09;
+    static final int PANE_BEVEL = 0xFF343E38;
+    static final int PANE = 0xFF181E1B;
+    static final int WELL = 0xFF141917;
     static final int BUTTON_HOVER = 0xFF39443D;
 
     private TerminalTab tab = TerminalTab.STORAGE;
@@ -116,14 +124,16 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         super.init();
         storageView = new StorageTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
                 workW, workH);
-        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, workH);
+        // Without the inventory the pane reaches down to the casing.
+        int tallH = windowHeight - 6 - STATUS_ROW - 3 - WORK_Y;
+        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, tallH);
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                workW, workH);
+                workW, tallH);
         craftingView = new CraftingTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                workW, workH);
-        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, workH);
+                workW, tallH);
+        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, workW, tallH);
         codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                workW, workH);
+                workW, tallH);
         announceTab();
     }
 
@@ -176,26 +186,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        // The texture is drawn for the full size. With fewer rows a strip of
-        // plain pane is left out across, with fewer columns one on each side
-        // of the inventory, so the frame closes in and the inventory stays centred.
-        int cut = WORK_Y + 30;
-        int skip = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT - windowHeight;
-        int side = (dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH - windowWidth) / 2;
-        int[][] across = {{0, 0, cut}, {cut, cut + skip, windowHeight - cut}};
-        // The strips sit left and right of the inventory, where the sheet is plain.
-        int left = 20;
-        int right = 270;
-        // {target x, source u, width}
-        int[][] along = {{0, 0, left}, {left, left + side, right - left - side},
-                {right - side, right + side, windowWidth - (right - side)}};
-        for (int[] row : across) {
-            for (int[] column : along) {
-                graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
-                        leftPos + column[0], topPos + row[0], column[1], row[1], column[2], row[2],
-                        512, 512);
-            }
-        }
+        menu.setInventoryVisible(tab == TerminalTab.STORAGE);
+        drawFrame(graphics);
         drawTabs(graphics, mouseX, mouseY);
         switch (tab) {
             case STORAGE -> storageView.extractRenderState(graphics, mouseX, mouseY);
@@ -297,7 +289,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * I had measured only the right one, and they slid into each other.
      */
     private void drawStatus(GuiGraphicsExtractor graphics) {
-        int y = topPos + screenBottom - STATUS_ROW + 1;
+        int y = statusTop();
         int right = leftPos + screenX1 - 4;
         int left = leftPos + WORK_X + 1;
 
@@ -352,8 +344,63 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     }
 
     /** On hover over the status line, it shows what the numbers mean. */
+    /**
+     * The casing, drawn rather than taken from a texture.
+     *
+     * <p>Dark like the pane: the light vanilla casing around a dark screen
+     * looked like two windows in one. Drawn, because the window changes size
+     * with the screen and with the tab, and a texture would have to be cut
+     * into pieces for every one of those sizes.
+     */
+    private void drawFrame(GuiGraphicsExtractor graphics) {
+        int x0 = leftPos;
+        int y0 = topPos;
+        int x1 = leftPos + windowWidth;
+        int y1 = topPos + windowHeight;
+        // Casing: dark edge, a light line top and left, the body.
+        graphics.fill(x0, y0, x1, y1, FRAME_EDGE);
+        graphics.fill(x0 + 1, y0 + 1, x1 - 1, y1 - 1, FRAME_LIGHT);
+        graphics.fill(x0 + 2, y0 + 2, x1 - 1, y1 - 1, FRAME_SHADE);
+        graphics.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, FRAME_BODY);
+
+        // The pane, sunk into the casing.
+        int px0 = leftPos + SCREEN_X0 - 1;
+        int py0 = topPos + SCREEN_TOP - 1;
+        int px1 = leftPos + screenX1 + 2;
+        int py1 = topPos + paneBottom() + 1;
+        graphics.fill(px0, py0, px1, py1, PANE_EDGE);
+        graphics.fill(px0 + 1, py0 + 1, px1 - 1, py1 - 1, PANE_BEVEL);
+        graphics.fill(px0 + 2, py0 + 2, px1 - 2, py1 - 2, PANE);
+        // The status band along the bottom of the pane.
+        graphics.fill(px0 + 2, statusTop(), px1 - 2, py1 - 2, PANE_EDGE);
+
+        if (tab == TerminalTab.STORAGE) {
+            // The wells under the player slots, sunk like the pane.
+            for (net.minecraft.world.inventory.Slot slot : menu.slots) {
+                int sx = leftPos + slot.x;
+                int sy = topPos + slot.y;
+                graphics.fill(sx - 1, sy - 1, sx + 17, sy + 17, PANE_BEVEL);
+                graphics.fill(sx - 1, sy - 1, sx + 16, sy + 16, PANE_EDGE);
+                graphics.fill(sx, sy, sx + 16, sy + 16, WELL);
+            }
+        }
+    }
+
+    /**
+     * Where the pane ends. The storage tab leaves room for the player
+     * inventory below; every other tab takes the whole height.
+     */
+    private int paneBottom() {
+        return tab == TerminalTab.STORAGE ? screenBottom + 1 : windowHeight - 6;
+    }
+
+    /** The top of the status band, the last row inside the pane. */
+    private int statusTop() {
+        return topPos + paneBottom() - STATUS_ROW;
+    }
+
     private void renderStatusTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        int y = topPos + screenBottom - STATUS_ROW + 1;
+        int y = statusTop();
         if (mouseY < y || mouseY >= y + STATUS_ROW
                 || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + screenX1) {
             return;
@@ -377,9 +424,11 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     protected void extractLabels(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         // The window title is in the tab bar; only the inventory is labelled,
-        // as in every vanilla window.
-        graphics.text(font, playerInventoryTitle, (windowWidth - 9 * 18) / 2,
-                inventoryLabelY, Widgets.CASE_TEXT, false);
+        // as in every vanilla window, and only where it is shown.
+        if (tab == TerminalTab.STORAGE) {
+            graphics.text(font, playerInventoryTitle, (windowWidth - 9 * 18) / 2,
+                    inventoryLabelY, TEXT_DIM, false);
+        }
     }
 
     /**

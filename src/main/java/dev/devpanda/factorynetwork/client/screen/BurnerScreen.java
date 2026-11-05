@@ -41,7 +41,9 @@ public class BurnerScreen extends AbstractContainerScreen<BurnerMenu> {
 
     public BurnerScreen(BurnerMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title, 176, 166);
-        this.inventoryLabelY = this.imageHeight - 94;
+        // Two pixels lower than vanilla: the reserve bar ends where the
+        // label would start.
+        this.inventoryLabelY = this.imageHeight - 92;
     }
 
     @Override

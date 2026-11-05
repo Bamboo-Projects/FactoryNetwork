@@ -74,10 +74,12 @@ public class ShareScreen extends Screen {
     protected void init() {
         left = (width - WIDTH) / 2;
         top = (height - HEIGHT) / 2;
-        addRenderableWidget(Button.builder(Component.translatable("screen.factorynetwork.share.tab.browse"),
-                button -> switchTo(Tab.BROWSE)).bounds(left + PAD, top + PAD, 80, 16).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.factorynetwork.share.tab.upload"),
-                button -> switchTo(Tab.UPLOAD)).bounds(left + PAD + 84, top + PAD, 80, 16).build());
+        addRenderableWidget(DarkButton.dark(Component.translatable("screen.factorynetwork.share.tab.browse"),
+                button -> switchTo(Tab.BROWSE)).bounds(left + PAD, top + PAD, 80, 16).build()
+                .selected(tab == Tab.BROWSE));
+        addRenderableWidget(DarkButton.dark(Component.translatable("screen.factorynetwork.share.tab.upload"),
+                button -> switchTo(Tab.UPLOAD)).bounds(left + PAD + 84, top + PAD, 80, 16).build()
+                .selected(tab == Tab.UPLOAD));
         if (tab == Tab.BROWSE) {
             initBrowse();
         } else {
@@ -116,7 +118,7 @@ public class ShareScreen extends Screen {
             typedAt = System.currentTimeMillis();
         });
         addRenderableWidget(search);
-        addRenderableWidget(Button.builder(Component.translatable(popular
+        addRenderableWidget(DarkButton.dark(Component.translatable(popular
                         ? "screen.factorynetwork.share.sort.popular" : "screen.factorynetwork.share.sort.new"),
                 button -> {
                     popular = !popular;
@@ -125,13 +127,13 @@ public class ShareScreen extends Screen {
                     load();
                 }).bounds(left + PAD + 204, y, 70, 16).build());
         int below = listTop() + ROWS * ROW + 4;
-        addRenderableWidget(Button.builder(Component.literal("<"), button -> {
+        addRenderableWidget(DarkButton.dark(Component.literal("<"), button -> {
             if (page > 0) {
                 page--;
                 load();
             }
         }).bounds(left + PAD, below, 20, 16).build());
-        addRenderableWidget(Button.builder(Component.literal(">"), button -> {
+        addRenderableWidget(DarkButton.dark(Component.literal(">"), button -> {
             if (entries.size() >= 20) {
                 page++;
                 load();
@@ -139,11 +141,11 @@ public class ShareScreen extends Screen {
         }).bounds(left + PAD + LIST_WIDTH - 20, below, 20, 16).build());
         int detailLeft = left + PAD + LIST_WIDTH + 10;
         int detailWidth = WIDTH - LIST_WIDTH - 2 * PAD - 10;
-        Button fetch = Button.builder(Component.translatable("screen.factorynetwork.share.fetch"),
+        Button fetch = DarkButton.dark(Component.translatable("screen.factorynetwork.share.fetch"),
                 button -> fetchSelected()).bounds(detailLeft, below, detailWidth - 64, 16).build();
         fetch.active = detail != null && holdsDisk();
         addRenderableWidget(fetch);
-        Button report = Button.builder(Component.translatable("screen.factorynetwork.share.report"),
+        Button report = DarkButton.dark(Component.translatable("screen.factorynetwork.share.report"),
                 button -> reportSelected()).bounds(detailLeft + detailWidth - 60, below, 60, 16).build();
         report.active = detail != null;
         addRenderableWidget(report);
@@ -246,7 +248,7 @@ public class ShareScreen extends Screen {
         bind = Checkbox.builder(Component.translatable("screen.factorynetwork.share.upload.bind"), font)
                 .pos(x + (share != null ? fieldWidth / 2 : 0), checks).build();
         addRenderableWidget(bind);
-        Button send = Button.builder(Component.translatable(share != null
+        Button send = DarkButton.dark(Component.translatable(share != null
                         ? "screen.factorynetwork.share.upload.send_update" : "screen.factorynetwork.share.upload.send"),
                 button -> upload()).bounds(x, checks + 24, fieldWidth, 18).build();
         send.active = ProgramDiskItem.read(disk()) != null && !busy;

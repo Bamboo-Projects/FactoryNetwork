@@ -182,14 +182,38 @@ public class TerminalMenu extends AbstractContainerMenu {
      */
     private Slot slotFor(Inventory inventory, int index, int x, int y) {
         if (device == null || index != deviceSlot) {
-            return new Slot(inventory, index, x, y);
+            return new InventorySlot(inventory, index, x, y);
         }
-        return new Slot(inventory, index, x, y) {
+        return new InventorySlot(inventory, index, x, y) {
             @Override
             public boolean mayPickup(Player player) {
                 return false;
             }
         };
+    }
+
+    /**
+     * Whether the player inventory is shown. Only the storage tab needs it;
+     * the other tabs take its room. Client only: the server keeps every slot
+     * active, so nothing about what may be moved changes.
+     */
+    private boolean inventoryVisible = true;
+
+    public void setInventoryVisible(boolean visible) {
+        inventoryVisible = visible;
+    }
+
+    /** A player slot that is neither drawn nor clickable while the inventory is hidden. */
+    private class InventorySlot extends Slot {
+
+        InventorySlot(Inventory inventory, int index, int x, int y) {
+            super(inventory, index, x, y);
+        }
+
+        @Override
+        public boolean isActive() {
+            return inventoryVisible;
+        }
     }
 
     /** Is the device this window is open with at this slot in the window? */
