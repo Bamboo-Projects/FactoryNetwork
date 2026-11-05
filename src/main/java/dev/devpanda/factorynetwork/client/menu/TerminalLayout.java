@@ -84,6 +84,39 @@ public final class TerminalLayout {
     public static final int INV_Y = HEIGHT - 82;
     public static final int HOTBAR_Y = HEIGHT - 24;
 
+    /** Fewer rows than this and the code editor shows too few lines to work in. */
+    public static final int MIN_ROWS = 4;
+
+    /**
+     * How many grid rows the client has room for; asked when a terminal
+     * opens. Set by the client at start, so that this class, which the
+     * server loads too, names nothing of the client.
+     *
+     * <p>At 1080p Minecraft picks GUI scale 4 on its own, which leaves 270
+     * pixels of height; the full window needs 310. With fewer rows the
+     * window shrinks instead of being cut off at top and bottom.
+     */
+    public static java.util.function.IntSupplier fittingRows = () -> GRID_ROWS;
+
+    public static int workHeight(int rows) {
+        return SEARCH_ROW + 2 + rows * SLOT;
+    }
+
+    public static int screenBottom(int rows) {
+        return WORK_Y + workHeight(rows) + 2 + STATUS_ROW;
+    }
+
+    public static int height(int rows) {
+        return screenBottom(rows) + 14 + 82;
+    }
+
+    /** The most rows, at most {@link #GRID_ROWS}, whose window fits into {@code available} pixels. */
+    public static int rowsFor(int available) {
+        int missing = height(GRID_ROWS) - available;
+        int rows = missing <= 0 ? GRID_ROWS : GRID_ROWS - (missing + SLOT - 1) / SLOT;
+        return Math.max(MIN_ROWS, Math.min(GRID_ROWS, rows));
+    }
+
     private TerminalLayout() {
     }
 }

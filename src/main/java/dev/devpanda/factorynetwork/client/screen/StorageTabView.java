@@ -43,8 +43,6 @@ public class StorageTabView {
      * <p>The room it freed up goes into fourteen more visible types — and not
      * into thin air.
      */
-    private static final int ROWS = dev.devpanda.factorynetwork.client.menu
-            .TerminalLayout.GRID_ROWS;
 
     private final TerminalScreen screen;
     private final Font font;
@@ -52,6 +50,8 @@ public class StorageTabView {
     private final int y;
     private final int width;
     private final int height;
+    /** Visible grid rows: nine, fewer on a small screen. */
+    private final int rows;
 
     private final StringBuilder search = new StringBuilder();
     private boolean searchFocused;
@@ -66,6 +66,8 @@ public class StorageTabView {
         this.y = y;
         this.width = width;
         this.height = height;
+        // As many rows as the work area holds below the search row.
+        this.rows = (height - 15) / SLOT;
         SearchMode mode = FnClientConfig.searchMode();
         String start = FnClientConfig.rememberSearch() ? ClientStorageView.lastSearch() : "";
         if (mode.jeiSync() && ExternalSearch.available()) {
@@ -90,7 +92,7 @@ public class StorageTabView {
 
     private int maxScroll() {
         int rows = (ClientStorageView.rows().size() + COLUMNS - 1) / COLUMNS;
-        return Math.max(0, rows - ROWS);
+        return Math.max(0, rows - this.rows);
     }
 
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -111,7 +113,7 @@ public class StorageTabView {
 
         // Grid background, one tile per cell. The texture holds eight rows and
         // the grid has nine; drawn as one piece, the last row stayed empty.
-        for (int row = 0; row < ROWS; row++) {
+        for (int row = 0; row < this.rows; row++) {
             for (int column = 0; column < COLUMNS; column++) {
                 graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, GRID,
                         gridX() + column * SLOT, gridY() + row * SLOT, 0, 0, SLOT, SLOT, 512, 512);
@@ -120,7 +122,7 @@ public class StorageTabView {
 
         List<ClientStorageView.Row> rows = ClientStorageView.rows();
         int first = scrollRow * COLUMNS;
-        for (int index = 0; index < COLUMNS * ROWS; index++) {
+        for (int index = 0; index < COLUMNS * this.rows; index++) {
             int position = first + index;
             if (position >= rows.size()) {
                 break;
@@ -138,10 +140,12 @@ public class StorageTabView {
                 // millibuckets stand.
                 amount = amount + row.unit();
             }
+            // Half size, as in AE2: at full size three digits are wider than
+            // the cell and run into the neighbour ("500500500").
             graphics.pose().pushMatrix();
-            // Since 26.1 later strokes lie above earlier ones; no depth step needed.
-            graphics.text(font, amount,
-                    cellX + 17 - font.width(amount), cellY + 9, 0xFFFFFFFF, true);
+            graphics.pose().translate(cellX + 16, cellY + 16);
+            graphics.pose().scale(0.5F, 0.5F);
+            graphics.text(font, amount, -font.width(amount), -font.lineHeight + 1, 0xFFFFFFFF, true);
             graphics.pose().popMatrix();
         }
 
@@ -209,7 +213,7 @@ public class StorageTabView {
     private void drawScrollbar(GuiGraphicsExtractor graphics) {
         int trackX = gridX() + COLUMNS * SLOT + 2;
         int trackY = gridY();
-        int trackH = ROWS * SLOT;
+        int trackH = this.rows * SLOT;
 
         // One recessed groove over the full height, not a column of tiles: a
         // track drawn from fifteen-pixel pieces looked like a row of slots.
@@ -295,7 +299,7 @@ public class StorageTabView {
         // above the grid, where the sort buttons sit, counted as the first row.
         int column = (int) Math.floor((mouseX - gridX()) / SLOT);
         int row = (int) Math.floor((mouseY - gridY()) / SLOT);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) {
+        if (column < 0 || column >= COLUMNS || row < 0 || row >= this.rows) {
             return false;
         }
         int index = (scrollRow + row) * COLUMNS + column;
@@ -414,7 +418,7 @@ public class StorageTabView {
         // above the grid, where the sort buttons sit, counted as the first row.
         int column = (int) Math.floor((mouseX - gridX()) / SLOT);
         int row = (int) Math.floor((mouseY - gridY()) / SLOT);
-        if (column < 0 || column >= COLUMNS || row < 0 || row >= ROWS) {
+        if (column < 0 || column >= COLUMNS || row < 0 || row >= this.rows) {
             return null;
         }
         int index = (scrollRow + row) * COLUMNS + column;

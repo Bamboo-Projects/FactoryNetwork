@@ -65,7 +65,7 @@ public class RouterMenu extends AbstractContainerMenu {
         return data.get(CAPACITY_INDEX);
     }
 
-    public String formatLoad(int lane) {
+    public net.minecraft.network.chat.Component formatLoad(int lane) {
         // In bytes per second, as everywhere: "0.4 of 1 KB/s" instead of "12/16".
         return dev.devpanda.factorynetwork.network.Bandwidth.usage(
                 load(lane), capacity());

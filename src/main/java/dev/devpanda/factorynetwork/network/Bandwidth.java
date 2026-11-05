@@ -153,7 +153,6 @@ public final class Bandwidth {
         return String.format(Locale.GERMANY, "%.1f %s/s", wert, UNITS[stufe]);
     }
 
-    /** What of a capacity has already been used: "0,4 von 1 KB/s". */
     /** The tiers in which a total amount is read. */
     private static final String[] UNITS = {"B", "KB", "MB", "GB", "TB"};
 
@@ -183,11 +182,16 @@ public final class Bandwidth {
         return String.format(Locale.GERMANY, "%.1f %s", wert, UNITS[stufe]);
     }
 
-    public static String usage(int usedPerTick, int capacityPerTick) {
+    /**
+     * What of a capacity has already been used: "0.4 of 1 KB/s". A component,
+     * so that "of" follows the reader's language and not the code's.
+     */
+    public static net.minecraft.network.chat.Component usage(int usedPerTick, int capacityPerTick) {
         if (capacityPerTick >= UNLIMITED) {
-            return perSecond(usedPerTick);
+            return net.minecraft.network.chat.Component.literal(perSecond(usedPerTick));
         }
-        return perSecond(usedPerTick) + " von " + perSecond(capacityPerTick);
+        return net.minecraft.network.chat.Component.translatable("message.factorynetwork.bandwidth.usage",
+                perSecond(usedPerTick), perSecond(capacityPerTick));
     }
 
     private Bandwidth() {

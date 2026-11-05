@@ -32,11 +32,6 @@ public class LogTabView {
 
     private static final int LINE = 10;
 
-    /** Width of a filter button. */
-    private static final int FILTER = 40;
-
-    /** The gap between the time and the text. */
-    private static final int TIME_WIDTH = 34;
 
     /**
      * The time of day, without a date.
@@ -101,8 +96,13 @@ public class LogTabView {
         }
 
         int room = (y + height - line) / LINE;
-        int first = Math.max(0, visible.size() - room - scroll);
-        int last = Math.min(visible.size(), first + room);
+        int last = Math.max(0, visible.size() - scroll);
+        int first = Math.max(0, last - room);
+        // A date line takes a row too; without counting it the newest line
+        // ended up under the status row.
+        while (first < last && linesNeeded(visible, first, last) > room) {
+            first++;
+        }
         String lastDay = "";
         for (int i = first; i < last; i++) {
             LogStatePacket.Line entry = visible.get(i);
@@ -121,6 +121,22 @@ public class LogTabView {
         renderNote(graphics);
     }
 
+    /** Rows the entries from {@code first} to {@code last} take, date lines included. */
+    private int linesNeeded(List<LogStatePacket.Line> visible, int first, int last) {
+        int lines = last - first;
+        String lastDay = "";
+        for (int i = first; i < last; i++) {
+            String day = format(visible.get(i).time(), DAY);
+            if (!day.equals(lastDay)) {
+                if (i > first || scroll > 0) {
+                    lines++;
+                }
+                lastDay = day;
+            }
+        }
+        return lines;
+    }
+
     /** The feedback at the bottom, for a few seconds. */
     private void renderNote(GuiGraphicsExtractor graphics) {
         if (note.isEmpty() || System.currentTimeMillis() > noteUntil) {
@@ -135,7 +151,8 @@ public class LogTabView {
         graphics.text(font, format(entry.time(), CLOCK), x + 3, line,
                 TerminalScreen.TEXT_FAINT, false);
 
-        int textX = x + 3 + TIME_WIDTH;
+        // Measured: a fixed width was narrower than the time in this font.
+        int textX = x + 3 + font.width("00:00:00") + 5;
         // The origin in brackets in front, muted: it is the information you
         // search for, not the one you read.
         if (!entry.source().isBlank()) {
@@ -173,21 +190,23 @@ public class LogTabView {
         int left = x + 3;
         for (LogLevel level : LogLevel.values()) {
             boolean active = ClientLogState.minimum() == level;
-            boolean hovered = mouseX >= left && mouseX < left + FILTER
-                    && mouseY >= line - 1 && mouseY < line + 9;
-            graphics.fill(left, line - 1, left + FILTER, line + 9,
-                    hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
             long count = ClientLogState.count(level);
             String label = Component.translatable(
                     "screen.factorynetwork.terminal.log." + level.key()).getString();
             if (count > 0) {
                 label = label + " " + count;
             }
-            graphics.text(font, font.plainSubstrByWidth(label, FILTER - 4),
-                    left + 2, line, active ? TerminalScreen.ACCENT : TerminalScreen.TEXT_DIM,
+            // As wide as the label: a fixed width cut "Warning" to "Warnin".
+            int wide = font.width(label) + 6;
+            boolean hovered = mouseX >= left && mouseX < left + wide
+                    && mouseY >= line - 1 && mouseY < line + 9;
+            graphics.fill(left, line - 1, left + wide, line + 9,
+                    hovered ? TerminalScreen.BUTTON_HOVER : TerminalScreen.BUTTON);
+            graphics.text(font, label,
+                    left + 3, line, active ? TerminalScreen.ACCENT : TerminalScreen.TEXT_DIM,
                     false);
-            filters.add(new Filter(left, line - 1, level));
-            left += FILTER + 2;
+            filters.add(new Filter(left, line - 1, wide, level));
+            left += wide + 2;
         }
 
         // Right-aligned and away from the filters: "Clear" is the only button
@@ -302,10 +321,10 @@ public class LogTabView {
     }
 
     /** A filter button, remembered for the click. */
-    private record Filter(int left, int top, LogLevel level) {
+    private record Filter(int left, int top, int wide, LogLevel level) {
 
         boolean hit(double mouseX, double mouseY) {
-            return mouseX >= left && mouseX < left + FILTER
+            return mouseX >= left && mouseX < left + wide
                     && mouseY >= top && mouseY < top + 10;
         }
     }

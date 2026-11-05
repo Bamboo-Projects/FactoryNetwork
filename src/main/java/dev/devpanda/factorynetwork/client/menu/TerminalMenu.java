@@ -45,6 +45,8 @@ public class TerminalMenu extends AbstractContainerMenu {
 
     private final ContainerLevelAccess access;
     private final BlockPos position;
+    /** How many grid rows the window has; fewer on a small screen. */
+    private final int rows;
     private final Player owner;
 
     /**
@@ -135,17 +137,21 @@ public class TerminalMenu extends AbstractContainerMenu {
         this.deviceSlot = deviceSlot;
         this.owner = inventory.player;
         this.access = ContainerLevelAccess.create(inventory.player.level(), position);
+        // Only the client's slot positions are ever drawn; the server keeps the full layout.
+        this.rows = inventory.player.level().isClientSide()
+                ? TerminalLayout.fittingRows.getAsInt() : TerminalLayout.GRID_ROWS;
+        int shift = TerminalLayout.height(rows) - TerminalLayout.HEIGHT;
 
         // Three rows of inventory
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(slotFor(inventory, column + row * 9 + 9,
-                        INV_X + column * SLOT_SIZE, INV_Y + row * SLOT_SIZE));
+                        INV_X + column * SLOT_SIZE, INV_Y + shift + row * SLOT_SIZE));
             }
         }
         // Hotbar
         for (int column = 0; column < 9; column++) {
-            addSlot(slotFor(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y));
+            addSlot(slotFor(inventory, column, INV_X + column * SLOT_SIZE, HOTBAR_Y + shift));
         }
 
         // From now on the player receives the network state — the status row
@@ -185,6 +191,11 @@ public class TerminalMenu extends AbstractContainerMenu {
         return device != null && index >= 0 && index < slots.size()
                 && slots.get(index) instanceof Slot slot
                 && !slot.mayPickup(owner);
+    }
+
+    /** How many grid rows the window has. */
+    public int rows() {
+        return rows;
     }
 
     public BlockPos position() {

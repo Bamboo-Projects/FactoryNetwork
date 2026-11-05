@@ -44,7 +44,6 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     // The measurements live in TerminalLayout, because the menu needs them
     // too and runs on a server without graphics. Here only the short names.
     static final int WIDTH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WIDTH;
-    static final int HEIGHT = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT;
     static final int SCREEN_X0 =
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_X0;
     static final int SCREEN_X1 =
@@ -53,15 +52,17 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_TOP;
     static final int SCREEN_PAD =
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_PAD;
-    static final int SCREEN_BOTTOM =
-            dev.devpanda.factorynetwork.client.menu.TerminalLayout.SCREEN_BOTTOM;
     static final int TAB_ROW = dev.devpanda.factorynetwork.client.menu.TerminalLayout.TAB_ROW;
     static final int STATUS_ROW =
             dev.devpanda.factorynetwork.client.menu.TerminalLayout.STATUS_ROW;
     static final int WORK_X = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_X;
     static final int WORK_Y = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_Y;
     static final int WORK_W = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_W;
-    static final int WORK_H = dev.devpanda.factorynetwork.client.menu.TerminalLayout.WORK_H;
+
+    /** Height of the window, the work area and the pane: all follow the row count. */
+    private final int windowHeight;
+    private final int workH;
+    private final int screenBottom;
 
     /** How far apart the tab labels stand. */
     private static final int TAB_GAP = 12;
@@ -98,23 +99,27 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private CodeTabView codeView;
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title, WIDTH, HEIGHT);
-        this.inventoryLabelY = HEIGHT - 82 - 11;
+        super(menu, inventory, title, WIDTH,
+                dev.devpanda.factorynetwork.client.menu.TerminalLayout.height(menu.rows()));
+        this.windowHeight = dev.devpanda.factorynetwork.client.menu.TerminalLayout.height(menu.rows());
+        this.workH = dev.devpanda.factorynetwork.client.menu.TerminalLayout.workHeight(menu.rows());
+        this.screenBottom = dev.devpanda.factorynetwork.client.menu.TerminalLayout.screenBottom(menu.rows());
+        this.inventoryLabelY = windowHeight - 82 - 11;
     }
 
     @Override
     protected void init() {
         super.init();
         storageView = new StorageTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, WORK_H);
-        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
+                WORK_W, workH);
+        networkView = new NetworkTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, workH);
         dashboardsView = new DashboardsTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, WORK_H);
+                WORK_W, workH);
         craftingView = new CraftingTabView(font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, WORK_H);
-        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, WORK_H);
+                WORK_W, workH);
+        logView = new LogTabView(font, leftPos + WORK_X, topPos + WORK_Y, WORK_W, workH);
         codeView = new CodeTabView(this, font, leftPos + WORK_X, topPos + WORK_Y,
-                WORK_W, WORK_H);
+                WORK_W, workH);
         announceTab();
     }
 
@@ -167,7 +172,14 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         super.extractBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND, leftPos, topPos, 0, 0, WIDTH, HEIGHT, 512, 512);
+        // The texture is drawn for the full row count; with fewer rows a strip
+        // of the plain pane is left out, so frame and inventory move up.
+        int cut = WORK_Y + 30;
+        int skip = dev.devpanda.factorynetwork.client.menu.TerminalLayout.HEIGHT - windowHeight;
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
+                leftPos, topPos, 0, 0, WIDTH, cut, 512, 512);
+        graphics.blit(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, BACKGROUND,
+                leftPos, topPos + cut, 0, cut + skip, WIDTH, windowHeight - cut, 512, 512);
         drawTabs(graphics, mouseX, mouseY);
         switch (tab) {
             case STORAGE -> storageView.extractRenderState(graphics, mouseX, mouseY);
@@ -269,7 +281,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
      * I had measured only the right one, and they slid into each other.
      */
     private void drawStatus(GuiGraphicsExtractor graphics) {
-        int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
+        int y = topPos + screenBottom - STATUS_ROW + 1;
         int right = leftPos + SCREEN_X1 - 4;
         int left = leftPos + WORK_X + 1;
 
@@ -320,7 +332,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     /** On hover over the status line, it shows what the numbers mean. */
     private void renderStatusTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        int y = topPos + SCREEN_BOTTOM - STATUS_ROW + 1;
+        int y = topPos + screenBottom - STATUS_ROW + 1;
         if (mouseY < y || mouseY >= y + STATUS_ROW
                 || mouseX < leftPos + SCREEN_X0 || mouseX >= leftPos + SCREEN_X1) {
             return;

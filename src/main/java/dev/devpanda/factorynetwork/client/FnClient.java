@@ -149,6 +149,9 @@ public final class FnClient {
             WebBridge.registerCommands(event);
         }
         ShareCommands.register(event);
+        dev.devpanda.factorynetwork.client.menu.TerminalLayout.fittingRows = () ->
+                dev.devpanda.factorynetwork.client.menu.TerminalLayout.rowsFor(
+                        net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScaledHeight());
         dev.devpanda.factorynetwork.item.ProgramDiskItem.openShare = () -> {
             var client = net.minecraft.client.Minecraft.getInstance();
             if (!dev.devpanda.factorynetwork.network.packet.ShareAllowedPacket.allowedHere()) {

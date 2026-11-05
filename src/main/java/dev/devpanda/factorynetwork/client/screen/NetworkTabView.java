@@ -164,7 +164,7 @@ public class NetworkTabView {
         // doesn't answer the question you have in mind: is that a lot?
         int capacity = ClientTraffic.capacity();
         String rate = capacity > 0
-                ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity)
+                ? Bandwidth.usage(jetzt / Bandwidth.TICKS_PER_SECOND, capacity).getString()
                 : Bandwidth.perSecond(jetzt / Bandwidth.TICKS_PER_SECOND);
         graphics.text(font, rate, right - font.width(rate), line + 3,
                 TerminalScreen.TEXT, false);
@@ -203,7 +203,10 @@ public class NetworkTabView {
 
         // The peak at the left edge of the curve: the scale, without which a
         // bar has no height.
-        String spitze = Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
+        // Nothing has flowed yet: say so, instead of a scale over an empty box.
+        String spitze = ClientTraffic.total() == 0
+                ? Component.translatable("screen.factorynetwork.terminal.network.traffic.quiet").getString()
+                : Bandwidth.perSecond(peak / Bandwidth.TICKS_PER_SECOND);
         graphics.text(font, spitze, sparkLeft + 2, sparkTop + 1,
                 TerminalScreen.TEXT_FAINT, false);
 
@@ -387,9 +390,12 @@ public class NetworkTabView {
     /** A line in a column, cut to its width. */
     private int columnLine(GuiGraphicsExtractor graphics, int cx, int line, int cw,
                            String content, int colour) {
-        graphics.text(font, font.plainSubstrByWidth(content, cw),
-                cx, line, colour, false);
-        return line + LINE;
+        // Wrapped, not cut: "4096 instructio" left the reader guessing.
+        for (var wrapped : font.split(Component.literal(content), Math.max(10, cw))) {
+            graphics.text(font, wrapped, cx, line, colour, false);
+            line += LINE;
+        }
+        return line;
     }
 
     private int dim(GuiGraphicsExtractor graphics, int cx, int line, String content) {
