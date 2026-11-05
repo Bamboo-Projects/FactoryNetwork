@@ -202,6 +202,11 @@ Rechner aus. Gespeichert wird dann deine UUID, sonst nichts — und nur, wenn du
 
 Gesendet werden nur Programm und Titel, nie dein Name oder der Server.
 
+Ein Server kann den Share abschalten: `allowProgramShare = false` im Abschnitt
+`[share]` seiner `factorynetwork-server.toml`. Dann sind Fenster und
+`/fnshare` gesperrt, und der Server schreibt keine geholten Programme auf
+Disketten.
+
 ## Wenn jemand anders die Datei hält
 
 Im Mehrspielerbetrieb gehört eine Datei dem, der sie geöffnet hat — sonst

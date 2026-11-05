@@ -26,6 +26,8 @@ public final class FnPackets {
                 DiskWritePacket::handle);
         registrar.playToServer(DiskSharedPacket.TYPE, DiskSharedPacket.STREAM_CODEC,
                 DiskSharedPacket::handle);
+        registrar.playToClient(ShareAllowedPacket.TYPE, ShareAllowedPacket.STREAM_CODEC,
+                ShareAllowedPacket::handle);
         registrar.playToClient(DraftSavedPacket.TYPE, DraftSavedPacket.STREAM_CODEC,
                 DraftSavedPacket::handle);
         registrar.playToClient(NetworkStatePacket.TYPE, NetworkStatePacket.STREAM_CODEC,

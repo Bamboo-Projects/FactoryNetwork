@@ -70,6 +70,7 @@
   "screen.factorynetwork.share.upload.replaces": "Geteilt als %s – Hochladen ersetzt diese Fassung.",
   "screen.factorynetwork.share.upload.done": "Geteilt als %s (Code ist kopiert)",
   "screen.factorynetwork.share.upload.updated": "Neue Fassung unter %s (Code ist kopiert)",
+  "message.factorynetwork.share.disabled": "Auf diesem Server ist der Programm-Share abgeschaltet.",
   "message.factorynetwork.connector.unnamed": "Dieser Connector hat noch keinen Namen.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s Connectoren (%s ohne Namen) · %s Kabel",

@@ -70,6 +70,7 @@
   "screen.factorynetwork.share.upload.replaces": "Shared as %s – uploading replaces this version.",
   "screen.factorynetwork.share.upload.done": "Shared as %s (code copied)",
   "screen.factorynetwork.share.upload.updated": "New version under %s (code copied)",
+  "message.factorynetwork.share.disabled": "The program share is switched off on this server.",
   "message.factorynetwork.connector.unnamed": "This connector has no name yet.",
   "message.factorynetwork.connector.named": "Connector: %s",
   "message.factorynetwork.controller.status": "%s connectors (%s unnamed) · %s cables",

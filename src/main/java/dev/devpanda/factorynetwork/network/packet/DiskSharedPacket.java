@@ -33,6 +33,7 @@ public record DiskSharedPacket(String code, String key) implements CustomPacketP
     public static void handle(DiskSharedPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player
+                    && dev.devpanda.factorynetwork.FnConfig.programShare()
                     && player.getMainHandItem().getItem() instanceof ProgramDiskItem) {
                 ProgramDiskItem.setShare(player.getMainHandItem(),
                         new ProgramDiskItem.Share(packet.code(), packet.key()));

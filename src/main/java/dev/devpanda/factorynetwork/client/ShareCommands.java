@@ -34,8 +34,10 @@ public final class ShareCommands {
     public static void register(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("fnshare")
                 .executes(context -> {
-                    later(() -> Minecraft.getInstance().setScreen(new dev.devpanda.factorynetwork.client
-                            .screen.ShareScreen()));
+                    if (allowed()) {
+                        later(() -> Minecraft.getInstance().setScreen(new dev.devpanda.factorynetwork.client
+                                .screen.ShareScreen()));
+                    }
                     return 1;
                 })
                 .then(Commands.literal("upload")
@@ -109,6 +111,9 @@ public final class ShareCommands {
      * {@code bind} ties the code to the Minecraft account, proven with Mojang.
      */
     private static void upload(String title, boolean fresh, boolean bind) {
+        if (!allowed()) {
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (player == null) {
             return;
@@ -155,6 +160,9 @@ public final class ShareCommands {
 
     /** From any disk: a new version under a code bound to this account. */
     private static void updateBound(String code, String title) {
+        if (!allowed()) {
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (player == null) {
             return;
@@ -196,6 +204,9 @@ public final class ShareCommands {
     }
 
     private static void get(String code) {
+        if (!allowed()) {
+            return;
+        }
         var player = Minecraft.getInstance().player;
         if (player == null) {
             return;
@@ -216,6 +227,9 @@ public final class ShareCommands {
     }
 
     private static void list(boolean popular, String search, int page) {
+        if (!allowed()) {
+            return;
+        }
         ShareClient.list(popular, search, page).whenComplete((found, error) -> later(() -> {
             if (error != null) {
                 failed(error);
@@ -242,6 +256,9 @@ public final class ShareCommands {
     }
 
     private static void report(String code) {
+        if (!allowed()) {
+            return;
+        }
         ShareClient.report(code).whenComplete((done, error) -> later(() -> {
             if (error != null) {
                 failed(error);
@@ -255,6 +272,15 @@ public final class ShareCommands {
         Throwable cause = error.getCause() != null ? error.getCause() : error;
         say(Component.translatable("message.factorynetwork.share.failed",
                 String.valueOf(cause.getMessage())).withStyle(ChatFormatting.RED));
+    }
+
+    /** Whether this server allows the share; says so in the chat if not. */
+    private static boolean allowed() {
+        if (dev.devpanda.factorynetwork.network.packet.ShareAllowedPacket.allowedHere()) {
+            return true;
+        }
+        say(Component.translatable("message.factorynetwork.share.disabled").withStyle(ChatFormatting.RED));
+        return false;
     }
 
     private static void later(Runnable what) {

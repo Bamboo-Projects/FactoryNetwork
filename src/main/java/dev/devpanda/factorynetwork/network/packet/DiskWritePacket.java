@@ -46,7 +46,8 @@ public record DiskWritePacket(String title, Map<String, String> files) implement
 
     public static void handle(DiskWritePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (!(context.player() instanceof ServerPlayer player)) {
+            if (!(context.player() instanceof ServerPlayer player)
+                    || !dev.devpanda.factorynetwork.FnConfig.programShare()) {
                 return;
             }
             var disk = player.getMainHandItem();

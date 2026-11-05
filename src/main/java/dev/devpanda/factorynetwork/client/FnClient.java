@@ -149,9 +149,17 @@ public final class FnClient {
             WebBridge.registerCommands(event);
         }
         ShareCommands.register(event);
-        dev.devpanda.factorynetwork.item.ProgramDiskItem.openShare = () ->
-                net.minecraft.client.Minecraft.getInstance().setScreen(
-                        new dev.devpanda.factorynetwork.client.screen.ShareScreen());
+        dev.devpanda.factorynetwork.item.ProgramDiskItem.openShare = () -> {
+            var client = net.minecraft.client.Minecraft.getInstance();
+            if (!dev.devpanda.factorynetwork.network.packet.ShareAllowedPacket.allowedHere()) {
+                if (client.player != null) {
+                    client.player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                            "message.factorynetwork.share.disabled"));
+                }
+                return;
+            }
+            client.setScreen(new dev.devpanda.factorynetwork.client.screen.ShareScreen());
+        };
     }
 
     private FnClient() {

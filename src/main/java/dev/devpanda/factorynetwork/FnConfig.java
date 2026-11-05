@@ -63,6 +63,7 @@ public final class FnConfig {
     private static final ModConfigSpec.EnumValue<FnProtection.Mode> PROTECTION;
     private static final ModConfigSpec.BooleanValue KEEP_AWAKE;
     private static final ModConfigSpec.BooleanValue HALLS_LOAD_THEMSELVES;
+    private static final ModConfigSpec.BooleanValue PROGRAM_SHARE;
 
     public static final ModConfigSpec SERVER_SPEC;
 
@@ -131,6 +132,14 @@ public final class FnConfig {
                         "false: Die Halle läuft nur, solange ihr Block geladen ist.")
                 .define("hallsLoadThemselves", true);
         builder.pop();
+        builder.comment("Der Programm-Share (fnshare.bamboo-srv.de): Programme per Code teilen und holen.")
+                .push("share");
+        PROGRAM_SHARE = builder
+                .comment("Ob Spieler auf diesem Server den Programm-Share nutzen dürfen.",
+                        "false: Fenster und /fnshare sind gesperrt, und der Server schreibt",
+                        "keine geholten Programme auf Disketten.")
+                .define("allowProgramShare", true);
+        builder.pop();
         SERVER_SPEC = builder.build();
     }
 
@@ -189,6 +198,11 @@ public final class FnConfig {
     /** Whether a server with a running factory should skip the empty-server pause. */
     public static boolean keepAwakeWhileFactoriesRun() {
         return SERVER_SPEC.isLoaded() && KEEP_AWAKE.get();
+    }
+
+    /** Whether players may use the program share here. Without a loaded configuration: yes. */
+    public static boolean programShare() {
+        return !SERVER_SPEC.isLoaded() || PROGRAM_SHARE.get();
     }
 
     /** Whether a hall keeps running while its block stands but is not loaded. */

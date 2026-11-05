@@ -174,6 +174,16 @@ public final class FnEvents {
         event.setCanceled(true);
     }
 
+    /** Tells a joining player whether the program share is allowed here. */
+    @SubscribeEvent
+    public static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                    new dev.devpanda.factorynetwork.network.packet.ShareAllowedPacket(
+                            dev.devpanda.factorynetwork.FnConfig.programShare()));
+        }
+    }
+
     private FnEvents() {
     }
 }
